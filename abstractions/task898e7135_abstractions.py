@@ -1,0 +1,223 @@
+"""Abstraction experiments for ARC task 898e7135."""
+
+from __future__ import annotations
+
+import json
+from collections import Counter, defaultdict, deque
+from math import gcd, sqrt
+from pathlib import Path
+from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
+
+Grid = List[List[int]]
+Coord = Tuple[int, int]
+
+
+def load_task(path: Path) -> Dict[str, Sequence[Dict[str, Grid]]]:
+    return json.loads(path.read_text())
+
+
+def _dominant_color(grid: Grid) -> int:
+    freq = Counter(val for row in grid for val in row if val != 0)
+    return max(freq, key=freq.get)
+
+
+def _bbox_of_color(grid: Grid, color: int) -> Tuple[int, int, int, int]:
+    rows, cols = zip(*[(r, c) for r, row in enumerate(grid) for c, v in enumerate(row) if v == color])
+    return min(rows), max(rows), min(cols), max(cols)
+
+
+def _zero_components_within_bbox(grid: Grid, bbox: Tuple[int, int, int, int]) -> List[List[Coord]]:
+    r0, r1, c0, c1 = bbox
+    h, w = r1 - r0 + 1, c1 - c0 + 1
+    seen = [[False] * w for _ in range(h)]
+    comps: List[List[Coord]] = []
+    for rr in range(h):
+        for cc in range(w):
+            if seen[rr][cc] or grid[r0 + rr][c0 + cc] != 0:
+                continue
+            queue = deque([(rr, cc)])
+            seen[rr][cc] = True
+            cells: List[Coord] = []
+            while queue:
+                cr, cc2 = queue.popleft()
+                cells.append((r0 + cr, c0 + cc2))
+                for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    nr, nc = cr + dr, cc2 + dc
+                    if 0 <= nr < h and 0 <= nc < w and not seen[nr][nc] and grid[r0 + nr][c0 + nc] == 0:
+                        seen[nr][nc] = True
+                        queue.append((nr, nc))
+            comps.append(cells)
+    return comps
+
+
+def _color_components(grid: Grid, skip_color: int) -> List[Tuple[int, List[Coord]]]:
+    h, w = len(grid), len(grid[0])
+    seen = [[False] * w for _ in range(h)]
+    comps: List[Tuple[int, List[Coord]]] = []
+    for r in range(h):
+        for c in range(w):
+            val = grid[r][c]
+            if val == 0 or val == skip_color or seen[r][c]:
+                continue
+            queue = deque([(r, c)])
+            seen[r][c] = True
+            cells: List[Coord] = []
+            while queue:
+                cr, cc = queue.popleft()
+                cells.append((cr, cc))
+                for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    nr, nc = cr + dr, cc + dc
+                    if 0 <= nr < h and 0 <= nc < w and not seen[nr][nc] and grid[nr][nc] == val:
+                        seen[nr][nc] = True
+                        queue.append((nr, nc))
+            comps.append((val, cells))
+    return comps
+
+
+def _scale_grid(coarse: Grid, factor: int) -> Grid:
+    h, w = len(coarse), len(coarse[0])
+    upscaled = [[0] * (w * factor) for _ in range(h * factor)]
+    for r in range(h):
+        for c in range(w):
+            val = coarse[r][c]
+            base_r = r * factor
+            base_c = c * factor
+            for dr in range(factor):
+                row = upscaled[base_r + dr]
+                for dc in range(factor):
+                    row[base_c + dc] = val
+    return upscaled
+
+
+def _solve_with_scale(grid: Grid, forced_scale: Optional[int] = None) -> Grid:
+    bg = _dominant_color(grid)
+    r0, r1, c0, c1 = _bbox_of_color(grid, bg)
+    h, w = r1 - r0 + 1, c1 - c0 + 1
+    coarse = [[grid[r0 + r][c0 + c] for c in range(w)] for r in range(h)]
+
+    zero_comps = _zero_components_within_bbox(grid, (r0, r1, c0, c1))
+    color_comps = _color_components(grid, bg)
+
+    significant = [(color, cells) for color, cells in color_comps if len(cells) >= 4]
+
+    if forced_scale is not None:
+        scale = max(1, forced_scale)
+        scale_sq = scale * scale
+    else:
+        scale_sq = 0
+        for _, cells in significant:
+            area = len(cells)
+            scale_sq = area if scale_sq == 0 else gcd(scale_sq, area)
+        if scale_sq <= 0:
+            scale_sq = 1
+        scale = max(1, int(round(sqrt(scale_sq))))
+        if scale * scale != scale_sq:
+            scale_sq = scale * scale
+
+    if not zero_comps or not significant:
+        return _scale_grid(coarse, scale)
+
+    zeros_by_size: Dict[int, List[Tuple[Tuple[float, float], List[Coord]]]] = defaultdict(list)
+    for cells in zero_comps:
+        zr = sum(r for r, _ in cells) / len(cells)
+        zc = sum(c for _, c in cells) / len(cells)
+        zeros_by_size[len(cells)].append(((zr, zc), cells))
+
+    colors_by_size: Dict[int, List[Tuple[int, Tuple[float, float]]]] = defaultdict(list)
+    for color, cells in significant:
+        area = len(cells)
+        if area % (scale * scale) != 0:
+            continue
+        coarse_cells = area // (scale * scale)
+        if coarse_cells <= 0:
+            continue
+        cr = sum(r for r, _ in cells) / area
+        cc = sum(c for _, c in cells) / area
+        colors_by_size[coarse_cells].append((color, (cr, cc)))
+
+    for size, z_entries in zeros_by_size.items():
+        palette = colors_by_size.get(size)
+        if not palette:
+            continue
+        used = [False] * len(palette)
+        for centroid, cells in z_entries:
+            zr, zc = centroid
+            best_idx = None
+            best_dist = float("inf")
+            for idx, (color, (cr, cc)) in enumerate(palette):
+                if used[idx]:
+                    continue
+                dist = (zr - cr) ** 2 + (zc - cc) ** 2
+                if dist < best_dist:
+                    best_dist = dist
+                    best_idx = idx
+            if best_idx is None:
+                continue
+            used[best_idx] = True
+            color = palette[best_idx][0]
+            for r, c in cells:
+                coarse[r - r0][c - c0] = color
+
+    return _scale_grid(coarse, scale)
+
+
+def abstraction_identity(grid: Grid) -> Grid:
+    return [row[:] for row in grid]
+
+
+def abstraction_fixed_scale2(grid: Grid) -> Grid:
+    return _solve_with_scale(grid, forced_scale=2)
+
+
+def abstraction_dynamic_scale(grid: Grid) -> Grid:
+    return _solve_with_scale(grid, forced_scale=None)
+
+
+ABSTRACTIONS: Dict[str, Callable[[Grid], Grid]] = {
+    "identity": abstraction_identity,
+    "scale2": abstraction_fixed_scale2,
+    "dynamic": abstraction_dynamic_scale,
+}
+
+
+def _eval_section(fn: Callable[[Grid], Grid], examples: Sequence[Dict[str, Grid]]) -> Tuple[int, int, Optional[int]]:
+    total = 0
+    correct = 0
+    first_fail: Optional[int] = None
+    for idx, example in enumerate(examples):
+        if "output" not in example:
+            continue
+        total += 1
+        pred = fn(example["input"])
+        if pred == example["output"]:
+            correct += 1
+        elif first_fail is None:
+            first_fail = idx
+    return correct, total, first_fail
+
+
+def main() -> None:
+    task_path = Path("analysis/arc2_samples/898e7135.json")
+    data = load_task(task_path)
+    sections = [
+        ("train", data.get("train", [])),
+        ("test", data.get("test", [])),
+        ("arc-gen", data.get("arc-gen", [])),
+    ]
+
+    for name, fn in ABSTRACTIONS.items():
+        print(f"== {name} ==")
+        for section_name, examples in sections:
+            if not examples:
+                print(f"  {section_name}: no examples")
+                continue
+            correct, total, first_fail = _eval_section(fn, examples)
+            if total == 0:
+                print(f"  {section_name}: no ground-truth outputs")
+                continue
+            status = "all matched" if correct == total else f"first fail idx {first_fail}"
+            print(f"  {section_name}: {correct}/{total} matched ({status})")
+
+
+if __name__ == "__main__":
+    main()
