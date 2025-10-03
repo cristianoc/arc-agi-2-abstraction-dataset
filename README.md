@@ -1,10 +1,12 @@
-# ARC-AGI-2 Solutions Dataset
+# ARC-AGI-2 Abstraction Dataset
 
 A dataset containing 50 generated ARC-AGI-2 task solvers with their corresponding abstraction implementations and analysis reports.
 
 ## Overview
 
-This dataset contains solvers for 50 ARC-AGI-2 tasks that were generated using an automated approach combining Codex with abstraction-refinement techniques. The solvers were refined starting from identity functions, and the identity functions are left when no solution was found. For details on the refinement pipeline, see the companion [compositional-program-synthesis](https://github.com/cristianoc/compositional-program-synthesis) repository. Each task solver includes:
+This dataset contains solvers for 50 ARC-AGI-2 **evaluation tasks**, generated using an automated approach combining coding agents with abstraction-refinement techniques.
+All 50 solvers pass **interpolation** (i.e., they correctly solve all training examples). This is the **initial batch**; the dataset will be expanded over time, and future tasks may not all pass interpolation.  
+The solvers were refined starting from identity functions, and identity functions are left when no solution is found. For details on the refinement pipeline, see the companion [compositional-program-synthesis](https://github.com/cristianoc/compositional-program-synthesis) repository. Each task solver includes:
 
 - **Task Solution**: The final working Python implementation
 - **Abstraction Code**: Reusable abstraction functions and pipelines
@@ -32,7 +34,7 @@ Each task solution in the `solutions/` directory contains:
 
 - A Python function that attempts to solve the ARC-AGI-2 task
 - Error handling and edge case management
-- Generated implementations that may or may not pass all test cases
+- Generated implementations that pass the training examples (interpolation). Generalization to unseen test cases remains the key open challenge.
 
 ## Abstraction Files
 
