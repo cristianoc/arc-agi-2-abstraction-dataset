@@ -1,0 +1,3 @@
+- `row_ltr`: treat wide grids with row-wise left→right segment interleaving. Solves 2/4 train cases before stalling on the tall example that needs column logic.
+- `column_ltr`: transpose tall grids but keep column order left→right; mismatched ordering leaves 0/4 train cases solved.
+- `directional`: hybrid that detects tall grids, reverses column order, and flips segment direction when the right edge is anchored; solves 4/4 train cases and feeds the final solver (test output shape 18×8).
