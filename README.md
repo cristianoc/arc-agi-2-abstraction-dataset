@@ -1,11 +1,11 @@
 # ARC-AGI-2 Abstraction Dataset
 
-A dataset containing 50 generated ARC-AGI-2 task solvers with their corresponding abstraction implementations and analysis reports.
+A dataset containing 79 generated ARC-AGI-2 task solvers with their corresponding abstraction implementations and analysis reports.
 
 ## Overview
 
-This dataset contains solvers for 50 ARC-AGI-2 **evaluation tasks**, generated using an automated approach combining coding agents with abstraction-refinement techniques.
-All 50 solvers pass **interpolation** (i.e., they correctly solve all training examples). This is the **initial batch**; the dataset will be expanded over time, and future tasks may not all pass interpolation.  
+This dataset contains solvers for 79 ARC-AGI-2 **evaluation tasks**, generated using an automated approach combining coding agents with abstraction-refinement techniques.
+All 79 solvers pass **interpolation** (i.e., they correctly solve all training examples). This dataset continues to be expanded over time, and future tasks may not all pass interpolation.  
 The solvers were refined starting from identity functions, and identity functions are left when no solution is found. For details on the refinement pipeline, see the companion [compositional-program-synthesis](https://github.com/cristianoc/compositional-program-synthesis) repository. Each task solver includes:
 
 - **Task Solution**: The final working Python implementation
@@ -87,6 +87,24 @@ from abstractions.task1ae2feb7_abstractions import repeat_last_nonzero_block
 result = repeat_last_nonzero_block(grid)
 ```
 
+### Checking Repository Consistency
+
+A consistency checker script is included to verify the dataset integrity:
+
+```bash
+# Check consistency (basic)
+python check_consistency.py
+
+# Check consistency with verbose output
+python check_consistency.py --verbose
+```
+
+The script verifies:
+- All solution files have corresponding abstraction files
+- All abstraction files have corresponding solution files
+- File counts match between directories
+- Documentation reflects actual file counts
+
 ## Methodology
 
 The solutions were generated using an automated approach that:
@@ -116,7 +134,15 @@ This dataset is released under the MIT License. See [LICENSE](LICENSE) for detai
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests.
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on:
+
+- Adding new tasks and abstractions
+- Repository structure and naming conventions
+- Running consistency checks
+- Code quality guidelines
+- Pull request process
+
+Please feel free to submit issues, feature requests, or pull requests following the guidelines in CONTRIBUTING.md.
 
 ## Acknowledgments
 

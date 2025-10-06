@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Nothing yet
 
+## [1.2.0] - 2025-01-XX
+
+### Added
+- 16 new ARC tasks for expanded dataset coverage
+- Complete abstraction analysis for tasks: 135a2760, 20270e3b, 2b83f449, 38007db0, 409aa875, 45a5af55, 7b5033c1, 7c66cb00, b99e7126, cbebaa4b, d35bdbdc, d8e07eb2, db0c5428, de809cff, dfadab01, e8686506
+- Abstraction reports for all 16 new tasks
+- Working solutions for all 16 new tasks (all pass interpolation)
+- Continued expansion of abstraction pattern coverage
+- Repository consistency checker script (`check_consistency.py`) for automated verification
+- Contributing guidelines (`CONTRIBUTING.md`) with detailed contribution process
+
+### Changed
+- Dataset expanded from 63 to 79 tasks
+- Total abstractions: 79 Python files + 79 Markdown reports
+- Total solutions: 79 Python files
+
 ## [1.1.0] - 2025-10-05
 
 ### Added
@@ -45,6 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Tasks | Description |
 |---------|------|-------|-------------|
+| 1.2.0 | 2025-01-XX | 79 | Added 16 tasks for expanded coverage |
 | 1.1.0 | 2025-10-05 | 63 | Added 13 tasks for grover-arc comparison |
 | 1.0.0 | 2025-10-02 | 50 | Initial release with baseline tasks |
 
