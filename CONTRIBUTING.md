@@ -60,6 +60,8 @@ The consistency checker verifies:
 - ✅ File counts match between directories
 - ✅ Task IDs are consistent across directories
 - ✅ Documentation reflects actual file counts
+- ✅ No placeholder dates in CHANGELOG.md (e.g., "2025-01-XX")
+- ✅ No placeholder text in documentation files
 
 ## Documentation Updates
 

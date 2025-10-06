@@ -132,8 +132,10 @@ def check_consistency(solutions_dir: Path, abstractions_dir: Path, verbose: bool
 
 
 def check_documentation_consistency(verbose: bool = False) -> bool:
-    """Check if documentation reflects actual file counts."""
+    """Check if documentation reflects actual file counts and has no placeholders."""
     print("📚 Checking documentation consistency...\n")
+    
+    issues_found = 0
     
     # Read README.md
     readme_path = Path("README.md")
@@ -164,10 +166,43 @@ def check_documentation_consistency(verbose: bool = False) -> bool:
     if str(actual_count) not in readme_content:
         print(f"❌ README.md doesn't mention current task count ({actual_count})")
         print(f"   Found mentions of: {readme_task_counts}")
-        return False
+        issues_found += 1
+    else:
+        print(f"✅ README.md correctly mentions {actual_count} tasks")
     
-    print(f"✅ README.md correctly mentions {actual_count} tasks")
-    return True
+    # Check CHANGELOG.md for placeholder dates
+    changelog_path = Path("CHANGELOG.md")
+    if changelog_path.exists():
+        with open(changelog_path, 'r') as f:
+            changelog_content = f.read()
+        
+        # Look for placeholder dates like "2025-01-XX" or "YYYY-MM-XX"
+        placeholder_dates = re.findall(r'\d{4}-\d{2}-XX', changelog_content)
+        if placeholder_dates:
+            print(f"❌ CHANGELOG.md contains placeholder dates: {placeholder_dates}")
+            issues_found += 1
+        else:
+            print("✅ CHANGELOG.md has no placeholder dates")
+        
+        # Check for TODO or FIXME comments
+        todo_comments = re.findall(r'(TODO|FIXME|XXX)', changelog_content, re.IGNORECASE)
+        if todo_comments:
+            print(f"⚠️  CHANGELOG.md contains TODO/FIXME comments: {set(todo_comments)}")
+    
+    # Check for other common placeholder patterns
+    placeholder_patterns = [
+        r'<[A-Z_]+>',  # <PLACEHOLDER>
+        r'\[TODO\]',   # [TODO]
+        r'XXX',        # XXX
+        r'PLACEHOLDER' # PLACEHOLDER
+    ]
+    
+    for pattern in placeholder_patterns:
+        matches = re.findall(pattern, readme_content, re.IGNORECASE)
+        if matches:
+            print(f"⚠️  README.md contains potential placeholders ({pattern}): {set(matches)}")
+    
+    return issues_found == 0
 
 
 def main():

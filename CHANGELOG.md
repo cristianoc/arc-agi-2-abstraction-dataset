@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Nothing yet
 
-## [1.2.0] - 2025-01-XX
+## [1.2.0] - 2025-10-06
 
 ### Added
 - 16 new ARC tasks for expanded dataset coverage
@@ -61,7 +61,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Tasks | Description |
 |---------|------|-------|-------------|
-| 1.2.0 | 2025-01-XX | 79 | Added 16 tasks for expanded coverage |
+| 1.2.0 | 2025-10-06 | 79 | Added 16 tasks for expanded coverage |
 | 1.1.0 | 2025-10-05 | 63 | Added 13 tasks for grover-arc comparison |
 | 1.0.0 | 2025-10-02 | 50 | Initial release with baseline tasks |
 
