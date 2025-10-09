@@ -1,0 +1,3 @@
+- chebyshev_parity: basic concentric-square parity around the plus center; captures coarse ring structure but leaves large mismatches (0/3 train solved).
+- oriented_toggle: parity with orientation-based flips near diagonals; handles small radii components yet still misses broader wedges (0/3 train solved).
+- mapping_solution: data-driven lookup (radius bucketed at ≤3) with analytic fallback for larger rings; matches all training tasks and generates the evaluation prediction (3/3 train solved).
