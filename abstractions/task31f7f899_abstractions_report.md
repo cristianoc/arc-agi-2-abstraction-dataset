@@ -1,0 +1,6 @@
+# Task 31f7f899 Abstraction Summary
+
+- **identity** – simple copy of the input grid. Performance: 0/3 train matches; first failure at train[0].
+- **sorted_stripes** – treat the dense center row as a profile, then sort the vertical spans of all non-dominant stripes from left to right. Performance: 3/3 train matches, no failures; applies cleanly to the evaluation input and produces the expected column cascade on the held-out test grid.
+
+Final refinement: use `sorted_stripes` alone. It preserves the central backbone while redistributing stripe heights monotonically; visual inspection of the evaluation test prediction confirms the intended tapering pattern.
