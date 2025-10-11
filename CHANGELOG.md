@@ -7,8 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Task faa9f03d: Complete solver rewrite from nearest-neighbor classifier to rule-based approach with noise removal and selective closures (100% train accuracy)
+
+### Removed
+- Task 271d71e2 (removed: solution was encoding the training examples)
+- Task da515329 (removed: solution was encoding the training examples)
+- Dataset reduced from 118 to 116 tasks
+
+## [1.4.0] - 2025-10-10
+
 ### Added
-- Nothing yet
+- 40 new ARC tasks for expanded dataset coverage (bringing total to 119, then 118 after removal)
+- Complete abstraction analysis for 40 new tasks
+- Abstraction reports for all 40 new tasks
+- Working solutions approaching comprehensive coverage of ARC-AGI-2 evaluation set
+
+### Changed
+- Dataset expanded from 99 to 118 tasks (after one removal)
+- Total abstractions: 118 Python files + 118 Markdown reports
+- Total solutions: 118 Python files
+- Updated 2 solutions (faa9f03d, and one other) to remove local JSON file dependencies
+
+### Removed
+- Task 21897d95 (removed from dataset)
 
 ## [1.3.0] - 2025-10-09
 
@@ -78,6 +100,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Tasks | Description |
 |---------|------|-------|-------------|
+| 1.4.0 | 2025-10-10 | 118 | Added 40 tasks approaching full ARC-AGI-2 coverage |
 | 1.3.0 | 2025-10-09 | 99 | Added 20 tasks for expanded coverage |
 | 1.2.0 | 2025-10-06 | 79 | Added 16 tasks for expanded coverage |
 | 1.1.0 | 2025-10-05 | 63 | Added 13 tasks for grover-arc comparison |

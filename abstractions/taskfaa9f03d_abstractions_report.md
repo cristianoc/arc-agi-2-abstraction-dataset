@@ -1,6 +1,6 @@
-# ARC faa9f03d – abstraction notes
+# faa9f03d Abstractions Report
 
-- **bridge-g3**: simple row/column gap-closure (<=3 cells) on preprocessed grids; could not align mixed digit structures (0/4 train success, fails immediately on train[0]).
-- **knn-1**: 1-nearest-neighbour on handcrafted row/column statistics (after colour cleanup); perfectly reproduces training labels (100% on train, sensible digits on test prediction).
-
-Final solution: use the `knn-1` classifier, as implemented in `analysis/arc2_samples/faa9f03d.py`.
+- **noise_only** – Recolors low-frequency cells with majority neighbours; collapses stray artifacts but leaves underlying digits disconnected. Train accuracy: 0/4.
+- **row_col_closure** – Adds short row/column bridges around dominant colors; improves cohesion yet still misses long-range hooks. Train accuracy: 0/4.
+- **flanked_extend** – Adds flanked infill and limited row extension; recovers one training case but fails to propagate vertical spines. Train accuracy: 1/4 (first failure at train[1]).
+- **final_solver** – Full pipeline from `solve_faa9f03d` combining noise removal, selective closures, flanked infill, row extensions, and tail-specific six propagation. Train accuracy: 4/4 (no failures). Test prediction shown in harness output.
