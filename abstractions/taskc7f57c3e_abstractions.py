@@ -1,78 +1,109 @@
-"""Abstractions explored for ARC task c7f57c3e."""
+"""Abstraction experiments for ARC task c7f57c3e."""
 
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
-from typing import Callable, Iterable, List
+from typing import Callable, Iterable, List, Sequence
 
-from arc2_samples.c7f57c3e import (
-    RADIUS,
-    _encode_patch,
-    _nearest_color,
-    _training_memory,
-)
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.append(str(PROJECT_ROOT))
 
+from arc2_samples import c7f57c3e as task
 
 Grid = List[List[int]]
 
 
-def load_task() -> dict:
+def _variant_a(grid: Grid) -> Grid:
+    background = task._most_common_color(grid)
+    palette = task._palette_without(grid, background)
+    if len(palette) < 3:
+        return task._copy_grid(grid)
+    high = palette[-1]
+    mid = max(c for c in palette if c < high)
+    c1 = palette[0]
+    c2 = palette[1]
+    return task._apply_variant_a(grid, background, c1, c2, mid, high)
+
+
+def _variant_b(grid: Grid) -> Grid:
+    background = task._most_common_color(grid)
+    palette = task._palette_without(grid, background)
+    if len(palette) < 3:
+        return task._copy_grid(grid)
+    high = palette[-1]
+    candidates = [c for c in palette if c < high]
+    if not candidates:
+        return task._copy_grid(grid)
+    mid = max(candidates)
+    pivot = palette[1] if len(palette) > 1 else palette[0]
+    return task._apply_variant_b(grid, background, pivot, mid, high)
+
+
+def _hybrid(grid: Grid) -> Grid:
+    return task.solve_c7f57c3e(grid)
+
+
+def _load_dataset() -> dict:
     path = Path("arc2_samples/c7f57c3e.json")
-    return json.loads(path.read_text())
+    with path.open() as fh:
+        return json.load(fh)
 
 
-def abstraction_identity(grid: Grid) -> Grid:
-    """Baseline: return a copy of the input grid."""
+def _evaluate_split(
+    name: str,
+    cases: Iterable[dict],
+    solver: Callable[[Grid], Grid],
+) -> tuple[int, int, int | None]:
+    total = 0
+    matches = 0
+    first_failure: int | None = None
+    for idx, case in enumerate(cases):
+        if "output" not in case:
+            continue
+        total += 1
+        predicted = solver(case["input"])
+        if predicted == case["output"]:
+            matches += 1
+        elif first_failure is None:
+            first_failure = idx
+    return total, matches, first_failure
 
-    return [row[:] for row in grid]
+
+def _print_report(split: str, total: int, matches: int, first_failure: int | None) -> None:
+    if total == 0:
+        print(f"    {split}: no cases")
+        return
+    if matches == total:
+        status = "all match"
+    else:
+        status = f"{matches}/{total} match"
+    fail_str = "n/a" if first_failure is None else str(first_failure)
+    print(f"    {split}: {status} (first failure: {fail_str})")
 
 
-def abstraction_knn5(grid: Grid) -> Grid:
-    """5×5 nearest-neighbour recolouring using training patterns."""
+def main() -> None:
+    data = _load_dataset()
+    pipelines: Sequence[tuple[str, Callable[[Grid], Grid]]] = (
+        ("variant_a", _variant_a),
+        ("variant_b", _variant_b),
+        ("hybrid", _hybrid),
+    )
+    splits = {
+        "train": data.get("train", []),
+        "test": data.get("test", []),
+        "arc_gen": data.get("arc_gen", []),
+    }
 
-    pattern_to_color, patterns, colors = _training_memory()
-    height = len(grid)
-    width = len(grid[0])
-    result = [[0] * width for _ in range(height)]
-    for r in range(height):
-        for c in range(width):
-            pattern = _encode_patch(grid, r, c)
-            result[r][c] = _nearest_color(pattern, pattern_to_color, patterns, colors)
-    return result
-
-
-def evaluate_abstractions(abstractions: Iterable[tuple[str, Callable[[Grid], Grid]]]) -> None:
-    data = load_task()
-    sections = ["train", "test", "arc-gen"]
-    for name, fn in abstractions:
-        print(f"=== {name} ===")
-        for section in sections:
-            entries = data.get(section) or []
-            evaluable = [ex for ex in entries if "output" in ex]
-            if not evaluable:
-                if entries:
-                    print(f" {section}: no reference outputs")
-                continue
-            correct = 0
-            first_fail = None
-            for idx, example in enumerate(evaluable):
-                predicted = fn([row[:] for row in example["input"]])
-                if predicted == example["output"]:
-                    correct += 1
-                elif first_fail is None:
-                    first_fail = idx
-            status = f"{correct}/{len(evaluable)}"
-            if first_fail is not None:
-                status += f" first_fail={first_fail}"
-            print(f" {section}: {status}")
+    for name, solver in pipelines:
+        print(f"Abstraction: {name}")
+        for split, cases in splits.items():
+            total, matches, first_failure = _evaluate_split(split, cases, solver)
+            _print_report(split, total, matches, first_failure)
         print()
 
 
 if __name__ == "__main__":
-    evaluate_abstractions(
-        [
-            ("identity", abstraction_identity),
-            ("knn5", abstraction_knn5),
-        ]
-    )
+    main()

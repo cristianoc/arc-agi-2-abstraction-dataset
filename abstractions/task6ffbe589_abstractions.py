@@ -1,99 +1,168 @@
-"""Abstraction experiments for ARC task 6ffbe589."""
+"""Abstraction playground for ARC task 6ffbe589."""
 
 from __future__ import annotations
 
-import importlib.util
 import json
 from pathlib import Path
-from typing import Callable, Dict, Iterable, List, Tuple
+from typing import Callable, List, Sequence, Tuple
+
+ARTHUR_ROOT = Path(__file__).resolve().parent.parent
+DATA_PATH = ARTHUR_ROOT / "arc2_samples" / "6ffbe589.json"
+
+Grid = List[List[int]]
 
 
-TASK_PATH = Path(__file__).parent / "arc2_samples" / "6ffbe589.json"
+def _load_samples() -> Tuple[List[dict], List[dict]]:
+    data = json.loads(DATA_PATH.read_text())
+    return data["train"], data.get("test", [])
 
 
-def _load_task() -> Dict[str, List[dict]]:
-    return json.loads(TASK_PATH.read_text())
+# ---------------------------------------------------------------------------
+# Shared helpers
 
 
-def _load_solver_module():
-    solver_path = Path(__file__).parent / "arc2_samples" / "6ffbe589.py"
-    spec = importlib.util.spec_from_file_location("task6ffbe589_solver", solver_path)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    spec.loader.exec_module(module)
-    return module
+def _extract_main_square(grid: Grid) -> Grid:
+    row_counts = [sum(val != 0 for val in row) for row in grid]
+    top, bottom = _longest_nonzero_run(row_counts)
+    rows = grid[top : bottom + 1]
+
+    col_counts = [sum(row[col] != 0 for row in rows) for col in range(len(rows[0]))]
+    left, right = _longest_nonzero_run(col_counts)
+
+    return [row[left : right + 1] for row in rows]
 
 
-_SOLVER = _load_solver_module()
+def _longest_nonzero_run(counts: Sequence[int]) -> Tuple[int, int]:
+    values = list(counts)
+    best_len = -1
+    best = (0, len(values) - 1)
+    start = None
+    for idx, count in enumerate(values + [0]):
+        if count > 0:
+            if start is None:
+                start = idx
+        elif start is not None:
+            length = idx - start
+            if length > best_len:
+                best_len = length
+                best = (start, idx - 1)
+            start = None
+    return best
 
 
-def _copy_grid(grid: List[List[int]]) -> List[List[int]]:
-    return [row[:] for row in grid]
+def _rotate_cw(block: Grid) -> Grid:
+    size = len(block)
+    return [[block[size - 1 - r][c] for r in range(size)] for c in range(size)]
 
 
-def abstraction_identity(grid: List[List[int]]) -> List[List[int]]:
-    return _copy_grid(grid)
+def _rotate_ccw(block: Grid) -> Grid:
+    size = len(block)
+    return [[block[c][size - 1 - r] for c in range(size)] for r in range(size)]
 
 
-def abstraction_expanded_crop(grid: List[List[int]]) -> List[List[int]]:
-    """Crop to the expanded dominant-color rectangle without further adjustments."""
-
-    color = _SOLVER._dominant_color(grid)  # type: ignore[attr-defined]
-    r0, r1, c0, c1 = _SOLVER._expand_if_needed(  # type: ignore[attr-defined]
-        grid, *_SOLVER._best_border_rect(grid, color)  # type: ignore[attr-defined]
-    )
-    return [row[c0 : c1 + 1] for row in grid[r0 : r1 + 1]]
+def _rotate_180(block: Grid) -> Grid:
+    size = len(block)
+    return [[block[size - 1 - r][size - 1 - c] for c in range(size)] for r in range(size)]
 
 
-def abstraction_nearest_neighbor(grid: List[List[int]]) -> List[List[int]]:
-    return _SOLVER.solve_6ffbe589(grid)  # type: ignore[attr-defined]
+def _mask(block: Grid, color: int) -> Grid:
+    return [[1 if cell == color else 0 for cell in row] for row in block]
 
 
-ABSTRACTIONS: Dict[str, Callable[[List[List[int]]], List[List[int]]]] = {
-    "identity": abstraction_identity,
-    "expanded_crop": abstraction_expanded_crop,
-    "nearest_neighbor": abstraction_nearest_neighbor,
-}
+def _apply_mask(target: Grid, mask: Grid, color: int, *, overwrite: bool = True) -> None:
+    for r, row in enumerate(mask):
+        for c, flag in enumerate(row):
+            if flag and (overwrite or target[r][c] == 0):
+                target[r][c] = color
 
 
-def _evaluate(task: Dict[str, List[dict]], name: str, fn: Callable[[List[List[int]]], List[List[int]]]) -> None:
-    print(f"== {name} ==")
-    for split in ("train", "test", "arc-gen"):
-        entries = task.get(split, [])
-        if not entries:
-            continue
+# ---------------------------------------------------------------------------
+# Candidate abstractions
 
-        total = sum(1 for entry in entries if "output" in entry)
-        matches = 0
-        first_failure = None
 
-        for idx, entry in enumerate(entries):
-            prediction = fn(entry["input"])
-            target = entry.get("output")
-            if target is None:
-                continue
-            if prediction == target:
-                matches += 1
-            elif first_failure is None:
-                first_failure = idx
+def abstraction_crop(grid: Grid) -> Grid:
+    return _extract_main_square(grid)
 
-        print(
-            f"  {split}: {matches}/{total} correct; first failure index: {first_failure}"
-        )
-    print()
+
+def abstraction_rotate_ccw(grid: Grid) -> Grid:
+    block = _extract_main_square(grid)
+    return _rotate_ccw(block)
+
+
+def abstraction_rotate_cw_with_edges(grid: Grid) -> Grid:
+    block = _extract_main_square(grid)
+    rotated = _rotate_cw(block)
+    rotated[0] = block[0][:]
+    rotated[-1] = block[-1][:]
+    for r in range(len(block)):
+        rotated[r][0] = block[r][0]
+        rotated[r][-1] = block[r][-1]
+    return rotated
+
+
+def abstraction_color_masks(grid: Grid) -> Grid:
+    block = _extract_main_square(grid)
+    size = len(block)
+    result = [[0] * size for _ in range(size)]
+
+    mask3 = _mask(block, 3)
+    mask8 = _mask(block, 8)
+    mask6 = _mask(block, 6)
+
+    mask3_rot = _rotate_cw(mask3)
+    mask8_rot = _rotate_180(mask8)
+
+    _apply_mask(result, mask3_rot, 3)
+    _apply_mask(result, mask8_rot, 8, overwrite=False)
+    _apply_mask(result, mask6, 6, overwrite=False)
+
+    return result
+
+
+def abstraction_final(grid: Grid) -> Grid:
+    module = __import__('arc2_samples.6ffbe589', fromlist=['solve_6ffbe589'])
+    return module.solve_6ffbe589(grid)
+
+
+ABSTRACTIONS: List[Tuple[str, Callable[[Grid], Grid]]] = [
+    ("crop_only", abstraction_crop),
+    ("rotate_ccw", abstraction_rotate_ccw),
+    ("rotate_cw_with_edges", abstraction_rotate_cw_with_edges),
+    ("color_masks", abstraction_color_masks),
+    ("final_hybrid", abstraction_final),
+]
+
+
+def _evaluate(split: List[dict], func: Callable[[Grid], Grid]) -> Tuple[int, int, int]:
+    hits = 0
+    first_fail = -1
+    for idx, sample in enumerate(split):
+        predicted = func(sample["input"])
+        if predicted == sample["output"]:
+            hits += 1
+        elif first_fail == -1:
+            first_fail = idx
+    return hits, len(split), first_fail
 
 
 def main() -> None:
-    task = _load_task()
-    for name, fn in ABSTRACTIONS.items():
-        _evaluate(task, name, fn)
+    train, test = _load_samples()
+    for name, func in ABSTRACTIONS:
+        train_hits, train_total, train_fail = _evaluate(train, func)
+        test_hits, test_total, test_fail = _evaluate(test, func) if test else (0, 0, -1)
 
-    test = task.get("test", [])
-    if test:
-        print("nearest_neighbor prediction on test[0]:")
-        prediction = ABSTRACTIONS["nearest_neighbor"](test[0]["input"])
-        for row in prediction:
-            print("".join(str(value) for value in row))
+        parts = [
+            f"train {train_hits}/{train_total}",
+            f"test {test_hits}/{test_total}" if test_total else "test n/a",
+        ]
+        summary = ", ".join(parts)
+        detail = []
+        if train_hits != train_total and train_fail != -1:
+            detail.append(f"first train miss @ {train_fail}")
+        if test_total and test_hits != test_total and test_fail != -1:
+            detail.append(f"first test miss @ {test_fail}")
+        tail = f" ({'; '.join(detail)})" if detail else ""
+        print(f"{name:>20}: {summary}{tail}")
 
 
 if __name__ == "__main__":
