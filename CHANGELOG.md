@@ -7,13 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Nothing yet
+
+## [1.5.0] - 2025-10-11
+
+### Added
+- Identity function baselines for 4 tasks where stable interpolating solutions are not yet available (142ca369, 21897d95, 271d71e2, da515329)
+- Enhanced consistency checker to detect identity function baselines and distinguish them from full solutions
+
 ### Changed
 - Task faa9f03d: Complete solver rewrite from nearest-neighbor classifier to rule-based approach with noise removal and selective closures (100% train accuracy)
+- Dataset now contains 120 total solutions: 116 with full abstraction analysis + 4 identity baselines
+- Updated documentation to reflect complete task coverage
 
 ### Removed
-- Task 271d71e2 (removed: solution was encoding the training examples)
-- Task da515329 (removed: solution was encoding the training examples)
-- Dataset reduced from 118 to 116 tasks
+- Previous solutions for tasks 271d71e2 and da515329 (were encoding training examples; replaced with identity baselines)
 
 ## [1.4.0] - 2025-10-10
 
@@ -100,6 +109,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Tasks | Description |
 |---------|------|-------|-------------|
+| 1.5.0 | 2025-10-11 | 120 | Complete ARC-AGI-2 coverage (116 full + 4 identity baselines) |
 | 1.4.0 | 2025-10-10 | 118 | Added 40 tasks approaching full ARC-AGI-2 coverage |
 | 1.3.0 | 2025-10-09 | 99 | Added 20 tasks for expanded coverage |
 | 1.2.0 | 2025-10-06 | 79 | Added 16 tasks for expanded coverage |

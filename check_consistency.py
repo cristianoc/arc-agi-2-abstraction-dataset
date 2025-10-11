@@ -29,6 +29,20 @@ def get_task_ids_from_solutions(solutions_dir: Path) -> Set[str]:
     return task_ids
 
 
+def get_identity_stub_task_ids(solutions_dir: Path) -> Set[str]:
+    """Extract task IDs that are identity function stubs (no abstractions expected)."""
+    identity_task_ids = set()
+    for file_path in solutions_dir.glob("*.py"):
+        with open(file_path, 'r') as f:
+            content = f.read()
+            # Check if it's actually an identity stub by looking for the identity implementation
+            # True identity stubs just return [row[:] for row in grid]
+            if 'return [row[:] for row in grid]' in content and content.count('\n') < 15:
+                task_id = file_path.stem
+                identity_task_ids.add(task_id)
+    return identity_task_ids
+
+
 def get_task_ids_from_abstractions(abstractions_dir: Path) -> Set[str]:
     """Extract task IDs from abstraction files."""
     task_ids = set()
@@ -57,6 +71,7 @@ def check_consistency(solutions_dir: Path, abstractions_dir: Path, verbose: bool
     # Get task IDs from both directories
     solution_task_ids = get_task_ids_from_solutions(solutions_dir)
     abstraction_task_ids = get_task_ids_from_abstractions(abstractions_dir)
+    identity_stub_ids = get_identity_stub_task_ids(solutions_dir)
     
     # Check file counts
     solution_count, abstraction_py_count, abstraction_md_count, total_abstraction_count = check_file_counts(
@@ -65,6 +80,8 @@ def check_consistency(solutions_dir: Path, abstractions_dir: Path, verbose: bool
     
     print(f"📊 File Counts:")
     print(f"   Solutions: {solution_count}")
+    if identity_stub_ids:
+        print(f"   Identity stubs (no abstractions): {len(identity_stub_ids)}")
     print(f"   Abstraction Python files: {abstraction_py_count}")
     print(f"   Abstraction Markdown reports: {abstraction_md_count}")
     print(f"   Total abstraction files: {total_abstraction_count}")
@@ -78,8 +95,9 @@ def check_consistency(solutions_dir: Path, abstractions_dir: Path, verbose: bool
             print(f"   - {task_id}.py")
         print()
     
-    # Check for missing abstractions (solutions without abstractions)
-    missing_abstractions = solution_task_ids - abstraction_task_ids
+    # Check for missing abstractions (solutions without abstractions, excluding identity stubs)
+    expected_abstractions = solution_task_ids - identity_stub_ids
+    missing_abstractions = expected_abstractions - abstraction_task_ids
     if missing_abstractions:
         print(f"❌ Missing abstraction files for {len(missing_abstractions)} tasks:")
         for task_id in sorted(missing_abstractions):
@@ -104,10 +122,11 @@ def check_consistency(solutions_dir: Path, abstractions_dir: Path, verbose: bool
             print(f"   - {file}")
         print()
     
-    # Check if counts match
+    # Check if counts match (accounting for identity stubs)
     count_issues = []
-    if solution_count != abstraction_py_count:
-        count_issues.append(f"Solution count ({solution_count}) != Abstraction Python count ({abstraction_py_count})")
+    expected_abstraction_count = solution_count - len(identity_stub_ids)
+    if expected_abstraction_count != abstraction_py_count:
+        count_issues.append(f"Expected abstraction count ({expected_abstraction_count}) != Actual abstraction Python count ({abstraction_py_count})")
     if abstraction_py_count != abstraction_md_count:
         count_issues.append(f"Abstraction Python count ({abstraction_py_count}) != Abstraction Markdown count ({abstraction_md_count})")
     if total_abstraction_count != abstraction_py_count + abstraction_md_count:
@@ -124,7 +143,10 @@ def check_consistency(solutions_dir: Path, abstractions_dir: Path, verbose: bool
     
     if total_issues == 0:
         print("✅ All consistency checks passed!")
-        print(f"   Dataset contains {solution_count} complete task implementations")
+        print(f"   Dataset contains {solution_count} total solutions")
+        print(f"   - {abstraction_py_count} with full abstraction analysis")
+        if identity_stub_ids:
+            print(f"   - {len(identity_stub_ids)} identity stubs (baseline)")
         return True
     else:
         print(f"❌ Found {total_issues} consistency issues")
