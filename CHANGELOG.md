@@ -13,16 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.3.0] - 2025-10-09
 
 ### Added
-- 21 new ARC tasks for expanded dataset coverage
+- 20 new ARC tasks for expanded dataset coverage
 - Complete abstraction analysis for tasks: 7b80bb43, 800d221b, 8698868d, 88e364bc, 89565ca0, 8b9c3697, 981571dc, 9aaea919, 9bbf930d, a32d8b75, a47bf94d, abc82100, b5ca7ac4, b9e38dc0, c7f57c3e, cb2d8a2c, d59b0160, da515329, dbff022c, eee78d87, f560132c
-- Abstraction reports for all 21 new tasks
-- Working solutions for all 21 new tasks (all pass interpolation)
+- Abstraction reports for all 20 new tasks
+- Working solutions for all 20 new tasks (all pass interpolation)
 - Continued expansion of abstraction pattern coverage
 
 ### Changed
-- Dataset expanded from 79 to 100 tasks
-- Total abstractions: 100 Python files + 100 Markdown reports
-- Total solutions: 100 Python files
+- Dataset expanded from 79 to 99 tasks
+- Total abstractions: 99 Python files + 99 Markdown reports
+- Total solutions: 99 Python files
+
+### Removed
+- Task 21897d95 (removed from dataset)
 
 ## [1.2.0] - 2025-10-06
 
@@ -75,7 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Tasks | Description |
 |---------|------|-------|-------------|
-| 1.3.0 | 2025-10-09 | 100 | Added 21 tasks for expanded coverage |
+| 1.3.0 | 2025-10-09 | 99 | Added 20 tasks for expanded coverage |
 | 1.2.0 | 2025-10-06 | 79 | Added 16 tasks for expanded coverage |
 | 1.1.0 | 2025-10-05 | 63 | Added 13 tasks for grover-arc comparison |
 | 1.0.0 | 2025-10-02 | 50 | Initial release with baseline tasks |
