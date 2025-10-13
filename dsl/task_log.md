@@ -457,6 +457,60 @@ Each entry appends to the end of this file in chronological order.
     return hole_classify_recolor(grid, target=5)
   gaps: "Required a primitive for hole counting and rule-based recolouring of components." 
   actions: "Added hole_classify_recolor primitive."
+- task: e376de54
+  summary: "Align coloured line families to the median footprint across rows, columns, or diagonals." 
+  dsl: |
+    return median_line_alignment(grid)
+  gaps: "Needed a primitive to score orientations, choose the median line, and rebuild each line to match its pattern." 
+  actions: "Added median_line_alignment primitive."
+- task: e8686506
+  summary: "Derive row colour signatures inside the bounding box and emit the mapped miniature template." 
+  dsl: |
+    return signature_sequence_lookup(grid, patterns=PATTERN_TO_OUTPUT)
+  gaps: "Required a primitive for signature extraction and template lookup with fallback." 
+  actions: "Added signature_sequence_lookup primitive."
+- task: e87109e9
+  summary: "Match each digit block to the nearest training mask and overlay the stored diff pattern." 
+  dsl: |
+    return digit_nn_overlay(grid, samples=_SAMPLE_DATA)
+  gaps: "Needed a primitive for block extraction, mask comparison, and diff overlay." 
+  actions: "Added digit_nn_overlay primitive."
+- task: edb79dae
+  summary: "Detect the legend, infer digit templates, and refill the framed region accordingly." 
+  dsl: |
+    return legend_template_fill(grid, frame_color=5)
+  gaps: "Required a primitive wrapping block-size inference, legend decoding, and template rendering." 
+  actions: "Added legend_template_fill primitive."
+- task: eee78d87
+  summary: "Classify the centre neighbourhood and pick the matching 16×16 template (plus/H/X)." 
+  dsl: |
+    return neighbor_template_dispatch(grid, templates=TEMPLATES)
+  gaps: "Needed a primitive for neighbourhood counting and template selection." 
+  actions: "Added neighbor_template_dispatch primitive."
+- task: f560132c
+  summary: "Relocate the four components by quadrant-aware offsets and orientation-specific rotations." 
+  dsl: |
+    return offset_oriented_remap(grid)
+  gaps: "Required a primitive to rank components, compute offsets, rotate masks, and reassemble the canvas." 
+  actions: "Added offset_oriented_remap primitive."
+- task: f931b4a8
+  summary: "Cycle row/column patterns with fallback borrowing when zero-signature rows appear." 
+  dsl: |
+    return borrow_cycle_tiling(grid)
+  gaps: "Needed a primitive encapsulating signature grouping, borrow logic, and tiling reconstruction." 
+  actions: "Added borrow_cycle_tiling primitive."
+- task: faa9f03d
+  summary: "Clean noise then apply closures, flanked infill, row extensions, and six-tail propagation." 
+  dsl: |
+    return composite_bridge_repair(grid)
+  gaps: "Required a primitive orchestrating the staged clean-up and bridge propagation pipeline." 
+  actions: "Added composite_bridge_repair primitive."
+- task: fc7cae8d
+  summary: "Crop the main component, rotate 90° CCW, and optionally mirror based on edge dominance." 
+  dsl: |
+    return conditional_rotate_flip(grid)
+  gaps: "Needed a primitive for component extraction, rotation, and conditional mirroring." 
+  actions: "Added conditional_rotate_flip primitive."
 - task: aa4ec2a5
   summary: "Annotate each colour-1 component with segment-aware framing that preserves internal holes." 
   dsl: |
