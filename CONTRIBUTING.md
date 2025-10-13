@@ -8,12 +8,12 @@ The repository follows a consistent structure:
 
 ```
 arc-agi-2-abstraction-dataset/
-├── solutions/           # Task solution implementations
-│   ├── <task_id>.py    # Individual task solvers
-│   └── ...
-├── abstractions/        # Abstraction implementations and reports
-│   ├── task<task_id>_abstractions.py      # Abstraction functions
-│   ├── task<task_id>_abstractions_report.md  # Analysis reports
+├── tasks/               # Self-contained task bundles
+│   ├── <task_id>/
+│   │   ├── solution.py          # Solver entry point (required)
+│   │   ├── abstractions.py      # Reusable abstractions (optional for identity baselines)
+│   │   ├── abstractions.md      # Abstraction report (optional for identity baselines)
+│   │   └── task.json            # ARC task specification (optional helper file)
 │   └── ...
 ├── check_consistency.py # Repository consistency checker
 └── README.md           # Main documentation
@@ -25,23 +25,24 @@ When adding new ARC-AGI-2 tasks to the dataset, ensure you include:
 
 ### Required Files
 
-1. **Solution File**: `solutions/<task_id>.py`
+1. **Task Bundle Directory**: `tasks/<task_id>/`
+   - Create a new directory named with the ARC task ID.
+
+2. **Solution File**: `tasks/<task_id>/solution.py`
    - Contains the main solver function `solve_<task_id>(grid)`
+   - Should import cleanly (no side-effects on import)
 
-2. **Abstraction Code**: `abstractions/task<task_id>_abstractions.py`
-   - Contains reusable abstraction functions
-   - Modular design for easy composition
-   - Common patterns: component detection, symmetry analysis, morphological operations
-
-3. **Analysis Report**: `abstractions/task<task_id>_abstractions_report.md`
-   - Summary of abstraction approaches tried
+3. **Optional Artefacts** (include any that strengthen your submission):
+   - `tasks/<task_id>/task.json`: copy of the ARC task grids for convenience
+   - `tasks/<task_id>/abstractions.py`: reusable abstraction helpers (component detection, symmetry analysis, morphological ops, etc.)
+   - `tasks/<task_id>/abstractions.md`: short report describing the abstraction experiments and findings
+   - Identity baselines may omit the optional files; stronger submissions should include them.
 
 ### Naming Conventions
 
-- Solution files: `<task_id>.py`
-- Abstraction files: `task<task_id>_abstractions.py`
-- Report files: `task<task_id>_abstractions_report.md`
-- Function names: `solve_<task_id>(grid)` and descriptive abstraction function names
+- Bundle directory: `<task_id>`
+- Solution file: `solution.py`
+- Function name: `solve_<task_id>(grid)` and descriptive abstraction helper names
 
 ## Consistency Checks
 
@@ -55,11 +56,9 @@ python check_consistency.py
 ```
 
 The consistency checker verifies:
-- ✅ All solution files have corresponding abstraction files
-- ✅ All abstraction files have corresponding solution files
-- ✅ File counts match between directories
-- ✅ Task IDs are consistent across directories
-- ✅ Documentation reflects actual file counts
+- ✅ Every bundle has a solver
+- ✅ Optional artefacts are present when expected
+- ✅ Task counts align with documentation
 - ✅ No placeholder dates in CHANGELOG.md (e.g., "2025-01-XX")
 - ✅ No placeholder text in documentation files
 
@@ -90,7 +89,7 @@ Before submitting:
 python check_consistency.py
 
 # Test individual solution (if you have test data)
-python -c "from solutions.<task_id> import solve_<task_id>; print('Import successful')"
+python -c "from tasks.<task_id>.solution import solve_<task_id>; print('Import successful')"
 ```
 
 ## License

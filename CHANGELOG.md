@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Nothing yet
 
+## [1.6.0] - 2025-10-12
+
+### Changed
+- Restructured the repository into per-task bundles under `tasks/<id>/`
+- Updated documentation and consistency checker to describe the new layout
+
+### Removed
+- Legacy `solutions/` and `abstractions/` directories (content now lives inside bundles)
+
 ## [1.5.0] - 2025-10-11
 
 ### Added
