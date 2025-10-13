@@ -530,7 +530,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return borrow_cycle_tiling(grid)
   gaps: "Needed a primitive encapsulating signature grouping, borrow logic, and tiling reconstruction." 
-  actions: "Added borrow_cycle_tiling primitive."
+  actions: "Introduced cycle_router combinator. Added borrow_cycle_tiling primitive."
 - task: faa9f03d
   summary: "Clean noise then apply closures, flanked infill, row extensions, and six-tail propagation." 
   dsl: |
@@ -768,7 +768,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return rotated_cycle(grid)
   gaps: "Needed a primitive for rotating and cycling block sequences." 
-  actions: "Added rotated_cycle primitive."
+  actions: "Introduced cycle_router combinator. Added rotated_cycle primitive."
 - task: 7b0280bc
   summary: "Gather monochrome components of the two dominant colors, classify them with a learnt decision tree, and recolor matches." 
   dsl: |
