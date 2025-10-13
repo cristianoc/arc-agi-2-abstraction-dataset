@@ -425,6 +425,9 @@ primitives:
     tasks: [fc7cae8d]
     description: "Crop the dominant component, rotate it 90° CCW, and mirror it when edge dominance requires."
 combinators:
+  - name: variant_dispatch
+    tasks: [c7f57c3e, cb2d8a2c, 6ffbe589, 7491f3cf, eee78d87, a251c730]
+    description: "Select among variant-specific pipelines based on a classifier outcome."
   - name: branch
     tasks: [0934a4d8]
     description: "Conditional selection between alternative pipelines based on a boolean guard."
