@@ -86,8 +86,11 @@ def _split_candidate_names(text: str) -> Iterable[str]:
         if "combinator" in name.lower():
             continue
         name = name.split()[0]
-        if name.isidentifier():
-            yield name
+        if not name.isidentifier():
+            continue
+        if name.lower() in {"added", "introduce", "introduced", "add", "and"}:
+            continue
+        yield name
 
 
 def _extract_primitives_from_actions(entries: Iterable[TaskLogEntry]) -> Set[str]:

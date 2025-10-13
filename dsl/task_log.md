@@ -404,13 +404,13 @@ Each entry appends to the end of this file in chronological order.
            variant_a(grid, c1, pivot, mid, high),
            variant_b(grid, pivot, mid, high))
   gaps: "Needed helpers to detect adjacency and perform the two colour-swapping variants." 
-  actions: "Added color_variant_dispatch primitive."
+  actions: "Introduced variant_dispatch combinator. Added color_variant_dispatch primitive."
 - task: cb2d8a2c
   summary: "Route between horizontal and vertical corridor builders to draw 3-paths with 6 extensions." 
   dsl: |
     return corridor_dispatch(grid, horizontal_builder, vertical_builder)
   gaps: "Required primitives for orientation-aware corridor derivation and diagonal propagation." 
-  actions: "Added corridor_dispatch primitive."
+  actions: "Introduced variant_dispatch combinator. Added corridor_dispatch primitive."
 - task: cbebaa4b
   summary: "Construct connector graphs, vote translation deltas, and relocate gadgets relative to the door." 
   dsl: |
@@ -518,7 +518,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return neighbor_template_dispatch(grid, templates=TEMPLATES)
   gaps: "Needed a primitive for neighbourhood counting and template selection." 
-  actions: "Added neighbor_template_dispatch primitive."
+  actions: "Introduced variant_dispatch combinator. Added neighbor_template_dispatch primitive."
 - task: f560132c
   summary: "Relocate the four components by quadrant-aware offsets and orientation-specific rotations." 
   dsl: |
@@ -632,7 +632,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return neighbor_template_dispatch(grid, templates=TEMPLATES)
   gaps: "Needed a primitive for neighbourhood counting and template selection." 
-  actions: "Added neighbor_template_dispatch primitive."
+  actions: "Introduced variant_dispatch combinator. Added neighbor_template_dispatch primitive."
 - task: f560132c
   summary: "Relocate the four components by quadrant-aware offsets and orientation-specific rotations." 
   dsl: |
@@ -744,7 +744,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return color_dispatch_rotate(grid)
   gaps: "Needed a primitive for color-aware rotation dispatch." 
-  actions: "Added color_dispatch_rotate primitive."
+  actions: "Introduced variant_dispatch combinator. Added color_dispatch_rotate primitive."
 - task: 71e489b6
   summary: "Identify zero tips and apply guarded halos while pruning stray ones." 
   dsl: |
@@ -756,7 +756,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return panel_dispatch(grid)
   gaps: "Needed a primitive to dispatch between cross and block overlays based on panel shapes." 
-  actions: "Added panel_dispatch primitive."
+  actions: "Introduced variant_dispatch combinator. Added panel_dispatch primitive."
 - task: 7666fa5d
   summary: "Fill corridor cells when both diagonally adjacent components bracket the position." 
   dsl: |
