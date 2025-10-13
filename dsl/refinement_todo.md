@@ -2,19 +2,31 @@
 
 The following tasks still rely on bespoke primitives without a shared router/combinator. When resuming the abstraction-review process, work through them and decide whether each primitive should become a parameterised configuration of an existing router or remain a task-specific helper.
 
+## Workflow Instructions
+
+1. For each task below (checkbox list), open its `abstractions.md`.
+2. Add a **DSL Structure** section that lists typed operations (with brief type explanations) and a concise solver summary.
+3. Update the checklist entry with a one-line status/note.
+4. Rerun `python3 dsl/validate_dsl.py` if any DSL/code changes were required.
+5. Mark the task as `[x]` once the abstraction file has the typed-operations summary.
+
+## Example
+
+See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entry.
+
 ## Pending Tasks
 
 - [x] 0934a4d8 — Core geometry primitives (`bbox`, `crop`, `flip`, `count_color`); keep as foundational helpers.
-- [ ] 135a2760
-- [ ] 136b0064
-- [ ] 13e47133
-- [ ] 16b78196
-- [ ] 16de56c4
-- [ ] 1818057f
-- [ ] 195c6913
-- [ ] 1ae2feb7
-- [ ] 20270e3b
-- [ ] 20a9e565
+- [x] 135a2760 — Row slice repair via periodic pattern search (documented in abstractions.md).
+- [x] 136b0064 — Digit template placement with placement heuristic.
+- [x] 13e47133 — Template lookup/overlay per component.
+- [x] 16b78196 — Component stacking around dominant band.
+- [x] 16de56c4 — Row stride + column stride propagation.
+- [x] 1818057f — Plus detection/repaint.
+- [x] 195c6913 — Legend palette decode and propagation.
+- [x] 1ae2feb7 — Repeat segments across barrier column.
+- [x] 20270e3b — Vertical/horizontal fold with fallback recolour.
+- [x] 20a9e565 — Column group classification into S/C/B layouts.
 - [ ] 221dfab4
 - [ ] 247ef758
 - [ ] 269e22fb
@@ -116,21 +128,4 @@ The following tasks still rely on bespoke primitives without a shared router/com
 - [ ] a6f40cea
 - [ ] 65b59efc
 
-## Workflow Instructions
 
-For each task listed below:
-1. Open the task’s solver (`tasks/<id>/solution.py`) and the corresponding `abstractions.md`.
-2. Identify the primitive(s) introduced for that task and remember the refinement history described in the markdown.
-3. Decide whether the behaviour can be expressed by:
-   - Passing parameters to an existing router/combinator.
-   - Extending a router/combinator with a new hook or variant.
-   - Retaining the primitive as a task-specific helper (record the rationale).
-4. Update `dsl_state.yaml` and `dsl/task_log.md` accordingly, and rerun `python3 dsl/validate_dsl.py`.
-5. If the primitive remains task-specific, consider leaving a brief note in this file or the task log explaining why.
-
-
-## Example: see tasks/0934a4d8/abstractions.md
-
-
-
-Use this format when analysing the remaining tasks: list the typed operations (with short explanations of each type) and add a one-line solver summary.
