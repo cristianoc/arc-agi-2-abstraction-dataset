@@ -7,3 +7,10 @@
 - **final_solver** – selects the vertical overlay when a background column exists, otherwise applies the horizontal overlay, falling back to recolouring 7→4; this hybrid resolves all observed examples (4/4 train) and yields plausible 5×14 and 8×5 outputs on the two unseen test inputs.
 
 The arc-gen split is empty.
+
+## DSL Structure
+- **Typed operations**
+  - `verticalFold : Grid -> Optional Grid` — fold across a background column, overlaying the right block onto the left.
+  - `horizontalFold : Grid -> Optional Grid` — remove the special band and glue the remaining parts with an offset.
+  - `recolourFallback : Grid -> Grid` — recolour special cells to the fill colour when no folding applies.
+- **Solver summary**: "Try the vertical fold; if it fails, try the horizontal glue; if both fail, recolour the special cells to the fill colour." 

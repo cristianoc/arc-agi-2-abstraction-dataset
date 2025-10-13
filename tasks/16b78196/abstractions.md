@@ -7,3 +7,11 @@
 
 Final refinement: `compressed_width_stack`, which preserves the dominant strip while threading width-based towers that tuck neatly against it; the resulting test prediction mirrors the intended stepped columns and keeps every transplanted component intact.
 
+## DSL Structure
+- **Typed operations**
+  - `getComponents : Grid -> List Component` — extract non-zero components with bounding boxes and shapes.
+  - `splitByWidth : List Component -> (Dominant, Wide, Narrow)` — identify the dominant component and partition others by width.
+  - `stackWide : List Component × Anchor -> Grid` — stack wide components above the dominant block using the spacing heuristic.
+  - `orderNarrow : List Component -> List Component` — compute the bespoke ordering for narrow components (colour buckets and tails).
+  - `stackNarrow : List Component × Anchor -> Grid` — stack the narrow components relative to the dominant band and averaged columns.
+- **Solver summary**: "Keep the dominant band, stack wide components above it, order and stack the narrow components below, and render the combined arrangement on a fresh canvas."
