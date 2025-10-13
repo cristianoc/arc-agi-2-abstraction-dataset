@@ -425,6 +425,9 @@ primitives:
     tasks: [fc7cae8d]
     description: "Crop the dominant component, rotate it 90° CCW, and mirror it when edge dominance requires."
 combinators:
+  - name: legend_router
+    tasks: [edb79dae, 9385bd28]
+    description: "Coordinate legend-driven inference and recolouring steps."
   - name: propagate_router
     tasks: [16de56c4, 195c6913]
     description: "Coordinate propagation behaviours such as stride-based and pattern-based extensions."
