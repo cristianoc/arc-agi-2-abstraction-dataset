@@ -36,7 +36,7 @@ arc-agi-2-abstraction-dataset/
 
 Each bundle in `tasks/<task-id>/` contains:
 
-- `solution.py`: the final solver implementation. All of the shipped solutions pass the training examples (interpolation). Generalization to unseen test cases remains the key open challenge.
+- `solution.py`: the final solver implementation. Most solvers (116 of 120) pass every training example; the remaining bundles ship identity baselines while better programs are in progress. Generalization to unseen test cases remains the key open challenge.
 - `abstractions.py`: reusable abstraction pipelines (optional when only an identity baseline is available).
 - `abstractions.md`: a markdown report describing the abstraction process (also optional for identity baselines).
 
