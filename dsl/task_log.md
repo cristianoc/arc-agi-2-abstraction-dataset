@@ -360,13 +360,13 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return scoreboard_count8(grid)
   gaps: "Added a primitive for scoreboard component counting." 
-  actions: "Introduced scoreboard_count8 primitive."
+  actions: "Introduced instruction_router combinator. Added scoreboard_count8 primitive."
 - task: 58f5dbd5
   summary: "Cluster salient colors, choose a grid arrangement, and render per-slot 5×5 glyphs." 
   dsl: |
     return color_scoreboard(grid)
   gaps: "Needed a primitive to drive layout and glyph rendering." 
-  actions: "Added color_scoreboard primitive."
+  actions: "Introduced scoreboard_router combinator. Added color_scoreboard primitive."
 - task: 5961cc34
   summary: "Filter motifs with paired guides, cast rays, and flood-fill the sentinel-connected scaffold." 
   dsl: |
@@ -720,7 +720,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return column_instruction_stack(grid)
   gaps: "Required a primitive orchestrating column alignment and instruction-guided stacking." 
-  actions: "Added column_instruction_stack primitive."
+  actions: "Introduced instruction_router combinator. Added column_instruction_stack primitive."
 - task: 67e490f4
   summary: "Scan two-colour squares, pick the motif, and recolour components using matched shapes elsewhere." 
   dsl: |
@@ -900,7 +900,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return instruction_board(grid)
   gaps: "Introduced a primitive for instruction-driven column recolouring." 
-  actions: "Added instruction_board primitive." 
+  actions: "Introduced instruction_router combinator. Added instruction_board primitive." 
 - task: 9bbf930d
   summary: "Adjust separator rows and sparse columns based on dominant-row comparisons." 
   dsl: |

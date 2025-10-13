@@ -425,6 +425,12 @@ primitives:
     tasks: [fc7cae8d]
     description: "Crop the dominant component, rotate it 90° CCW, and mirror it when edge dominance requires."
 combinators:
+  - name: scoreboard_router
+    tasks: [58490d8a, 58f5dbd5]
+    description: "Coordinate scoreboard counting and render pipelines."
+  - name: instruction_router
+    tasks: [c4d067a0, 9aaea919]
+    description: "Coordinate instruction parsing, column stacking, and board rendering."
   - name: legend_router
     tasks: [edb79dae, 9385bd28]
     description: "Coordinate legend-driven inference and recolouring steps."
