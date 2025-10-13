@@ -397,6 +397,66 @@ Each entry appends to the end of this file in chronological order.
     return mapped_tiles(grid)
   gaps: "Introduced a primitive for separator-based template mosaics." 
   actions: "Added mapped_tiles primitive."
+- task: d8e07eb2
+  summary: "Highlight digit blocks via header classification, column fingerprints, and priority fallbacks." 
+  dsl: |
+    return priority_digit_highlight(grid)
+  gaps: "Needed a primitive orchestrating header analysis, fingerprint matching, and fallback block painting." 
+  actions: "Added priority_digit_highlight primitive."
+- task: da515329
+  summary: "Identity placeholder used while no abstraction was discovered." 
+  dsl: |
+    return grid
+  gaps: "None — identity baseline covers the current solver." 
+  actions: "None."
+- task: db0c5428
+  summary: "Lift 3×3 digit blocks into a 5×5 macro layout using dual ring colours and centre inference." 
+  dsl: |
+    return macro_dual_ring_tiling(grid)
+  gaps: "Needed a primitive for macro tiling with corner/edge colour reconciliation." 
+  actions: "Added macro_dual_ring_tiling primitive."
+- task: db695cfb
+  summary: "Bridge matching 1-components along diagonals and extend embedded 6s perpendicularly." 
+  dsl: |
+    return diagonal_connect_extend(grid, primary=1, extender=6)
+  gaps: "Required a primitive to connect diagonal anchors and propagate extender colours across orthogonal diagonals." 
+  actions: "Added diagonal_connect_extend primitive."
+- task: dbff022c
+  summary: "Fill zero cavities with partner colours based on boundary colour, size, and adjacency rules." 
+  dsl: |
+    return partner_cavity_fill(grid)
+  gaps: "Needed a primitive encapsulating zero-component analysis with colour-partner heuristics." 
+  actions: "Added partner_cavity_fill primitive."
+- task: dd6b8c4b
+  summary: "Rebalance colour-9 tiles by promoting ring positions and retiring scattered ones via scoring." 
+  dsl: |
+    return balanced_ring_relocation(grid, color=9)
+  gaps: "Required a primitive that scores scattered tiles and moves them into the ring to match imbalance counts." 
+  actions: "Added balanced_ring_relocation primitive."
+- task: de809cff
+  summary: "Expand halos around strong zero pockets, realign secondary pixels, and prune stragglers." 
+  dsl: |
+    return halo_realign_prune(grid)
+  gaps: "Needed a primitive combining halo expansion, majority realignment, and pruning of isolated pixels." 
+  actions: "Added halo_realign_prune primitive."
+- task: dfadab01
+  summary: "Apply colour-conditioned 4×4 patch motifs learned from training examples." 
+  dsl: |
+    return patch_dictionary_lookup(grid, library=PATCH_LIBRARY)
+  gaps: "Required a primitive for colour-aware patch lookup and overlay." 
+  actions: "Added patch_dictionary_lookup primitive."
+- task: e12f9a14
+  summary: "Expand 2×2 seeds into digit glyphs using collision-aware variant templates." 
+  dsl: |
+    return seeded_digit_expand(grid, variants=DIGIT_TEMPLATE_VARIANTS)
+  gaps: "Needed a primitive to apply colour-specific template variants while respecting collisions." 
+  actions: "Added seeded_digit_expand primitive."
+- task: e3721c99
+  summary: "Classify each colour-5 component by internal holes and recolour accordingly." 
+  dsl: |
+    return hole_classify_recolor(grid, target=5)
+  gaps: "Required a primitive for hole counting and rule-based recolouring of components." 
+  actions: "Added hole_classify_recolor primitive."
 - task: aa4ec2a5
   summary: "Annotate each colour-1 component with segment-aware framing that preserves internal holes." 
   dsl: |
