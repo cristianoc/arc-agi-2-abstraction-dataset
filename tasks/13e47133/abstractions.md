@@ -5,3 +5,12 @@
 - **templates_final** – fully patched glyph dictionary matching training layouts; overlays all anchors correctly and solves every training example (3/3 train). The induced test output preserves the structured digit mosaic and matches qualitative expectations.
 
 The released solver uses the `templates_final` abstraction, which combines anchor detection with the corrected glyph atlas to reproduce the required multi-colour numerals.
+
+## DSL Structure
+- **Typed operations**
+  - `findComponents : Grid -> List Component` — enumerate colour components with bounding-box metadata.
+  - `lookupTemplates : Component -> List TemplateKey` — gather template candidates keyed by colour, height, and size.
+  - `selectOffset : Component × TemplateCandidates -> Offset` — choose the correct row/column offset for the template.
+  - `loadTemplate : TemplateKey -> Template` — retrieve the stored template with `None` placeholders.
+  - `overlayTemplate : Grid × Template × Offset -> Grid` — paste the template onto the output grid at the computed position.
+- **Solver summary**: "Match each component to the template library, select the proper offset, and overlay the template onto the canvas."
