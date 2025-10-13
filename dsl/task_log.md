@@ -397,6 +397,152 @@ Each entry appends to the end of this file in chronological order.
     return mapped_tiles(grid)
   gaps: "Introduced a primitive for separator-based template mosaics." 
   actions: "Added mapped_tiles primitive."
+- task: c7f57c3e
+  summary: "Dispatch between two colour-swapping variants depending on mid/pivot adjacency." 
+  dsl: |
+    branch(has_adjacent(mid, pivot),
+           variant_a(grid, c1, pivot, mid, high),
+           variant_b(grid, pivot, mid, high))
+  gaps: "Needed helpers to detect adjacency and perform the two colour-swapping variants." 
+  actions: "Added color_variant_dispatch primitive."
+- task: cb2d8a2c
+  summary: "Route between horizontal and vertical corridor builders to draw 3-paths with 6 extensions." 
+  dsl: |
+    return corridor_dispatch(grid, horizontal_builder, vertical_builder)
+  gaps: "Required primitives for orientation-aware corridor derivation and diagonal propagation." 
+  actions: "Added corridor_dispatch primitive."
+- task: cbebaa4b
+  summary: "Construct connector graphs, vote translation deltas, and relocate gadgets relative to the door." 
+  dsl: |
+    return connector_translate(grid)
+  gaps: "Needed a primitive to recover connector graphs and perform translation with fallbacks." 
+  actions: "Added connector_translate primitive."
+- task: d35bdbdc
+  summary: "Pair ring centres with donors and zero out the rest using sink-based pairing." 
+  dsl: |
+    return ring_sink_pair(grid)
+  gaps: "Required a primitive capturing the ring detection and sink pairing heuristic." 
+  actions: "Added ring_sink_pair primitive."
+- task: d59b0160
+  summary: "Fill rectangular rooms of non-7 cells using edge-touch and height heuristics." 
+  dsl: |
+    return targeted_room_fill(grid, fill_color=7)
+  gaps: "Needed a primitive to evaluate room properties before painting them to 7." 
+  actions: "Added targeted_room_fill primitive."
+- task: d8e07eb2
+  summary: "Highlight digit blocks based on header analysis, column fingerprints, and priority fallbacks." 
+  dsl: |
+    return priority_digit_highlight(grid)
+  gaps: "Needed a primitive orchestrating header inspection, signature matching, and fallback painting." 
+  actions: "Added priority_digit_highlight primitive."
+- task: da515329
+  summary: "Identity placeholder; solver returns the grid unchanged." 
+  dsl: |
+    return grid
+  gaps: "None."
+  actions: "None."
+- task: db0c5428
+  summary: "Lift 3×3 digit blocks into a 5×5 macro layout with dual ring colours and centre inference." 
+  dsl: |
+    return macro_dual_ring_tiling(grid)
+  gaps: "Needed a primitive to extract blocks, reconcile colours, and tile the macro canvas." 
+  actions: "Added macro_dual_ring_tiling primitive."
+- task: db695cfb
+  summary: "Connect matching 1s along diagonals and extend embedded 6s orthogonally." 
+  dsl: |
+    return diagonal_connect_extend(grid, primary=1, extender=6)
+  gaps: "Required a primitive handling diagonal connections plus perpendicular 6 propagation." 
+  actions: "Added diagonal_connect_extend primitive."
+- task: dbff022c
+  summary: "Fill zero cavities using partner colours based on boundary size and adjacency rules." 
+  dsl: |
+    return partner_cavity_fill(grid)
+  gaps: "Needed a primitive encapsulating zero-component analysis and partner colour selection." 
+  actions: "Added partner_cavity_fill primitive."
+- task: dd6b8c4b
+  summary: "Promote ring positions to colour 9 and retire scattered 9s via scoring to rebalance quadrants." 
+  dsl: |
+    return balanced_ring_relocation(grid, color=9)
+  gaps: "Required a primitive that scores scattered tiles and relocates them into the ring." 
+  actions: "Added balanced_ring_relocation primitive."
+- task: de809cff
+  summary: "Expand halos around zero pockets, realign secondary pixels, and prune stray cells." 
+  dsl: |
+    return halo_realign_prune(grid)
+  gaps: "Needed a primitive combining halo expansion, majority realignment, and pruning." 
+  actions: "Added halo_realign_prune primitive."
+- task: dfadab01
+  summary: "Apply colour-conditioned 4×4 patch motifs learned from training examples." 
+  dsl: |
+    return patch_dictionary_lookup(grid, library=PATCH_LIBRARY)
+  gaps: "Required a primitive for colour-aware patch lookup and overlay." 
+  actions: "Added patch_dictionary_lookup primitive."
+- task: e12f9a14
+  summary: "Expand 2×2 seeds into digit glyphs using collision-aware template variants." 
+  dsl: |
+    return seeded_digit_expand(grid, variants=DIGIT_TEMPLATE_VARIANTS)
+  gaps: "Needed a primitive to select template variants while respecting collisions." 
+  actions: "Added seeded_digit_expand primitive."
+- task: e3721c99
+  summary: "Classify colour-5 components by internal holes and recolour accordingly." 
+  dsl: |
+    return hole_classify_recolor(grid, target=5)
+  gaps: "Required a primitive for hole counting and rule-based recolouring." 
+  actions: "Added hole_classify_recolor primitive."
+- task: e376de54
+  summary: "Align coloured line families to the median footprint across rows, columns, or diagonals." 
+  dsl: |
+    return median_line_alignment(grid)
+  gaps: "Needed a primitive to score orientations, choose the median line, and rebuild each line to match it." 
+  actions: "Added median_line_alignment primitive."
+- task: e8686506
+  summary: "Derive row colour signatures inside the bounding box and emit the mapped miniature template." 
+  dsl: |
+    return signature_sequence_lookup(grid, patterns=PATTERN_TO_OUTPUT)
+  gaps: "Required a primitive for signature extraction and template lookup with fallback." 
+  actions: "Added signature_sequence_lookup primitive."
+- task: e87109e9
+  summary: "Match each digit block to the nearest training mask and overlay the stored diff pattern." 
+  dsl: |
+    return digit_nn_overlay(grid, samples=_SAMPLE_DATA)
+  gaps: "Needed a primitive for block extraction, mask comparison, and diff overlay." 
+  actions: "Added digit_nn_overlay primitive."
+- task: edb79dae
+  summary: "Detect the legend, infer digit templates, and refill the framed region accordingly." 
+  dsl: |
+    return legend_template_fill(grid, frame_color=5)
+  gaps: "Required a primitive for block-size detection, legend decoding, and template rendering." 
+  actions: "Added legend_template_fill primitive."
+- task: eee78d87
+  summary: "Classify the centre neighbourhood and pick the matching 16×16 template (plus/H/X)." 
+  dsl: |
+    return neighbor_template_dispatch(grid, templates=TEMPLATES)
+  gaps: "Needed a primitive for neighbourhood counting and template selection." 
+  actions: "Added neighbor_template_dispatch primitive."
+- task: f560132c
+  summary: "Relocate the four components by quadrant-aware offsets and orientation-specific rotations." 
+  dsl: |
+    return offset_oriented_remap(grid)
+  gaps: "Required a primitive to rank components, rotate masks, and reassemble the canvas." 
+  actions: "Added offset_oriented_remap primitive."
+- task: f931b4a8
+  summary: "Cycle row/column patterns with fallback borrowing when zero-signature rows appear." 
+  dsl: |
+    return borrow_cycle_tiling(grid)
+  gaps: "Needed a primitive encapsulating signature grouping, borrow logic, and tiling reconstruction." 
+  actions: "Added borrow_cycle_tiling primitive."
+- task: faa9f03d
+  summary: "Clean noise then apply closures, flanked infill, row extensions, and six-tail propagation." 
+  dsl: |
+    return composite_bridge_repair(grid)
+  gaps: "Required a primitive orchestrating the staged clean-up and bridge propagation pipeline." 
+  actions: "Added composite_bridge_repair primitive."
+- task: fc7cae8d
+  summary: "Crop the main component, rotate 90° CCW, and optionally mirror based on edge dominance." 
+  dsl: |
+    return conditional_rotate_flip(grid)
+  gaps: "Needed a primitive for component extraction, rotation, and conditional mirroring." 
+  actions: "Added conditional_rotate_flip primitive."
 - task: d8e07eb2
   summary: "Highlight digit blocks via header classification, column fingerprints, and priority fallbacks." 
   dsl: |

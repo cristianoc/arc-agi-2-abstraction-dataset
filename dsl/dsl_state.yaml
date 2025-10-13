@@ -255,6 +255,16 @@ primitives:
     description: "Expand seed blocks into digit glyphs by applying collision-aware template variants." 
   - name: hole_classify_recolor
     description: "Classify components by internal holes and recolour them according to heuristic rules." 
+  - name: color_variant_dispatch
+    description: "Choose between colour-swapping variants based on adjacency tests for pivot and mid colours." 
+  - name: corridor_dispatch
+    description: "Derive horizontal or vertical corridor plans and render diagonal connections with extensions." 
+  - name: connector_translate
+    description: "Translate gadgets by building connector graphs, voting deltas, and applying fallbacks." 
+  - name: ring_sink_pair
+    description: "Detect coloured rings, pair centres with donors, and remove the remainder." 
+  - name: targeted_room_fill
+    description: "Evaluate non-background rooms and fill those that satisfy edge-touch and height heuristics." 
   - name: median_line_alignment
     description: "Score candidate orientations, choose the median line, and remap every line to its canonical footprint." 
   - name: signature_sequence_lookup
