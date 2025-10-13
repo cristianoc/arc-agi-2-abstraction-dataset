@@ -1,5 +1,5 @@
-version: 64
-updated: 2025-10-13T09:10:00Z
+version: 65
+updated: 2025-10-13T10:15:00Z
 primitives:
   - name: bbox
     description: "Return the axis-aligned bounding box for cells matching a predicate (e.g., specific color)."
@@ -237,6 +237,24 @@ primitives:
     description: "Tile a multicolour component wherever a mask component evaluates to true." 
   - name: column_instruction_stack
     description: "Align and stack block columns according to instruction sequences and learned spacing." 
+  - name: priority_digit_highlight
+    description: "Analyse digit headers, match column fingerprints, and paint priority-selected blocks with fallback rules." 
+  - name: macro_dual_ring_tiling
+    description: "Lift 3×3 digit blocks into a 5×5 macro layout while reconciling corner and edge ring colours." 
+  - name: diagonal_connect_extend
+    description: "Connect paired anchors along diagonals and extend extender colours along perpendicular diagonals." 
+  - name: partner_cavity_fill
+    description: "Fill zero cavities using boundary colour, size, and adjacency-driven partner selection." 
+  - name: balanced_ring_relocation
+    description: "Score scattered tiles and relocate them into a central ring to rebalance directional counts." 
+  - name: halo_realign_prune
+    description: "Expand halos around zero pockets, realign secondary pixels, and prune stray cells." 
+  - name: patch_dictionary_lookup
+    description: "Apply colour-conditioned patch templates learned from training examples to the grid." 
+  - name: seeded_digit_expand
+    description: "Expand seed blocks into digit glyphs by applying collision-aware template variants." 
+  - name: hole_classify_recolor
+    description: "Classify components by internal holes and recolour them according to heuristic rules." 
 combinators:
   - name: branch
     description: "Conditional selection between alternative pipelines based on a boolean guard."
