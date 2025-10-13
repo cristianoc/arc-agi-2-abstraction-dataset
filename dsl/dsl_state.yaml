@@ -428,6 +428,12 @@ combinators:
   - name: variant_dispatch
     tasks: [c7f57c3e, cb2d8a2c, 6ffbe589, 7491f3cf, eee78d87, a251c730]
     description: "Select among variant-specific pipelines based on a classifier outcome."
+  - name: projection_router
+    tasks: [221dfab4, 247ef758, 409aa875, 4a21e3da, 64efde09, 88bcf3b4, a6f40cea]
+    description: "Route projection logic through shared anchor detection and placement strategies."
+  - name: template_router
+    tasks: [136b0064, 269e22fb, 2d0172a1, edb79dae, b10624e5, 6e4f6532, 88e364bc, a395ee82]
+    description: "Coordinate template selection, alignment, and rendering across template-driven pipelines."
   - name: branch
     tasks: [0934a4d8]
     description: "Conditional selection between alternative pipelines based on a boolean guard."
