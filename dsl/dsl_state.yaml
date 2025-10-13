@@ -1,5 +1,5 @@
-version: 65
-updated: 2025-10-13T10:15:00Z
+version: 66
+updated: 2025-10-13T11:05:00Z
 primitives:
   - name: bbox
     description: "Return the axis-aligned bounding box for cells matching a predicate (e.g., specific color)."
@@ -255,6 +255,24 @@ primitives:
     description: "Expand seed blocks into digit glyphs by applying collision-aware template variants." 
   - name: hole_classify_recolor
     description: "Classify components by internal holes and recolour them according to heuristic rules." 
+  - name: median_line_alignment
+    description: "Score candidate orientations, choose the median line, and remap every line to its canonical footprint." 
+  - name: signature_sequence_lookup
+    description: "Compute row colour signatures inside a bounding box and map them to stored templates with fallback handling." 
+  - name: digit_nn_overlay
+    description: "Extract digit blocks, compare them to training masks, and overlay the corresponding difference mask." 
+  - name: legend_template_fill
+    description: "Infer block size and legend templates to repaint the framed region with recovered digits." 
+  - name: neighbor_template_dispatch
+    description: "Classify neighbourhood structure around a centre cell and render the associated template." 
+  - name: offset_oriented_remap
+    description: "Rank components by quadrant offsets, rotate their masks, and place them into a remapped canvas." 
+  - name: borrow_cycle_tiling
+    description: "Cycle row and column patterns with fallback borrowing when zero-signature rows appear." 
+  - name: composite_bridge_repair
+    description: "Run the staged clean-up pipeline combining closures, infill, row extensions, and tail propagation." 
+  - name: conditional_rotate_flip
+    description: "Crop the dominant component, rotate it 90° CCW, and mirror it when edge dominance requires." 
 combinators:
   - name: branch
     description: "Conditional selection between alternative pipelines based on a boolean guard."
