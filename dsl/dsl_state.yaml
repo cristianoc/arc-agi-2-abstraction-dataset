@@ -1,0 +1,228 @@
+version: 63
+updated: 2025-10-13T07:56:17Z
+primitives:
+  - name: bbox
+    description: "Return the axis-aligned bounding box for cells matching a predicate (e.g., specific color)."
+  - name: crop
+    description: "Extract a subgrid defined by a bounding box or region."
+  - name: reflect_offset
+    description: "Mirror a region across a given axis, optionally applying a fixed offset before sampling."
+  - name: flip
+    description: "Flip a block along the specified axis (left-right or up-down)."
+  - name: count_color
+    description: "Count occurrences of a color within a block for heuristic comparisons."
+  - name: periodic_majority
+    description: "Infer the dominant repeating pattern within a 1D sequence up to a bounded period and tile it back."
+  - name: segment_rows
+    description: "Group consecutive rows satisfying a predicate into row-interval segments."
+  - name: majority_color
+    description: "Return the most frequent non-background color within a region."
+  - name: template_lookup
+    description: "Select a template/glyph from a dictionary keyed by detected labels."
+  - name: overlay
+    description: "Overlay a template or block onto a canvas at a specified position."
+  - name: components
+    description: "Enumerate 4-connected components with metadata (cells, color, bounds)."
+  - name: stack_components
+    description: "Stack a collection of components above or below an anchor while managing spacing, alignment, and boundary clamping."
+  - name: propagate_stride
+    description: "Extend repeated colors along rows or columns using stride/gcd inference from existing placements."
+  - name: match_kernel
+    description: "Detect occurrences of a small von-Neumann or Moore neighborhood pattern (e.g., plus shapes)."
+  - name: propagate_pattern
+    description: "Given a cyclic color pattern and anchor rows/columns, propagate it across fill regions while applying boundary caps."
+  - name: repeat_segments
+    description: "Repeat non-zero segments across a barrier using their segment length as spacing."
+  - name: fold_overlay
+    description: "Fold one side of the grid over a separator and overlay it onto the other side with alignment heuristics."
+  - name: band_glue
+    description: "Remove a special-colored band and glue the remaining parts together with offset-aware fill projection."
+  - name: recolor
+    description: "Recolor all occurrences of specified colors according to a mapping."
+  - name: segment_columns
+    description: "Group consecutive non-background columns by shared features (e.g., top color)."
+  - name: classify_column_pattern
+    description: "Classify column groups into structural types (e.g., cycle, banner, alternating)."
+  - name: render_column_pattern
+    description: "Render an output layout given a column-pattern classification and group metadata."
+  - name: stripe_projection
+    description: "Apply a periodic color pattern along selected columns."
+  - name: overlay_object_rows
+    description: "Overlay object colors onto specific rows based on modular indices."
+  - name: detect_axis_column
+    description: "Detect the separator column whose entries share a constant non-background color."
+  - name: extract_markers
+    description: "Extract marker positions from a designated border (e.g., top row or right column)."
+  - name: cartesian_project
+    description: "Translate component footprints to every combination of row/column markers, honoring placement order."
+  - name: align_template
+    description: "Align an input grid within a canonical template, allowing dihedral transforms and color remapping."
+  - name: template_fill
+    description: "Embed the aligned subpattern into a copy of the canonical template."
+  - name: apply_transform
+    description: "Apply a named dihedral transform to a grid."
+  - name: remap_colors
+    description: "Remap colors according to a provided dictionary."
+  - name: bounded_gap_candidates
+    description: "Enumerate zero cells in rows whose neighbors on both sides are non-zero."
+  - name: relocate_supply
+    description: "Greedily relocate supply cells into candidate targets according to ordered priorities."
+  - name: normalize_orientation
+    description: "Normalize grid orientation (e.g., transpose tall grids) and report whether a transpose was applied."
+  - name: extract_row_segments
+    description: "Extract non-header color segments from each row after trimming the header column."
+  - name: group_contiguous_rows
+    description: "Group consecutive rows that contain segments."
+  - name: weave_segments
+    description: "Interleave row segment lists into the target output, respecting orientation and edge anchoring."
+  - name: paint_cross_runs
+    description: "Replace qualifying runs of a source color with cross-shaped motifs."
+  - name: boundary_recolor
+    description: "Recolor boundary cells using zero-distance heuristics and neighbor preservation rules."
+  - name: split_components_by_hollowness
+    description: "Partition components into hollow vs. solid based on interior zeros."
+  - name: pair_components
+    description: "Pair lists of components, padding the shorter side with blanks."
+  - name: canonical_block
+    description: "Resample a component into a canonical block size."
+  - name: concat_blocks
+    description: "Concatenate blocks horizontally and vertically into the final grid."
+  - name: axis_cross_reconstruction
+    description: "Reconstruct axis-aligned crosses by detecting the axis, ranking colors, and painting vertical/horizontal arms with adjustments."
+  - name: template_reconstruction
+    description: "Select and render a pre-defined template based on accent bounding boxes and extend alternating patterns when required."
+  - name: sorted_stripes
+    description: "Identify central stripes, sort their lengths, and rebuild columns with monotonically increasing spans."
+  - name: relocate_zero_block
+    description: "Relocate the zero block based on adjacency cues to other colors with thresholded distance improvement."
+  - name: hull_shift
+    description: "Construct base hulls for multi-point colors and shift them to anchor singleton colors."
+  - name: scaffold_wrap
+    description: "Extend scaffold columns downward and wrap connected target runs with a halo."
+  - name: unique_block_column
+    description: "Partition interior into blocks and retain the unique block per block-row while restoring borders."
+  - name: band_synthesis
+    description: "Crop interesting bands, adjust row patterns, and synthesize duplicated rows according to band heuristics."
+  - name: intruder_edge_push
+    description: "Relocate embedded components to host edges based on centroid offsets and component uniqueness."
+  - name: hint_path
+    description: "Follow hint row ordering to paint corridors between colored nodes."
+  - name: centroid_projection
+    description: "Lift selected components, normalize columns, and drop centroid markers with recoloring."
+  - name: grid_compactor
+    description: "Compact per-color components into a near-square block and center it with border fill."
+  - name: stripe_rings
+    description: "Convert leading axis stripes into concentric rings after dropping the trailing stripe."
+  - name: corner_projection
+    description: "Mirror sentinel-aligned subsets of a component into the corners with guarded ray painting."
+  - name: wedge_mirror_shift
+    description: "Shift right-side details upward based on left wedge presence, then mirror the wedge offset." 
+  - name: corner_hooks
+    description: "Classify corner markers and paint hook patterns according to corner orientation and distances." 
+  - name: zero_component_glyph
+    description: "Collapse large zero components into a coarse glyph with highlighted axes and corner marker." 
+  - name: type_priority_compactor
+    description: "Classify components by shape, normalize them, and concatenate using priority ordering with redundancy filtering." 
+  - name: mixed_component_tiling
+    description: "Detect 4-connected components containing colors {2,4} and tile their pattern upward." 
+  - name: segment_consensus
+    description: "Combine consensus highlights across repeated segments with alignment rules and special two-segment handling." 
+  - name: full_alignment
+    description: "Align components to shared anchors across columns/rows with drift-aware refinements." 
+  - name: scoreboard_count8
+    description: "Count 8-connected components outside the zero board and encode totals on the scoreboard." 
+  - name: color_scoreboard
+    description: "Cluster prominent colors, assign them to a layout, and render 5×5 glyph tiles." 
+  - name: filtered_scaffold
+    description: "Build a sentinel-guided scaffold by filtering guides and extending rays before flood fill." 
+  - name: hybrid_palette
+    description: "Detect orientation and apply prelearned palettes for horizontal vs vertical legend regions." 
+  - name: aggregated_overlap
+    description: "Aggregate column overlaps to orient color groups toward top/bottom edges and translate components accordingly." 
+  - name: shadow_projection
+    description: "Cast vertical and horizontal shadows alternating directions based on motif bounding boxes." 
+  - name: two_colour_scan
+    description: "Scan for two-colour squares and repaint components using matched shapes elsewhere." 
+  - name: slide_gap
+    description: "Slide zero components toward a guide column and highlight rows based on gap heuristics." 
+  - name: canonical_template
+    description: "Match component signatures to prelearned templates and place them at marker offsets." 
+  - name: color_dispatch_rotate
+    description: "Dispatch to color-specific rotation recipes after cropping the active block." 
+  - name: tip_halo
+    description: "Detect zero-component tips and paint guarded 7 halos with cleanup." 
+  - name: panel_dispatch
+    description: "Inspect panel shapes and dispatch to cross or block overlays accordingly." 
+  - name: component_corridor
+    description: "Fill corridor cells where adjacent diagonal components bracket the position." 
+  - name: rotated_cycle
+    description: "Rotate separator-delimited blocks, cycle their order, and reassemble with separators." 
+  - name: perimeter_tiling
+    description: "Enumerate component placements to maximise perimeter/score within a compact square." 
+  - name: top_row_histogram
+    description: "Order colours by first occurrence and emit vertical histogram counts." 
+  - name: column_snap
+    description: "Regularise aligned linework via column/row masks with support-aware bridges." 
+  - name: stamp_bottom
+    description: "Extract prototype components from legend sections and stamp them onto target bands." 
+  - name: nearest_axis_reflection
+    description: "Reflect components across the nearest applicable symmetry axis." 
+  - name: hybrid_knn
+    description: "Use feature-based kNN with heuristics to recolor transition regions between fringe colours." 
+  - name: handle_extension
+    description: "Extend diagonal handles into perpendicular stripes while guarding existing structure." 
+  - name: column_priority_assignment
+    description: "Assign shape tiles to background tiles using column-weighted matching and re-render grid." 
+  - name: path_projection
+    description: "Trace accent paths from anchor columns to target components via heuristic corridor planning." 
+  - name: block_template_lookup
+    description: "Map 5x5 digit templates to recolor positions using lookup tables." 
+  - name: refined_stripe
+    description: "Summarise stripes with dominance/fallback rules to build prefix histograms." 
+  - name: dynamic_scale_fill
+    description: "Infer upscale factors from component areas and refill zero cavities accordingly." 
+  - name: distance_filtered_fill
+    description: "Fill zero cavities when boundary colours are within distance thresholds of key colours." 
+  - name: matched_corridors
+    description: "Pair components with structures via corridor scoring and slide them along clear paths." 
+  - name: global_color_symmetry
+    description: "Remove asymmetric pixels to enforce per-colour symmetry about a chosen axis." 
+  - name: striped_frames
+    description: "Reconstruct frame interiors using motif-driven stripe counts while clearing side noise." 
+  - name: accessible_halo
+    description: "Colour the accessible frontier and diagonals around left-connected regions with guard rules." 
+  - name: legend_guided_fill
+    description: "Apply legend-guided bounding-box recolouring with zero-pair handling." 
+  - name: selective_cap_fill
+    description: "Fill sandwich columns when matching caps and support heuristics agree." 
+  - name: row_col_match
+    description: "Iteratively complete rows and columns by matching visible entries until symmetric." 
+  - name: instruction_board
+    description: "Interpret scoreboard instructions to recolor columns and extend plus counts." 
+  - name: separator_adjust
+    description: "Adjust separator rows and sparse columns based on dominant-row comparisons." 
+  - name: signature_dispatch
+    description: "Dispatch to memorised outputs by colour-frequency signature with heuristic fallback." 
+  - name: compact_components
+    description: "Compact components via orientation-aware relocation inside anchor holes." 
+  - name: block_map_full
+    description: "Map instruction strips to sprite blocks with tail template handling." 
+  - name: template_transfer
+    description: "Replicate detected templates across a marker lattice with colour swapping." 
+  - name: paired_plus_x
+    description: "Place plus and X motifs on shared axes derived from square detections." 
+  - name: augmented_projection
+    description: "Project frame borders with alternating stripe heuristics and gap closing." 
+  - name: component_tree_classify
+    description: "Classify monochrome components via decision rules and recolor selected ones." 
+  - name: mapped_tiles
+    description: "Segment the grid by separators and fill each cell using a template lookup with fallback tiling." 
+combinators:
+  - name: branch
+    description: "Conditional selection between alternative pipelines based on a boolean guard."
+  - name: foreach
+    description: "Iterate over a collection (rows, components, etc.) applying a sub-pipeline to each element."
+  - name: first_success
+    description: "Evaluate pipelines in order and return the first successful (non-null) result."
+  - name: dispatch
+    description: "Route execution based on a discrete classification value."
