@@ -2,293 +2,438 @@ version: 66
 updated: 2025-10-13T11:05:00Z
 primitives:
   - name: bbox
+    tasks: [0934a4d8]
     description: "Return the axis-aligned bounding box for cells matching a predicate (e.g., specific color)."
   - name: crop
+    tasks: [0934a4d8]
     description: "Extract a subgrid defined by a bounding box or region."
   - name: reflect_offset
+    tasks: [0934a4d8]
     description: "Mirror a region across a given axis, optionally applying a fixed offset before sampling."
   - name: flip
+    tasks: [0934a4d8]
     description: "Flip a block along the specified axis (left-right or up-down)."
   - name: count_color
+    tasks: [0934a4d8]
     description: "Count occurrences of a color within a block for heuristic comparisons."
   - name: periodic_majority
+    tasks: [135a2760]
     description: "Infer the dominant repeating pattern within a 1D sequence up to a bounded period and tile it back."
   - name: segment_rows
+    tasks: [136b0064]
     description: "Group consecutive rows satisfying a predicate into row-interval segments."
   - name: majority_color
+    tasks: [136b0064]
     description: "Return the most frequent non-background color within a region."
   - name: template_lookup
+    tasks: [136b0064]
     description: "Select a template/glyph from a dictionary keyed by detected labels."
   - name: overlay
+    tasks: [136b0064]
     description: "Overlay a template or block onto a canvas at a specified position."
   - name: components
+    tasks: [13e47133]
     description: "Enumerate 4-connected components with metadata (cells, color, bounds)."
   - name: stack_components
+    tasks: [16b78196]
     description: "Stack a collection of components above or below an anchor while managing spacing, alignment, and boundary clamping."
   - name: propagate_stride
+    tasks: [16de56c4]
     description: "Extend repeated colors along rows or columns using stride/gcd inference from existing placements."
   - name: match_kernel
+    tasks: [1818057f]
     description: "Detect occurrences of a small von-Neumann or Moore neighborhood pattern (e.g., plus shapes)."
   - name: propagate_pattern
+    tasks: [195c6913]
     description: "Given a cyclic color pattern and anchor rows/columns, propagate it across fill regions while applying boundary caps."
   - name: repeat_segments
+    tasks: [1ae2feb7]
     description: "Repeat non-zero segments across a barrier using their segment length as spacing."
   - name: fold_overlay
+    tasks: [20270e3b]
     description: "Fold one side of the grid over a separator and overlay it onto the other side with alignment heuristics."
   - name: band_glue
+    tasks: [20270e3b]
     description: "Remove a special-colored band and glue the remaining parts together with offset-aware fill projection."
   - name: recolor
+    tasks: [20270e3b]
     description: "Recolor all occurrences of specified colors according to a mapping."
   - name: segment_columns
+    tasks: [20a9e565]
     description: "Group consecutive non-background columns by shared features (e.g., top color)."
   - name: classify_column_pattern
+    tasks: [20a9e565]
     description: "Classify column groups into structural types (e.g., cycle, banner, alternating)."
   - name: render_column_pattern
+    tasks: [20a9e565]
     description: "Render an output layout given a column-pattern classification and group metadata."
   - name: stripe_projection
+    tasks: [221dfab4]
     description: "Apply a periodic color pattern along selected columns."
   - name: overlay_object_rows
+    tasks: [221dfab4]
     description: "Overlay object colors onto specific rows based on modular indices."
   - name: detect_axis_column
+    tasks: [247ef758]
     description: "Detect the separator column whose entries share a constant non-background color."
   - name: extract_markers
+    tasks: [247ef758]
     description: "Extract marker positions from a designated border (e.g., top row or right column)."
   - name: cartesian_project
+    tasks: [247ef758]
     description: "Translate component footprints to every combination of row/column markers, honoring placement order."
   - name: align_template
+    tasks: [269e22fb]
     description: "Align an input grid within a canonical template, allowing dihedral transforms and color remapping."
   - name: template_fill
+    tasks: [269e22fb]
     description: "Embed the aligned subpattern into a copy of the canonical template."
   - name: apply_transform
+    tasks: [269e22fb]
     description: "Apply a named dihedral transform to a grid."
   - name: remap_colors
+    tasks: [269e22fb]
     description: "Remap colors according to a provided dictionary."
   - name: bounded_gap_candidates
+    tasks: [28a6681f]
     description: "Enumerate zero cells in rows whose neighbors on both sides are non-zero."
   - name: relocate_supply
+    tasks: [28a6681f]
     description: "Greedily relocate supply cells into candidate targets according to ordered priorities."
   - name: normalize_orientation
+    tasks: [291dc1e1]
     description: "Normalize grid orientation (e.g., transpose tall grids) and report whether a transpose was applied."
   - name: extract_row_segments
+    tasks: [291dc1e1]
     description: "Extract non-header color segments from each row after trimming the header column."
   - name: group_contiguous_rows
+    tasks: [291dc1e1]
     description: "Group consecutive rows that contain segments."
   - name: weave_segments
+    tasks: [291dc1e1]
     description: "Interleave row segment lists into the target output, respecting orientation and edge anchoring."
   - name: paint_cross_runs
+    tasks: [2b83f449]
     description: "Replace qualifying runs of a source color with cross-shaped motifs."
   - name: boundary_recolor
+    tasks: [2b83f449]
     description: "Recolor boundary cells using zero-distance heuristics and neighbor preservation rules."
   - name: split_components_by_hollowness
+    tasks: [2ba387bc]
     description: "Partition components into hollow vs. solid based on interior zeros."
   - name: pair_components
+    tasks: [2ba387bc]
     description: "Pair lists of components, padding the shorter side with blanks."
   - name: canonical_block
+    tasks: [2ba387bc]
     description: "Resample a component into a canonical block size."
   - name: concat_blocks
+    tasks: [2ba387bc]
     description: "Concatenate blocks horizontally and vertically into the final grid."
   - name: axis_cross_reconstruction
+    tasks: [2c181942]
     description: "Reconstruct axis-aligned crosses by detecting the axis, ranking colors, and painting vertical/horizontal arms with adjustments."
   - name: template_reconstruction
+    tasks: [2d0172a1]
     description: "Select and render a pre-defined template based on accent bounding boxes and extend alternating patterns when required."
   - name: sorted_stripes
+    tasks: [31f7f899]
     description: "Identify central stripes, sort their lengths, and rebuild columns with monotonically increasing spans."
   - name: relocate_zero_block
+    tasks: [332f06d7]
     description: "Relocate the zero block based on adjacency cues to other colors with thresholded distance improvement."
   - name: hull_shift
+    tasks: [35ab12c3]
     description: "Construct base hulls for multi-point colors and shift them to anchor singleton colors."
   - name: scaffold_wrap
+    tasks: [36a08778]
     description: "Extend scaffold columns downward and wrap connected target runs with a halo."
   - name: unique_block_column
+    tasks: [38007db0]
     description: "Partition interior into blocks and retain the unique block per block-row while restoring borders."
   - name: band_synthesis
+    tasks: [3a25b0d8]
     description: "Crop interesting bands, adjust row patterns, and synthesize duplicated rows according to band heuristics."
   - name: intruder_edge_push
+    tasks: [3dc255db]
     description: "Relocate embedded components to host edges based on centroid offsets and component uniqueness."
   - name: hint_path
+    tasks: [3e6067c3]
     description: "Follow hint row ordering to paint corridors between colored nodes."
   - name: centroid_projection
+    tasks: [409aa875]
     description: "Lift selected components, normalize columns, and drop centroid markers with recoloring."
   - name: grid_compactor
+    tasks: [446ef5d2]
     description: "Compact per-color components into a near-square block and center it with border fill."
   - name: stripe_rings
+    tasks: [45a5af55]
     description: "Convert leading axis stripes into concentric rings after dropping the trailing stripe."
   - name: corner_projection
+    tasks: [4a21e3da]
     description: "Mirror sentinel-aligned subsets of a component into the corners with guarded ray painting."
   - name: wedge_mirror_shift
-    description: "Shift right-side details upward based on left wedge presence, then mirror the wedge offset." 
+    tasks: [4c3d4a41]
+    description: "Shift right-side details upward based on left wedge presence, then mirror the wedge offset."
   - name: corner_hooks
-    description: "Classify corner markers and paint hook patterns according to corner orientation and distances." 
+    tasks: [4c416de3]
+    description: "Classify corner markers and paint hook patterns according to corner orientation and distances."
   - name: zero_component_glyph
-    description: "Collapse large zero components into a coarse glyph with highlighted axes and corner marker." 
+    tasks: [4c7dc4dd]
+    description: "Collapse large zero components into a coarse glyph with highlighted axes and corner marker."
   - name: type_priority_compactor
-    description: "Classify components by shape, normalize them, and concatenate using priority ordering with redundancy filtering." 
+    tasks: [4e34c42c]
+    description: "Classify components by shape, normalize them, and concatenate using priority ordering with redundancy filtering."
   - name: mixed_component_tiling
-    description: "Detect 4-connected components containing colors {2,4} and tile their pattern upward." 
+    tasks: [53fb4810]
+    description: "Detect 4-connected components containing colors {2,4} and tile their pattern upward."
   - name: segment_consensus
-    description: "Combine consensus highlights across repeated segments with alignment rules and special two-segment handling." 
+    tasks: [5545f144]
+    description: "Combine consensus highlights across repeated segments with alignment rules and special two-segment handling."
   - name: full_alignment
-    description: "Align components to shared anchors across columns/rows with drift-aware refinements." 
+    tasks: [581f7754]
+    description: "Align components to shared anchors across columns/rows with drift-aware refinements."
   - name: scoreboard_count8
-    description: "Count 8-connected components outside the zero board and encode totals on the scoreboard." 
+    tasks: [58490d8a]
+    description: "Count 8-connected components outside the zero board and encode totals on the scoreboard."
   - name: color_scoreboard
-    description: "Cluster prominent colors, assign them to a layout, and render 5×5 glyph tiles." 
+    tasks: [58f5dbd5]
+    description: "Cluster prominent colors, assign them to a layout, and render 5×5 glyph tiles."
   - name: filtered_scaffold
-    description: "Build a sentinel-guided scaffold by filtering guides and extending rays before flood fill." 
+    tasks: [5961cc34]
+    description: "Build a sentinel-guided scaffold by filtering guides and extending rays before flood fill."
   - name: hybrid_palette
-    description: "Detect orientation and apply prelearned palettes for horizontal vs vertical legend regions." 
+    tasks: [5dbc8537]
+    description: "Detect orientation and apply prelearned palettes for horizontal vs vertical legend regions."
   - name: aggregated_overlap
-    description: "Aggregate column overlaps to orient color groups toward top/bottom edges and translate components accordingly." 
+    tasks: [62593bfd]
+    description: "Aggregate column overlaps to orient color groups toward top/bottom edges and translate components accordingly."
   - name: shadow_projection
-    description: "Cast vertical and horizontal shadows alternating directions based on motif bounding boxes." 
+    tasks: [64efde09]
+    description: "Cast vertical and horizontal shadows alternating directions based on motif bounding boxes."
   - name: two_colour_scan
-    description: "Scan for two-colour squares and repaint components using matched shapes elsewhere." 
+    tasks: [67e490f4]
+    description: "Scan for two-colour squares and repaint components using matched shapes elsewhere."
   - name: slide_gap
-    description: "Slide zero components toward a guide column and highlight rows based on gap heuristics." 
+    tasks: [6e453dd6]
+    description: "Slide zero components toward a guide column and highlight rows based on gap heuristics."
   - name: canonical_template
-    description: "Match component signatures to prelearned templates and place them at marker offsets." 
+    tasks: [6e4f6532]
+    description: "Match component signatures to prelearned templates and place them at marker offsets."
   - name: color_dispatch_rotate
-    description: "Dispatch to color-specific rotation recipes after cropping the active block." 
+    tasks: [6ffbe589]
+    description: "Dispatch to color-specific rotation recipes after cropping the active block."
   - name: tip_halo
-    description: "Detect zero-component tips and paint guarded 7 halos with cleanup." 
+    tasks: [71e489b6]
+    description: "Detect zero-component tips and paint guarded 7 halos with cleanup."
   - name: panel_dispatch
-    description: "Inspect panel shapes and dispatch to cross or block overlays accordingly." 
+    tasks: [7491f3cf]
+    description: "Inspect panel shapes and dispatch to cross or block overlays accordingly."
   - name: component_corridor
-    description: "Fill corridor cells where adjacent diagonal components bracket the position." 
+    tasks: [7666fa5d]
+    description: "Fill corridor cells where adjacent diagonal components bracket the position."
   - name: rotated_cycle
-    description: "Rotate separator-delimited blocks, cycle their order, and reassemble with separators." 
+    tasks: [78332cb0]
+    description: "Rotate separator-delimited blocks, cycle their order, and reassemble with separators."
   - name: perimeter_tiling
-    description: "Enumerate component placements to maximise perimeter/score within a compact square." 
+    tasks: [7b3084d4]
+    description: "Enumerate component placements to maximise perimeter/score within a compact square."
   - name: top_row_histogram
-    description: "Order colours by first occurrence and emit vertical histogram counts." 
+    tasks: [7b5033c1]
+    description: "Order colours by first occurrence and emit vertical histogram counts."
   - name: column_snap
-    description: "Regularise aligned linework via column/row masks with support-aware bridges." 
+    tasks: [7b80bb43]
+    description: "Regularise aligned linework via column/row masks with support-aware bridges."
   - name: stamp_bottom
-    description: "Extract prototype components from legend sections and stamp them onto target bands." 
+    tasks: [7c66cb00]
+    description: "Extract prototype components from legend sections and stamp them onto target bands."
   - name: nearest_axis_reflection
-    description: "Reflect components across the nearest applicable symmetry axis." 
+    tasks: [7ed72f31]
+    description: "Reflect components across the nearest applicable symmetry axis."
   - name: hybrid_knn
-    description: "Use feature-based kNN with heuristics to recolor transition regions between fringe colours." 
+    tasks: [800d221b]
+    description: "Use feature-based kNN with heuristics to recolor transition regions between fringe colours."
   - name: handle_extension
-    description: "Extend diagonal handles into perpendicular stripes while guarding existing structure." 
+    tasks: [80a900e0]
+    description: "Extend diagonal handles into perpendicular stripes while guarding existing structure."
   - name: column_priority_assignment
-    description: "Assign shape tiles to background tiles using column-weighted matching and re-render grid." 
+    tasks: [8698868d]
+    description: "Assign shape tiles to background tiles using column-weighted matching and re-render grid."
   - name: path_projection
-    description: "Trace accent paths from anchor columns to target components via heuristic corridor planning." 
+    tasks: [88bcf3b4]
+    description: "Trace accent paths from anchor columns to target components via heuristic corridor planning."
   - name: block_template_lookup
-    description: "Map 5x5 digit templates to recolor positions using lookup tables." 
+    tasks: [88e364bc]
+    description: "Map 5x5 digit templates to recolor positions using lookup tables."
   - name: refined_stripe
-    description: "Summarise stripes with dominance/fallback rules to build prefix histograms." 
+    tasks: [89565ca0]
+    description: "Summarise stripes with dominance/fallback rules to build prefix histograms."
   - name: dynamic_scale_fill
-    description: "Infer upscale factors from component areas and refill zero cavities accordingly." 
+    tasks: [898e7135]
+    description: "Infer upscale factors from component areas and refill zero cavities accordingly."
   - name: distance_filtered_fill
-    description: "Fill zero cavities when boundary colours are within distance thresholds of key colours." 
+    tasks: [8b7bacbf]
+    description: "Fill zero cavities when boundary colours are within distance thresholds of key colours."
   - name: matched_corridors
-    description: "Pair components with structures via corridor scoring and slide them along clear paths." 
+    tasks: [8b9c3697]
+    description: "Pair components with structures via corridor scoring and slide them along clear paths."
   - name: global_color_symmetry
-    description: "Remove asymmetric pixels to enforce per-colour symmetry about a chosen axis." 
+    tasks: [8e5c0c38]
+    description: "Remove asymmetric pixels to enforce per-colour symmetry about a chosen axis."
   - name: striped_frames
-    description: "Reconstruct frame interiors using motif-driven stripe counts while clearing side noise." 
+    tasks: [8f215267]
+    description: "Reconstruct frame interiors using motif-driven stripe counts while clearing side noise."
   - name: accessible_halo
-    description: "Colour the accessible frontier and diagonals around left-connected regions with guard rules." 
+    tasks: [8f3a5a89]
+    description: "Colour the accessible frontier and diagonals around left-connected regions with guard rules."
   - name: legend_guided_fill
-    description: "Apply legend-guided bounding-box recolouring with zero-pair handling." 
+    tasks: [9385bd28]
+    description: "Apply legend-guided bounding-box recolouring with zero-pair handling."
   - name: selective_cap_fill
-    description: "Fill sandwich columns when matching caps and support heuristics agree." 
+    tasks: [97d7923e]
+    description: "Fill sandwich columns when matching caps and support heuristics agree."
   - name: row_col_match
-    description: "Iteratively complete rows and columns by matching visible entries until symmetric." 
+    tasks: [981571dc]
+    description: "Iteratively complete rows and columns by matching visible entries until symmetric."
   - name: instruction_board
-    description: "Interpret scoreboard instructions to recolor columns and extend plus counts." 
+    tasks: [9aaea919]
+    description: "Interpret scoreboard instructions to recolor columns and extend plus counts."
   - name: separator_adjust
-    description: "Adjust separator rows and sparse columns based on dominant-row comparisons." 
+    tasks: [9bbf930d]
+    description: "Adjust separator rows and sparse columns based on dominant-row comparisons."
   - name: signature_dispatch
-    description: "Dispatch to memorised outputs by colour-frequency signature with heuristic fallback." 
+    tasks: [a251c730]
+    description: "Dispatch to memorised outputs by colour-frequency signature with heuristic fallback."
   - name: compact_components
-    description: "Compact components via orientation-aware relocation inside anchor holes." 
+    tasks: [a25697e4]
+    description: "Compact components via orientation-aware relocation inside anchor holes."
   - name: block_map_full
-    description: "Map instruction strips to sprite blocks with tail template handling." 
+    tasks: [a32d8b75]
+    description: "Map instruction strips to sprite blocks with tail template handling."
   - name: template_transfer
-    description: "Replicate detected templates across a marker lattice with colour swapping." 
+    tasks: [a395ee82]
+    description: "Replicate detected templates across a marker lattice with colour swapping."
   - name: paired_plus_x
-    description: "Place plus and X motifs on shared axes derived from square detections." 
+    tasks: [a47bf94d]
+    description: "Place plus and X motifs on shared axes derived from square detections."
   - name: augmented_projection
-    description: "Project frame borders with alternating stripe heuristics and gap closing." 
+    tasks: [a6f40cea]
+    description: "Project frame borders with alternating stripe heuristics and gap closing."
   - name: component_tree_classify
-    description: "Classify monochrome components via decision rules and recolor selected ones." 
+    tasks: [7b0280bc]
+    description: "Classify monochrome components via decision rules and recolor selected ones."
   - name: mapped_tiles
-    description: "Segment the grid by separators and fill each cell using a template lookup with fallback tiling." 
+    tasks: [65b59efc]
+    description: "Segment the grid by separators and fill each cell using a template lookup with fallback tiling."
   - name: segment_frame
-    description: "Apply segment-aware framing to a component, including hole detection and selective recolouring." 
+    tasks: [aa4ec2a5]
+    description: "Apply segment-aware framing to a component, including hole detection and selective recolouring."
   - name: cell_knn_classifier
-    description: "Train and apply a per-cell kNN classifier using engineered row/column features." 
+    tasks: [abc82100]
+    description: "Train and apply a per-cell kNN classifier using engineered row/column features."
   - name: segment_tiling
-    description: "Replicate a template block across segments separated by dividers with orientation-aware spacing." 
+    tasks: [b0039139]
+    description: "Replicate a template block across segments separated by dividers with orientation-aware spacing."
   - name: ornament_template_expand
-    description: "Expand ornament colours around components using centre-aware horizontal and vertical halos." 
+    tasks: [b10624e5]
+    description: "Expand ornament colours around components using centre-aware horizontal and vertical halos."
   - name: ring_lane_pack
-    description: "Assign ring components to border lanes by outer colour while preventing overlaps." 
+    tasks: [b5ca7ac4]
+    description: "Assign ring components to border lanes by outer colour while preventing overlaps."
   - name: segment_digit_lookup
-    description: "Decode segment activation strings and emit the corresponding digit templates." 
+    tasks: [b6f77b65]
+    description: "Decode segment activation strings and emit the corresponding digit templates."
   - name: macro_mask_completion
-    description: "Complete macro tiles by repainting every position indicated by a minority mask tile." 
+    tasks: [b99e7126]
+    description: "Complete macro tiles by repainting every position indicated by a minority mask tile."
   - name: segmented_wedge_fill
-    description: "Grow wedge components toward barriers with orientation-aware clamping." 
+    tasks: [b9e38dc0]
+    description: "Grow wedge components toward barriers with orientation-aware clamping."
   - name: mask_pattern_tiling
-    description: "Tile a multicolour component wherever a mask component evaluates to true." 
+    tasks: [bf45cf4b]
+    description: "Tile a multicolour component wherever a mask component evaluates to true."
   - name: column_instruction_stack
-    description: "Align and stack block columns according to instruction sequences and learned spacing." 
+    tasks: [c4d067a0]
+    description: "Align and stack block columns according to instruction sequences and learned spacing."
   - name: priority_digit_highlight
-    description: "Analyse digit headers, match column fingerprints, and paint priority-selected blocks with fallback rules." 
+    tasks: [d8e07eb2]
+    description: "Analyse digit headers, match column fingerprints, and paint priority-selected blocks with fallback rules."
   - name: macro_dual_ring_tiling
-    description: "Lift 3×3 digit blocks into a 5×5 macro layout while reconciling corner and edge ring colours." 
+    tasks: [db0c5428]
+    description: "Lift 3×3 digit blocks into a 5×5 macro layout while reconciling corner and edge ring colours."
   - name: diagonal_connect_extend
-    description: "Connect paired anchors along diagonals and extend extender colours along perpendicular diagonals." 
+    tasks: [db695cfb]
+    description: "Connect paired anchors along diagonals and extend extender colours along perpendicular diagonals."
   - name: partner_cavity_fill
-    description: "Fill zero cavities using boundary colour, size, and adjacency-driven partner selection." 
+    tasks: [dbff022c]
+    description: "Fill zero cavities using boundary colour, size, and adjacency-driven partner selection."
   - name: balanced_ring_relocation
-    description: "Score scattered tiles and relocate them into a central ring to rebalance directional counts." 
+    tasks: [dd6b8c4b]
+    description: "Score scattered tiles and relocate them into a central ring to rebalance directional counts."
   - name: halo_realign_prune
-    description: "Expand halos around zero pockets, realign secondary pixels, and prune stray cells." 
+    tasks: [de809cff]
+    description: "Expand halos around zero pockets, realign secondary pixels, and prune stray cells."
   - name: patch_dictionary_lookup
-    description: "Apply colour-conditioned patch templates learned from training examples to the grid." 
+    tasks: [dfadab01]
+    description: "Apply colour-conditioned patch templates learned from training examples to the grid."
   - name: seeded_digit_expand
-    description: "Expand seed blocks into digit glyphs by applying collision-aware template variants." 
+    tasks: [e12f9a14]
+    description: "Expand seed blocks into digit glyphs by applying collision-aware template variants."
   - name: hole_classify_recolor
-    description: "Classify components by internal holes and recolour them according to heuristic rules." 
+    tasks: [e3721c99]
+    description: "Classify components by internal holes and recolour them according to heuristic rules."
   - name: color_variant_dispatch
-    description: "Choose between colour-swapping variants based on adjacency tests for pivot and mid colours." 
+    tasks: [c7f57c3e]
+    description: "Choose between colour-swapping variants based on adjacency tests for pivot and mid colours."
   - name: corridor_dispatch
-    description: "Derive horizontal or vertical corridor plans and render diagonal connections with extensions." 
+    tasks: [cb2d8a2c]
+    description: "Derive horizontal or vertical corridor plans and render diagonal connections with extensions."
   - name: connector_translate
-    description: "Translate gadgets by building connector graphs, voting deltas, and applying fallbacks." 
+    tasks: [cbebaa4b]
+    description: "Translate gadgets by building connector graphs, voting deltas, and applying fallbacks."
   - name: ring_sink_pair
-    description: "Detect coloured rings, pair centres with donors, and remove the remainder." 
+    tasks: [d35bdbdc]
+    description: "Detect coloured rings, pair centres with donors, and remove the remainder."
   - name: targeted_room_fill
-    description: "Evaluate non-background rooms and fill those that satisfy edge-touch and height heuristics." 
+    tasks: [d59b0160]
+    description: "Evaluate non-background rooms and fill those that satisfy edge-touch and height heuristics."
   - name: median_line_alignment
-    description: "Score candidate orientations, choose the median line, and remap every line to its canonical footprint." 
+    tasks: [e376de54]
+    description: "Score candidate orientations, choose the median line, and remap every line to its canonical footprint."
   - name: signature_sequence_lookup
-    description: "Compute row colour signatures inside a bounding box and map them to stored templates with fallback handling." 
+    tasks: [e8686506]
+    description: "Compute row colour signatures inside a bounding box and map them to stored templates with fallback handling."
   - name: digit_nn_overlay
-    description: "Extract digit blocks, compare them to training masks, and overlay the corresponding difference mask." 
+    tasks: [e87109e9]
+    description: "Extract digit blocks, compare them to training masks, and overlay the corresponding difference mask."
   - name: legend_template_fill
-    description: "Infer block size and legend templates to repaint the framed region with recovered digits." 
+    tasks: [edb79dae]
+    description: "Infer block size and legend templates to repaint the framed region with recovered digits."
   - name: neighbor_template_dispatch
-    description: "Classify neighbourhood structure around a centre cell and render the associated template." 
+    tasks: [eee78d87]
+    description: "Classify neighbourhood structure around a centre cell and render the associated template."
   - name: offset_oriented_remap
-    description: "Rank components by quadrant offsets, rotate their masks, and place them into a remapped canvas." 
+    tasks: [f560132c]
+    description: "Rank components by quadrant offsets, rotate their masks, and place them into a remapped canvas."
   - name: borrow_cycle_tiling
-    description: "Cycle row and column patterns with fallback borrowing when zero-signature rows appear." 
+    tasks: [f931b4a8]
+    description: "Cycle row and column patterns with fallback borrowing when zero-signature rows appear."
   - name: composite_bridge_repair
-    description: "Run the staged clean-up pipeline combining closures, infill, row extensions, and tail propagation." 
+    tasks: [faa9f03d]
+    description: "Run the staged clean-up pipeline combining closures, infill, row extensions, and tail propagation."
   - name: conditional_rotate_flip
-    description: "Crop the dominant component, rotate it 90° CCW, and mirror it when edge dominance requires." 
+    tasks: [fc7cae8d]
+    description: "Crop the dominant component, rotate it 90° CCW, and mirror it when edge dominance requires."
 combinators:
   - name: branch
+    tasks: [0934a4d8]
     description: "Conditional selection between alternative pipelines based on a boolean guard."
   - name: foreach
+    tasks: [135a2760]
     description: "Iterate over a collection (rows, components, etc.) applying a sub-pipeline to each element."
   - name: first_success
+    tasks: [20270e3b]
     description: "Evaluate pipelines in order and return the first successful (non-null) result."
   - name: dispatch
+    tasks: [20a9e565]
     description: "Route execution based on a discrete classification value."
