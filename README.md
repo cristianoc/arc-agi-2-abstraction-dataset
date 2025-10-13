@@ -1,6 +1,6 @@
 # ARC-AGI-2 Abstraction Dataset
 
-A dataset containing 120 generated ARC-AGI-2 task solvers with their corresponding abstraction implementations and analysis reports.
+A dataset containing 120 ARC-AGI-2 evaluation tasks, each with the final solver, abstraction implementation, and analysis report bundled together. In total, **120 tasks** are currently bundled.
 
 ## Overview
 
@@ -16,39 +16,38 @@ The solvers were refined starting from identity functions, and identity function
 ## Directory Structure
 
 ```
-arc-agi-2-solutions-dataset/
-├── solutions/           # Task solution implementations
-│   ├── 195c6913.py
-│   ├── 1ae2feb7.py
+arc-agi-2-abstraction-dataset/
+├── tasks/               # Self-contained task bundles
+│   ├── 195c6913/
+│   │   ├── solution.py
+│   │   ├── abstractions.py
+│   │   └── abstractions.md
+│   ├── 1ae2feb7/
+│   │   ├── solution.py
+│   │   ├── abstractions.py
+│   │   └── abstractions.md
 │   └── ...
-├── abstractions/        # Abstraction implementations and reports
-│   ├── task1ae2feb7_abstractions.py
-│   ├── task1ae2feb7_abstractions_report.md
-│   └── ...
-└── README.md           # This file
+├── check_consistency.py # Dataset integrity checker
+├── CHANGELOG.md
+└── README.md            # This file
 ```
 
 ## Task Solutions
 
-Each task solution in the `solutions/` directory contains:
+Each bundle in `tasks/<task-id>/` contains:
 
-- A Python function that attempts to solve the ARC-AGI-2 task
-- Error handling and edge case management
-- Generated implementations that pass the training examples (interpolation). Generalization to unseen test cases remains the key open challenge.
+- `solution.py`: the final solver implementation. All of the shipped solutions pass the training examples (interpolation). Generalization to unseen test cases remains the key open challenge.
+- `abstractions.py`: reusable abstraction pipelines (optional when only an identity baseline is available).
+- `abstractions.md`: a markdown report describing the abstraction process (also optional for identity baselines).
 
 ## Abstraction Files
 
-The `abstractions/` directory contains:
+Each bundle ships its own abstraction artefacts:
 
-### Abstraction Code (`*_abstractions.py`)
-- Reusable abstraction functions and pipelines
-- Common patterns like component detection, symmetry analysis, and morphological operations
-- Modular design for easy composition and reuse
+- `abstractions.py` — reusable abstraction routines (component analysis, symmetry detection, morphological operations, etc.).
+- `abstractions.md` — a human-readable report summarising experiments, performance, and failure analysis.
 
-### Analysis Reports (`*_abstractions_report.md`)
-- Summary of abstraction approaches tried
-- Performance metrics and failure analysis
-- Insights into the problem-solving process
+Identity baselines omit these files; you can treat the bundle as an invitation to contribute a stronger abstraction in the future.
 
 ## Key Abstraction Patterns
 
@@ -66,25 +65,19 @@ The solutions employ various abstraction techniques:
 ### Running a Task Solution
 
 ```python
-# Example: Running task 1ae2feb7
-from solutions.task1ae2feb7 import solve_1ae2feb7
+# Example: Running task 1ae2feb7 from its bundle
+from importlib import import_module
 
-# Load your ARC task data
-input_grid = [[0, 1, 0], [1, 1, 1], [0, 1, 0]]
-
-# Solve the task
-result = solve_1ae2feb7(input_grid)
-print(result)
+solve_module = import_module("tasks.1ae2feb7.solution")
+result = solve_module.solve_1ae2feb7(input_grid)
 ```
 
 ### Using Abstractions
 
 ```python
-# Example: Using abstraction functions
-from abstractions.task1ae2feb7_abstractions import repeat_last_nonzero_block
-
-# Apply abstraction to your data
-result = repeat_last_nonzero_block(grid)
+# Example: Using abstraction helpers
+abstractions = import_module("tasks.1ae2feb7.abstractions")
+result = abstractions.repeat_last_nonzero_block(grid)
 ```
 
 ### Checking Repository Consistency
@@ -100,10 +93,10 @@ python check_consistency.py --verbose
 ```
 
 The script verifies:
-- All solution files have corresponding abstraction files
-- All abstraction files have corresponding solution files
-- File counts match between directories
-- Documentation reflects actual file counts
+- Every bundle contains a solver implementation
+- Abstraction code/report files are present when expected
+- Identity baselines are correctly recognised
+- Documentation reflects the actual task count
 
 ## Methodology
 

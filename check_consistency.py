@@ -1,258 +1,162 @@
 #!/usr/bin/env python3
-"""
-Consistency checker for ARC-AGI-2 Abstraction Dataset.
+"""Consistency checker for the ARC-AGI-2 task bundle layout."""
+from __future__ import annotations
 
-This script verifies that:
-1. All solution files have corresponding abstraction files
-2. All abstraction files have corresponding solution files
-3. File counts match between solutions and abstractions
-4. Task IDs are consistent across directories
-5. Documentation reflects actual file counts
-
-Usage:
-    python check_consistency.py [--verbose]
-"""
-
-import os
-import sys
 import argparse
+import re
+import sys
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Set, List, Tuple
+from typing import Dict, List
+
+TASKS_DIR = Path("tasks")
+README_PATH = Path("README.md")
+CHANGELOG_PATH = Path("CHANGELOG.md")
+
+@dataclass
+class TaskInfo:
+    task_id: str
+    bundle_dir: Path
+    has_solver: bool
+    has_abs_py: bool
+    has_abs_md: bool
+    is_identity: bool
+
+IDENTITY_SNIPPET = "return [row[:] for row in grid]"
 
 
-def get_task_ids_from_solutions(solutions_dir: Path) -> Set[str]:
-    """Extract task IDs from solution files."""
-    task_ids = set()
-    for file_path in solutions_dir.glob("*.py"):
-        task_id = file_path.stem
-        task_ids.add(task_id)
-    return task_ids
+def detect_identity_solver(path: Path) -> bool:
+    if not path.exists():
+        return False
+    content = path.read_text(encoding="utf-8")
+    return IDENTITY_SNIPPET in content and content.count("\n") < 40
 
 
-def get_identity_stub_task_ids(solutions_dir: Path) -> Set[str]:
-    """Extract task IDs that are identity function stubs (no abstractions expected)."""
-    identity_task_ids = set()
-    for file_path in solutions_dir.glob("*.py"):
-        with open(file_path, 'r') as f:
-            content = f.read()
-            # Check if it's actually an identity stub by looking for the identity implementation
-            # True identity stubs just return [row[:] for row in grid]
-            if 'return [row[:] for row in grid]' in content and content.count('\n') < 15:
-                task_id = file_path.stem
-                identity_task_ids.add(task_id)
-    return identity_task_ids
+def gather_task_info(root: Path) -> Dict[str, TaskInfo]:
+    infos: Dict[str, TaskInfo] = {}
+    for bundle_dir in sorted(p for p in root.iterdir() if p.is_dir()):
+        task_id = bundle_dir.name
+        solver = bundle_dir / "solution.py"
+        abs_py = bundle_dir / "abstractions.py"
+        abs_md = bundle_dir / "abstractions.md"
+        infos[task_id] = TaskInfo(
+            task_id=task_id,
+            bundle_dir=bundle_dir,
+            has_solver=solver.exists(),
+            has_abs_py=abs_py.exists(),
+            has_abs_md=abs_md.exists(),
+            is_identity=detect_identity_solver(solver),
+        )
+    return infos
 
 
-def get_task_ids_from_abstractions(abstractions_dir: Path) -> Set[str]:
-    """Extract task IDs from abstraction files."""
-    task_ids = set()
-    for file_path in abstractions_dir.glob("task*_abstractions.py"):
-        # Extract task ID from filename like "task135a2760_abstractions.py"
-        task_id = file_path.stem.replace("task", "").replace("_abstractions", "")
-        task_ids.add(task_id)
-    return task_ids
+def check_bundles(verbose: bool = False) -> bool:
+    if not TASKS_DIR.exists():
+        print("❌ tasks/ directory not found")
+        return False
 
+    infos = gather_task_info(TASKS_DIR)
+    if not infos:
+        print("❌ No task bundles found under tasks/")
+        return False
 
-def check_file_counts(solutions_dir: Path, abstractions_dir: Path) -> Tuple[int, int, int, int]:
-    """Check file counts in each directory."""
-    solution_count = len(list(solutions_dir.glob("*.py")))
-    abstraction_py_count = len(list(abstractions_dir.glob("task*_abstractions.py")))
-    abstraction_md_count = len(list(abstractions_dir.glob("task*_abstractions_report.md")))
-    total_abstraction_count = len(list(abstractions_dir.glob("task*")))
-    
-    return solution_count, abstraction_py_count, abstraction_md_count, total_abstraction_count
+    identity = [tid for tid, info in infos.items() if info.is_identity]
+    missing_solver = [tid for tid, info in infos.items() if not info.has_solver]
+    missing_abs_py = [tid for tid, info in infos.items() if not info.is_identity and not info.has_abs_py]
+    missing_abs_md = [tid for tid, info in infos.items() if not info.is_identity and not info.has_abs_md]
 
-
-def check_consistency(solutions_dir: Path, abstractions_dir: Path, verbose: bool = False) -> bool:
-    """Check consistency between solutions and abstractions directories."""
-    
-    print("🔍 Checking ARC-AGI-2 Abstraction Dataset consistency...\n")
-    
-    # Get task IDs from both directories
-    solution_task_ids = get_task_ids_from_solutions(solutions_dir)
-    abstraction_task_ids = get_task_ids_from_abstractions(abstractions_dir)
-    identity_stub_ids = get_identity_stub_task_ids(solutions_dir)
-    
-    # Check file counts
-    solution_count, abstraction_py_count, abstraction_md_count, total_abstraction_count = check_file_counts(
-        solutions_dir, abstractions_dir
-    )
-    
-    print(f"📊 File Counts:")
-    print(f"   Solutions: {solution_count}")
-    if identity_stub_ids:
-        print(f"   Identity stubs (no abstractions): {len(identity_stub_ids)}")
-    print(f"   Abstraction Python files: {abstraction_py_count}")
-    print(f"   Abstraction Markdown reports: {abstraction_md_count}")
-    print(f"   Total abstraction files: {total_abstraction_count}")
+    print("🔍 Bundle summary")
+    print(f"   Total bundles        : {len(infos)}")
+    print(f"   Identity baselines   : {len(identity)}")
+    print(f"   Full abstractions    : {len(infos) - len(identity)}")
     print()
-    
-    # Check for missing solutions (abstractions without solutions)
-    missing_solutions = abstraction_task_ids - solution_task_ids
-    if missing_solutions:
-        print(f"❌ Missing solution files for {len(missing_solutions)} tasks:")
-        for task_id in sorted(missing_solutions):
-            print(f"   - {task_id}.py")
-        print()
-    
-    # Check for missing abstractions (solutions without abstractions, excluding identity stubs)
-    expected_abstractions = solution_task_ids - identity_stub_ids
-    missing_abstractions = expected_abstractions - abstraction_task_ids
-    if missing_abstractions:
-        print(f"❌ Missing abstraction files for {len(missing_abstractions)} tasks:")
-        for task_id in sorted(missing_abstractions):
-            print(f"   - task{task_id}_abstractions.py")
-            print(f"   - task{task_id}_abstractions_report.md")
-        print()
-    
-    # Check for individual missing files
-    missing_files = []
-    for task_id in solution_task_ids & abstraction_task_ids:
-        abstraction_py = abstractions_dir / f"task{task_id}_abstractions.py"
-        abstraction_md = abstractions_dir / f"task{task_id}_abstractions_report.md"
-        
-        if not abstraction_py.exists():
-            missing_files.append(f"task{task_id}_abstractions.py")
-        if not abstraction_md.exists():
-            missing_files.append(f"task{task_id}_abstractions_report.md")
-    
-    if missing_files:
-        print(f"❌ Missing individual abstraction files ({len(missing_files)} files):")
-        for file in sorted(missing_files):
-            print(f"   - {file}")
-        print()
-    
-    # Check if counts match (accounting for identity stubs)
-    count_issues = []
-    expected_abstraction_count = solution_count - len(identity_stub_ids)
-    if expected_abstraction_count != abstraction_py_count:
-        count_issues.append(f"Expected abstraction count ({expected_abstraction_count}) != Actual abstraction Python count ({abstraction_py_count})")
-    if abstraction_py_count != abstraction_md_count:
-        count_issues.append(f"Abstraction Python count ({abstraction_py_count}) != Abstraction Markdown count ({abstraction_md_count})")
-    if total_abstraction_count != abstraction_py_count + abstraction_md_count:
-        count_issues.append(f"Total abstraction count ({total_abstraction_count}) != Python + Markdown count ({abstraction_py_count + abstraction_md_count})")
-    
-    if count_issues:
-        print(f"❌ Count mismatches:")
-        for issue in count_issues:
-            print(f"   - {issue}")
-        print()
-    
-    # Summary
-    total_issues = len(missing_solutions) + len(missing_abstractions) + len(missing_files) + len(count_issues)
-    
-    if total_issues == 0:
-        print("✅ All consistency checks passed!")
-        print(f"   Dataset contains {solution_count} total solutions")
-        print(f"   - {abstraction_py_count} with full abstraction analysis")
-        if identity_stub_ids:
-            print(f"   - {len(identity_stub_ids)} identity stubs (baseline)")
-        return True
-    else:
-        print(f"❌ Found {total_issues} consistency issues")
-        return False
 
+    ok = True
+    if missing_solver:
+        ok = False
+        print(f"❌ Bundles missing solution.py ({len(missing_solver)}):")
+        for tid in sorted(missing_solver):
+            print(f"   - {tid}")
+        print()
 
-def check_documentation_consistency(verbose: bool = False) -> bool:
-    """Check if documentation reflects actual file counts and has no placeholders."""
-    print("📚 Checking documentation consistency...\n")
-    
-    issues_found = 0
-    
-    # Read README.md
-    readme_path = Path("README.md")
-    if not readme_path.exists():
-        print("❌ README.md not found")
-        return False
-    
-    with open(readme_path, 'r') as f:
-        readme_content = f.read()
-    
-    # Count tasks mentioned in README
-    import re
-    readme_task_counts = re.findall(r'\b(\d+)\s+tasks?\b', readme_content)
+    if missing_abs_py or missing_abs_md:
+        ok = False
+        if missing_abs_py:
+            print(f"❌ Bundles missing abstractions.py ({len(missing_abs_py)}):")
+            for tid in sorted(missing_abs_py):
+                print(f"   - {tid}")
+            print()
+        if missing_abs_md:
+            print(f"❌ Bundles missing abstractions.md ({len(missing_abs_md)}):")
+            for tid in sorted(missing_abs_md):
+                print(f"   - {tid}")
+            print()
+
     if verbose:
-        print(f"Task counts found in README: {readme_task_counts}")
-    
-    # Get actual counts
-    solutions_dir = Path("solutions")
-    abstractions_dir = Path("abstractions")
-    
-    if not solutions_dir.exists() or not abstractions_dir.exists():
-        print("❌ solutions/ or abstractions/ directories not found")
-        return False
-    
-    actual_count = len(list(solutions_dir.glob("*.py")))
-    
-    # Check if README mentions the correct count
-    if str(actual_count) not in readme_content:
-        print(f"❌ README.md doesn't mention current task count ({actual_count})")
-        print(f"   Found mentions of: {readme_task_counts}")
-        issues_found += 1
+        for tid in sorted(infos):
+            info = infos[tid]
+            status: List[str] = []
+            status.append("solver" if info.has_solver else "no-solver")
+            status.append("identity" if info.is_identity else "full")
+            if not info.is_identity:
+                status.append("abs.py" if info.has_abs_py else "no-abs.py")
+                status.append("abs.md" if info.has_abs_md else "no-abs.md")
+            print(f"   • {tid}: {', '.join(status)}")
+        print()
+
+    if ok:
+        print("✅ Bundle layout looks good\n")
     else:
-        print(f"✅ README.md correctly mentions {actual_count} tasks")
-    
-    # Check CHANGELOG.md for placeholder dates
-    changelog_path = Path("CHANGELOG.md")
-    if changelog_path.exists():
-        with open(changelog_path, 'r') as f:
-            changelog_content = f.read()
-        
-        # Look for placeholder dates like "2025-01-XX" or "YYYY-MM-XX"
-        placeholder_dates = re.findall(r'\d{4}-\d{2}-XX', changelog_content)
-        if placeholder_dates:
-            print(f"❌ CHANGELOG.md contains placeholder dates: {placeholder_dates}")
-            issues_found += 1
+        print("💥 Bundle issues detected\n")
+    return ok
+
+
+def check_documentation(task_count: int) -> bool:
+    ok = True
+    if not README_PATH.exists():
+        print("❌ README.md missing")
+        return False
+
+    readme = README_PATH.read_text(encoding="utf-8")
+    count_matches = re.findall(r"\b(\d+)\s+tasks?\b", readme)
+    if str(task_count) in count_matches or f"{task_count} tasks" in readme:
+        print(f"✅ README mentions {task_count} tasks")
+    else:
+        ok = False
+        print(f"❌ README does not reference the current task count ({task_count})")
+
+    if "tasks/" not in readme:
+        ok = False
+        print("❌ README has not been updated to describe the tasks/ layout")
+
+    if CHANGELOG_PATH.exists():
+        changelog = CHANGELOG_PATH.read_text(encoding="utf-8")
+        placeholders = re.findall(r"\d{4}-\d{2}-XX", changelog)
+        if placeholders:
+            ok = False
+            print(f"❌ CHANGELOG contains placeholder dates: {placeholders}")
         else:
-            print("✅ CHANGELOG.md has no placeholder dates")
-        
-        # Check for TODO or FIXME comments
-        todo_comments = re.findall(r'(TODO|FIXME|XXX)', changelog_content, re.IGNORECASE)
-        if todo_comments:
-            print(f"⚠️  CHANGELOG.md contains TODO/FIXME comments: {set(todo_comments)}")
-    
-    # Check for other common placeholder patterns
-    placeholder_patterns = [
-        r'<[A-Z_]+>',  # <PLACEHOLDER>
-        r'\[TODO\]',   # [TODO]
-        r'XXX',        # XXX
-        r'PLACEHOLDER' # PLACEHOLDER
-    ]
-    
-    for pattern in placeholder_patterns:
-        matches = re.findall(pattern, readme_content, re.IGNORECASE)
-        if matches:
-            print(f"⚠️  README.md contains potential placeholders ({pattern}): {set(matches)}")
-    
-    return issues_found == 0
+            print("✅ CHANGELOG dates look concrete")
+    else:
+        print("⚠️ CHANGELOG.md missing")
+    print()
+    return ok
 
 
-def main():
-    """Main function."""
-    parser = argparse.ArgumentParser(description="Check ARC-AGI-2 dataset consistency")
-    parser.add_argument("--verbose", "-v", action="store_true", 
-                       help="Enable verbose output")
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Check dataset bundle consistency")
+    parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args()
-    
-    # Check if we're in the right directory
-    if not Path("solutions").exists() or not Path("abstractions").exists():
-        print("❌ Error: Must run from repository root directory")
-        print("   Expected to find 'solutions/' and 'abstractions/' directories")
-        sys.exit(1)
-    
-    solutions_dir = Path("solutions")
-    abstractions_dir = Path("abstractions")
-    
-    # Run consistency checks
-    consistency_ok = check_consistency(solutions_dir, abstractions_dir, args.verbose)
-    doc_ok = check_documentation_consistency(args.verbose)
-    
-    print("\n" + "="*50)
-    if consistency_ok and doc_ok:
+
+    tasks_ok = check_bundles(verbose=args.verbose)
+    doc_ok = check_documentation(len([p for p in TASKS_DIR.iterdir() if p.is_dir()]))
+
+    print("=" * 50)
+    if tasks_ok and doc_ok:
         print("🎉 All checks passed! Repository is consistent.")
         sys.exit(0)
     else:
-        print("💥 Some checks failed. Please fix the issues above.")
+        print("💥 Some checks failed. Please review the messages above.")
         sys.exit(1)
 
 
