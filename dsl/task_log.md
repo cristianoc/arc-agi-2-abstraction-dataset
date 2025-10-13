@@ -56,7 +56,7 @@ Each entry appends to the end of this file in chronological order.
       row_cursor += glyph.height
     return right_panel
   gaps: "Needed primitives for segmenting contiguous row blocks, majority-color voting, template lookup, and overlay."
-  actions: "Added segment_rows, majority_color, template_lookup, and overlay primitives."
+  actions: "Introduced template_router combinator. Added segment_rows, majority_color, template_lookup, and overlay primitives."
 - task: 13e47133
   summary: "Detect colored anchors for glyphs and overlay prelearned templates using color- and size-specific offsets."
   dsl: |
@@ -169,7 +169,7 @@ Each entry appends to the end of this file in chronological order.
     overlay_object_rows(grid, period=6, phase=0, overlay_color=3, ignore_color=4)
     return grid
   gaps: "Needed primitives for stripe projection and row overlays keyed to modular indices."
-  actions: "Added stripe_projection and overlay_object_rows primitives."
+  actions: "Introduced projection_router combinator. Added stripe_projection and overlay_object_rows primitives."
 - task: 247ef758
   summary: "Use the constant-axis column to split glyphs, then place each color onto every row/column beacon combination."
   dsl: |
@@ -179,7 +179,7 @@ Each entry appends to the end of this file in chronological order.
     cartesian_project(grid, axis=axis, row_markers=row_markers, col_markers=col_markers, order="bottom_first")
     return grid
   gaps: "Needed primitives to detect the axis column, gather border markers, and execute the cartesian placement."
-  actions: "Added detect_axis_column, extract_markers, and cartesian_project primitives."
+  actions: "Introduced projection_router combinator. Added detect_axis_column, extract_markers, and cartesian_project primitives."
 - task: 269e22fb
   summary: "Align the input inside the canonical 20×20 template with dihedral transforms and optional color swap, then invert back."
   dsl: |
@@ -188,7 +188,7 @@ Each entry appends to the end of this file in chronological order.
     let unaligned = apply_transform(filled, align.inverse_transform)
     return remap_colors(unaligned, align.reverse_mapping)
   gaps: "Needed alignment, template embedding, transform application, and color remapping primitives."
-  actions: "Added align_template, template_fill, apply_transform, and remap_colors primitives."
+  actions: "Introduced template_router combinator. Added align_template, template_fill, apply_transform, and remap_colors primitives."
 - task: 271d71e2
   summary: "Identity baseline; no abstraction applied."
   dsl: |
@@ -240,7 +240,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return template_reconstruction(grid)
   gaps: "Captured the template selection and continuation rule inside a single primitive."
-  actions: "Added template_reconstruction primitive."
+  actions: "Introduced template_router combinator. Added template_reconstruction primitive."
 - task: 31f7f899
   summary: "Find the dense center row, measure stripe heights, sort them, and repaint columns to increase monotonically."
   dsl: |
@@ -294,7 +294,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return centroid_projection(grid, shift_rows=5)
   gaps: "Needed a primitive for centroid-driven projection and recoloring."
-  actions: "Added centroid_projection primitive."
+  actions: "Introduced projection_router combinator. Added centroid_projection primitive."
 - task: 446ef5d2
   summary: "Compact each color's components into a near-square grid and center the assembled rectangle with borders."
   dsl: |
@@ -312,7 +312,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return corner_projection(grid)
   gaps: "Captured the sentinel-guided corner mirroring into a single primitive."
-  actions: "Added corner_projection primitive."
+  actions: "Introduced projection_router combinator. Added corner_projection primitive."
 - task: 4c3d4a41
   summary: "Shift right blocks upward where left wedge 5s persist, then mirror the wedge onto the right." 
   dsl: |
@@ -390,7 +390,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return shadow_projection(grid)
   gaps: "Needed a primitive for combined shadow casting passes." 
-  actions: "Added shadow_projection primitive."
+  actions: "Introduced projection_router combinator. Added shadow_projection primitive."
 - task: 65b59efc
   summary: "Segment the board by 5-separators and fill each cell via template lookup with fallback dominant tiles." 
   dsl: |
@@ -512,7 +512,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return legend_template_fill(grid, frame_color=5)
   gaps: "Required a primitive for block-size detection, legend decoding, and template rendering." 
-  actions: "Added legend_template_fill primitive."
+  actions: "Introduced template_router combinator. Added legend_template_fill primitive."
 - task: eee78d87
   summary: "Classify the centre neighbourhood and pick the matching 16×16 template (plus/H/X)." 
   dsl: |
@@ -626,7 +626,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return legend_template_fill(grid, frame_color=5)
   gaps: "Required a primitive wrapping block-size inference, legend decoding, and template rendering." 
-  actions: "Added legend_template_fill primitive."
+  actions: "Introduced template_router combinator. Added legend_template_fill primitive."
 - task: eee78d87
   summary: "Classify the centre neighbourhood and pick the matching 16×16 template (plus/H/X)." 
   dsl: |
@@ -684,7 +684,7 @@ Each entry appends to the end of this file in chronological order.
     let comps = components(grid, color=2)
     return ornament_template_expand(grid, comps)
   gaps: "Needed a primitive that captures the ornament replication with centre guards and colour de-duplication." 
-  actions: "Added ornament_template_expand primitive."
+  actions: "Introduced template_router combinator. Added ornament_template_expand primitive."
 - task: b5ca7ac4
   summary: "Detect 5×5 rings, split them by outer colour, and lane-pack them toward opposing borders without overlap." 
   dsl: |
@@ -738,7 +738,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return canonical_template(grid)
   gaps: "Added a primitive for marker-based template placement." 
-  actions: "Introduced canonical_template primitive."
+  actions: "Introduced template_router combinator. Added canonical_template primitive."
 - task: 6ffbe589
   summary: "Crop the active block, inspect its color triad, and apply the matching rotation recipe." 
   dsl: |
@@ -828,13 +828,13 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return path_projection(grid)
   gaps: "Introduced a primitive for guided path projection." 
-  actions: "Added path_projection primitive."
+  actions: "Introduced projection_router combinator. Added path_projection primitive."
 - task: 88e364bc
   summary: "Use a 5x5 template lookup to reposition colour-4 cells within digit blocks." 
   dsl: |
     return block_template_lookup(grid)
   gaps: "Needed a primitive for template-driven recolouring inside blocks." 
-  actions: "Added block_template_lookup primitive."
+  actions: "Introduced template_router combinator. Added block_template_lookup primitive."
 - task: 89565ca0
   summary: "Rank stripes via dominance and fallback rules to build prefix histograms per colour." 
   dsl: |
@@ -930,7 +930,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return template_transfer(grid)
   gaps: "Needed a primitive for template transfer across marker lattices." 
-  actions: "Added template_transfer primitive." 
+  actions: "Introduced template_router combinator. Added template_transfer primitive." 
 - task: a47bf94d
   summary: "Place plus and X motifs on shared axes derived from square detections." 
   dsl: |
@@ -942,7 +942,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return augmented_projection(grid)
   gaps: "Needed a primitive for augmented border projection." 
-  actions: "Added augmented_projection primitive." 
+  actions: "Introduced projection_router combinator. Added augmented_projection primitive." 
 - task: 65b59efc
   summary: "Segment the board by 5-separators and fill each cell via template lookup with fallback dominant tiles." 
   dsl: |
