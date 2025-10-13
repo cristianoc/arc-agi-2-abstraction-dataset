@@ -440,6 +440,9 @@ combinators:
   - name: overlay_router
     tasks: [136b0064, 20270e3b, 221dfab4, e87109e9]
     description: "Coordinate overlay selection and application across multiple overlay-based steps."
+  - name: cycle_router
+    tasks: [78332cb0, f931b4a8]
+    description: "Coordinate cyclic rearrangements and reuse logic for rotated/borrowed cycle patterns."
   - name: branch
     tasks: [0934a4d8]
     description: "Conditional selection between alternative pipelines based on a boolean guard."
