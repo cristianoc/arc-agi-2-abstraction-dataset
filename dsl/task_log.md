@@ -470,7 +470,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return halo_realign_prune(grid)
   gaps: "Needed a primitive combining halo expansion, majority realignment, and pruning." 
-  actions: "Added halo_realign_prune primitive."
+  actions: "Introduced halo_router combinator. Added halo_realign_prune primitive."
 - task: dfadab01
   summary: "Apply colour-conditioned 4×4 patch motifs learned from training examples." 
   dsl: |
@@ -750,7 +750,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return tip_halo(grid)
   gaps: "Added a primitive for tip detection plus halo drawing." 
-  actions: "Introduced tip_halo primitive."
+  actions: "Introduced halo_router combinator. Added tip_halo primitive."
 - task: 7491f3cf
   summary: "Inspect the left/centre panel shapes and apply either the cross overlay or block template before copying right." 
   dsl: |
@@ -876,7 +876,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return accessible_halo(grid)
   gaps: "Introduced a primitive for guarded halo colouring of accessible regions." 
-  actions: "Added accessible_halo primitive." 
+  actions: "Introduced halo_router combinator. Added accessible_halo primitive." 
 - task: 9385bd28
   summary: "Apply legend-guided bounding-box recolouring with zero-pair handling and protection." 
   dsl: |
