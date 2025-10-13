@@ -512,7 +512,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return legend_template_fill(grid, frame_color=5)
   gaps: "Required a primitive for block-size detection, legend decoding, and template rendering." 
-  actions: "Introduced template_router combinator. Added legend_template_fill primitive."
+  actions: "Introduced template_router combinator. Introduced legend_router combinator. Added legend_template_fill primitive."
 - task: eee78d87
   summary: "Classify the centre neighbourhood and pick the matching 16×16 template (plus/H/X)." 
   dsl: |
@@ -626,7 +626,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return legend_template_fill(grid, frame_color=5)
   gaps: "Required a primitive wrapping block-size inference, legend decoding, and template rendering." 
-  actions: "Introduced template_router combinator. Added legend_template_fill primitive."
+  actions: "Introduced template_router combinator. Introduced legend_router combinator. Added legend_template_fill primitive."
 - task: eee78d87
   summary: "Classify the centre neighbourhood and pick the matching 16×16 template (plus/H/X)." 
   dsl: |
@@ -882,7 +882,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return legend_guided_fill(grid)
   gaps: "Needed a primitive for legend-driven fills with guards." 
-  actions: "Added legend_guided_fill primitive." 
+  actions: "Introduced legend_router combinator. Added legend_guided_fill primitive." 
 - task: 97d7923e
   summary: "Fill sandwich columns only when matching caps and support heuristics agree." 
   dsl: |
