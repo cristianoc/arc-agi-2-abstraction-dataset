@@ -397,6 +397,70 @@ Each entry appends to the end of this file in chronological order.
     return mapped_tiles(grid)
   gaps: "Introduced a primitive for separator-based template mosaics." 
   actions: "Added mapped_tiles primitive."
+- task: aa4ec2a5
+  summary: "Annotate each colour-1 component with segment-aware framing that preserves internal holes." 
+  dsl: |
+    let comps = components(grid, color=1)
+    foreach comp in comps:
+      segment_frame(grid, comp, frame_color=2, hole_color=6, interior_color=8)
+    return grid
+  gaps: "Needed a primitive capturing per-row framing with hole detection around components." 
+  actions: "Added segment_frame primitive."
+- task: abc82100
+  summary: "Classify every cell via a hand-crafted feature vector and 1-NN over the provided training grids." 
+  dsl: |
+    return cell_knn_classifier(grid, training_examples=TRAIN_DATA, categorical_idx=CATEGORICAL_IDX)
+  gaps: "Required a primitive to train/apply a per-cell kNN classifier driven by engineered features." 
+  actions: "Added cell_knn_classifier primitive."
+- task: b0039139
+  summary: "Extract the colour-4 stencil and replicate it across counted colour-3 segments with orientation-aware spacing." 
+  dsl: |
+    return segment_tiling(grid, separator_color=1, template_color=4, repeat_color=3)
+  gaps: "Needed a primitive that segments by all-1 dividers and rebuilds the tiled pattern." 
+  actions: "Added segment_tiling primitive."
+- task: b10624e5
+  summary: "Infer ornament colours around each 2-component and expand them with centre-aware horizontal/vertical halos." 
+  dsl: |
+    let comps = components(grid, color=2)
+    return ornament_template_expand(grid, comps)
+  gaps: "Needed a primitive that captures the ornament replication with centre guards and colour de-duplication." 
+  actions: "Added ornament_template_expand primitive."
+- task: b5ca7ac4
+  summary: "Detect 5×5 rings, split them by outer colour, and lane-pack them toward opposing borders without overlap." 
+  dsl: |
+    return ring_lane_pack(grid, ring_size=5)
+  gaps: "Required a primitive for colour-aware lane packing of ring components." 
+  actions: "Added ring_lane_pack primitive."
+- task: b6f77b65
+  summary: "Decode vertical segment strings and emit the matching digit templates with corrected alignment." 
+  dsl: |
+    return segment_digit_lookup(grid, mapping=MAPPING)
+  gaps: "Needed a primitive that performs segment-code lookup into pre-learned templates." 
+  actions: "Added segment_digit_lookup primitive."
+- task: b99e7126
+  summary: "Recover the minority macro tile and repaint every masked position with its 3×3 pattern." 
+  dsl: |
+    return macro_mask_completion(grid)
+  gaps: "Needed a primitive for mask-guided macro tile completion." 
+  actions: "Added macro_mask_completion primitive."
+- task: b9e38dc0
+  summary: "Grow the wedge component toward the barrier while respecting orientation and barrier clamping." 
+  dsl: |
+    return segmented_wedge_fill(grid)
+  gaps: "Required a primitive for orientation-aware wedge propagation with barrier guards." 
+  actions: "Added segmented_wedge_fill primitive."
+- task: bf45cf4b
+  summary: "Tile the multicolour component wherever the mask component is active, replicating its bounding box." 
+  dsl: |
+    return mask_pattern_tiling(grid)
+  gaps: "Needed a primitive for mask-driven pattern tiling." 
+  actions: "Added mask_pattern_tiling primitive."
+- task: c4d067a0
+  summary: "Bottom-align block columns and stack them per instruction columns with learned spacing." 
+  dsl: |
+    return column_instruction_stack(grid)
+  gaps: "Required a primitive orchestrating column alignment and instruction-guided stacking." 
+  actions: "Added column_instruction_stack primitive."
 - task: 67e490f4
   summary: "Scan two-colour squares, pick the motif, and recolour components using matched shapes elsewhere." 
   dsl: |

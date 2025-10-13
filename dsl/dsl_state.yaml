@@ -1,5 +1,5 @@
-version: 63
-updated: 2025-10-13T07:56:17Z
+version: 64
+updated: 2025-10-13T09:10:00Z
 primitives:
   - name: bbox
     description: "Return the axis-aligned bounding box for cells matching a predicate (e.g., specific color)."
@@ -217,6 +217,26 @@ primitives:
     description: "Classify monochrome components via decision rules and recolor selected ones." 
   - name: mapped_tiles
     description: "Segment the grid by separators and fill each cell using a template lookup with fallback tiling." 
+  - name: segment_frame
+    description: "Apply segment-aware framing to a component, including hole detection and selective recolouring." 
+  - name: cell_knn_classifier
+    description: "Train and apply a per-cell kNN classifier using engineered row/column features." 
+  - name: segment_tiling
+    description: "Replicate a template block across segments separated by dividers with orientation-aware spacing." 
+  - name: ornament_template_expand
+    description: "Expand ornament colours around components using centre-aware horizontal and vertical halos." 
+  - name: ring_lane_pack
+    description: "Assign ring components to border lanes by outer colour while preventing overlaps." 
+  - name: segment_digit_lookup
+    description: "Decode segment activation strings and emit the corresponding digit templates." 
+  - name: macro_mask_completion
+    description: "Complete macro tiles by repainting every position indicated by a minority mask tile." 
+  - name: segmented_wedge_fill
+    description: "Grow wedge components toward barriers with orientation-aware clamping." 
+  - name: mask_pattern_tiling
+    description: "Tile a multicolour component wherever a mask component evaluates to true." 
+  - name: column_instruction_stack
+    description: "Align and stack block columns according to instruction sequences and learned spacing." 
 combinators:
   - name: branch
     description: "Conditional selection between alternative pipelines based on a boolean guard."
