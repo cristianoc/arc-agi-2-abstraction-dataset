@@ -56,7 +56,7 @@ Each entry appends to the end of this file in chronological order.
       row_cursor += glyph.height
     return right_panel
   gaps: "Needed primitives for segmenting contiguous row blocks, majority-color voting, template lookup, and overlay."
-  actions: "Introduced template_router combinator. Added segment_rows, majority_color, template_lookup, and overlay primitives."
+  actions: "Introduced template_router combinator. Introduced overlay_router combinator. Added segment_rows, majority_color, template_lookup, and overlay primitives."
 - task: 13e47133
   summary: "Detect colored anchors for glyphs and overlay prelearned templates using color- and size-specific offsets."
   dsl: |
@@ -91,7 +91,7 @@ Each entry appends to the end of this file in chronological order.
     stack_components(narrow, anchor=dominant, above=False, column≈mean_left(narrow))
     return canvas
   gaps: "Needed a primitive to express controlled stacking of components relative to an anchor."
-  actions: "Added stack_components primitive (overlay already covers component placement)."
+  actions: "Added stack_components primitive (overlay_router already covers component placement)."
 - task: 16de56c4
   summary: "First extend row-wise progressions, then propagate column-wise strides using the original as reference."
   dsl: |
@@ -99,7 +99,7 @@ Each entry appends to the end of this file in chronological order.
     let after_cols = propagate_stride(after_rows, axis="column", reference=grid)
     return after_cols
   gaps: "Needed a primitive capturing gcd-based stride propagation along rows/columns."
-  actions: "Added propagate_stride primitive."
+  actions: "Introduced propagate_router combinator. Added propagate_stride primitive."
 - task: 1818057f
   summary: "Recolor every 4-colored plus motif into color 8 without interference between updates."
   dsl: |
@@ -125,7 +125,7 @@ Each entry appends to the end of this file in chronological order.
     propagate_pattern(pattern, anchors, fill_color, cap_color, directions={"up","down"})
     return grid
   gaps: "Needed a primitive abstracting the legend-driven propagation once anchors and colors are known."
-  actions: "Added propagate_pattern primitive."
+  actions: "Introduced propagate_router combinator. Added propagate_pattern primitive."
 - task: 1ae2feb7
   summary: "For each row, reflect non-zero segments across the barrier of 2s, repeating them with their intrinsic spacing."
   dsl: |
@@ -143,7 +143,7 @@ Each entry appends to the end of this file in chronological order.
       recolor(grid, {SPECIAL: FILL})
     ])
   gaps: "Required primitives for fold overlay and band gluing, plus a combinator to pick the first succeeding pipeline."
-  actions: "Added fold_overlay, band_glue, recolor primitives and first_success combinator."
+  actions: "Introduced overlay_router combinator. Added fold_overlay, band_glue, recolor primitives and first_success combinator."
 - task: 20a9e565
   summary: "Group non-zero columns, classify the pattern, and render the corresponding layout template."
   dsl: |
@@ -169,7 +169,7 @@ Each entry appends to the end of this file in chronological order.
     overlay_object_rows(grid, period=6, phase=0, overlay_color=3, ignore_color=4)
     return grid
   gaps: "Needed primitives for stripe projection and row overlays keyed to modular indices."
-  actions: "Introduced projection_router combinator. Added stripe_projection and overlay_object_rows primitives."
+  actions: "Introduced projection_router combinator. Introduced overlay_router combinator. Added stripe_projection and overlay_object_rows primitives."
 - task: 247ef758
   summary: "Use the constant-axis column to split glyphs, then place each color onto every row/column beacon combination."
   dsl: |
@@ -506,7 +506,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return digit_nn_overlay(grid, samples=_SAMPLE_DATA)
   gaps: "Needed a primitive for block extraction, mask comparison, and diff overlay." 
-  actions: "Added digit_nn_overlay primitive."
+  actions: "Introduced overlay_router combinator. Added digit_nn_overlay primitive."
 - task: edb79dae
   summary: "Detect the legend, infer digit templates, and refill the framed region accordingly." 
   dsl: |
@@ -620,7 +620,7 @@ Each entry appends to the end of this file in chronological order.
   dsl: |
     return digit_nn_overlay(grid, samples=_SAMPLE_DATA)
   gaps: "Needed a primitive for block extraction, mask comparison, and diff overlay." 
-  actions: "Added digit_nn_overlay primitive."
+  actions: "Introduced overlay_router combinator. Added digit_nn_overlay primitive."
 - task: edb79dae
   summary: "Detect the legend, infer digit templates, and refill the framed region accordingly." 
   dsl: |
