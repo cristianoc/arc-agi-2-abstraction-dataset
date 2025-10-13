@@ -425,6 +425,9 @@ primitives:
     tasks: [fc7cae8d]
     description: "Crop the dominant component, rotate it 90° CCW, and mirror it when edge dominance requires."
 combinators:
+  - name: halo_router
+    tasks: [71e489b6, 8f3a5a89, de809cff]
+    description: "Coordinate halo detection, propagation, and pruning behaviours."
   - name: scoreboard_router
     tasks: [58490d8a, 58f5dbd5]
     description: "Coordinate scoreboard counting and render pipelines."
