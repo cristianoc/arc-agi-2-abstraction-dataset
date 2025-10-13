@@ -425,6 +425,9 @@ primitives:
     tasks: [fc7cae8d]
     description: "Crop the dominant component, rotate it 90° CCW, and mirror it when edge dominance requires."
 combinators:
+  - name: propagate_router
+    tasks: [16de56c4, 195c6913]
+    description: "Coordinate propagation behaviours such as stride-based and pattern-based extensions."
   - name: variant_dispatch
     tasks: [c7f57c3e, cb2d8a2c, 6ffbe589, 7491f3cf, eee78d87, a251c730]
     description: "Select among variant-specific pipelines based on a classifier outcome."
@@ -434,6 +437,9 @@ combinators:
   - name: template_router
     tasks: [136b0064, 269e22fb, 2d0172a1, edb79dae, b10624e5, 6e4f6532, 88e364bc, a395ee82]
     description: "Coordinate template selection, alignment, and rendering across template-driven pipelines."
+  - name: overlay_router
+    tasks: [136b0064, 20270e3b, 221dfab4, e87109e9]
+    description: "Coordinate overlay selection and application across multiple overlay-based steps."
   - name: branch
     tasks: [0934a4d8]
     description: "Conditional selection between alternative pipelines based on a boolean guard."
