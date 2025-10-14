@@ -14,9 +14,11 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
-from typing import Dict, Iterable, List, Sequence, Set, Tuple
+import ast
+from typing import Callable, Dict, Iterable, List, Sequence, Set, Tuple, TypeVar
 
 TYPING_IMPORTS = {"Any", "Dict", "Iterable", "Iterator", "List", "Optional", "Sequence", "Set", "Tuple"}
+TYPING_IMPORTS.update({"Callable", "TypeVar"})
 BUILTIN_MAP = {
     "Bool": "bool",
     "Boolean": "bool",
@@ -149,13 +151,160 @@ def parse_lambda_block(text: str) -> Tuple[str, Set[str]]:
     return code, tokens
 
 
+ALLOWED_BINOPS = (ast.Add, ast.Sub, ast.Mult, ast.Div)
+
+
+def is_pure_expr(node: ast.AST) -> bool:
+    if isinstance(node, ast.Name):
+        return True
+    if isinstance(node, ast.Call):
+        if not is_pure_expr(node.func):
+            return False
+        return all(is_pure_expr(arg) for arg in node.args) and all(is_pure_expr(kw.value) for kw in node.keywords)
+    if isinstance(node, ast.Attribute):
+        return is_pure_expr(node.value)
+    if isinstance(node, ast.Tuple):
+        return all(is_pure_expr(elt) for elt in node.elts)
+    if isinstance(node, ast.Constant):
+        return True
+    if isinstance(node, ast.BinOp):
+        return isinstance(node.op, ALLOWED_BINOPS) and is_pure_expr(node.left) and is_pure_expr(node.right)
+    if isinstance(node, ast.Compare):
+        return is_pure_expr(node.left) and all(is_pure_expr(comp) for comp in node.comparators)
+    if isinstance(node, ast.BoolOp):
+        return all(is_pure_expr(value) for value in node.values)
+    if isinstance(node, ast.Subscript):
+        return is_pure_expr(node.value) and is_pure_expr(node.slice)
+    if isinstance(node, ast.UnaryOp):
+        return is_pure_expr(node.operand)
+    if isinstance(node, ast.ListComp):
+        if not is_pure_expr(node.elt):
+            return False
+        for comp in node.generators:
+            if comp.is_async:
+                return False
+            if not is_pure_expr(comp.iter):
+                return False
+            if comp.ifs and not all(is_pure_expr(test) for test in comp.ifs):
+                return False
+        return True
+    if isinstance(node, ast.GeneratorExp):
+        if not is_pure_expr(node.elt):
+            return False
+        for comp in node.generators:
+            if comp.is_async:
+                return False
+            if not is_pure_expr(comp.iter):
+                return False
+            if comp.ifs and not all(is_pure_expr(test) for test in comp.ifs):
+                return False
+        return True
+    if isinstance(node, ast.Lambda):
+        if node.args.defaults or node.args.kw_defaults:
+            return False
+        if node.args.vararg or node.args.kwarg:
+            return False
+        return is_pure_expr(node.body)
+    return False
+
+
+def _validate_guard_if(stmt: ast.If, source_path: Path, violations: List[str]) -> None:
+    current = stmt
+    while True:
+        if len(current.body) != 1 or not isinstance(current.body[0], ast.Return):
+            violations.append(f"{source_path}:{current.lineno}: guard if must immediately return")
+            return
+        ret_stmt = current.body[0]
+        if ret_stmt.value is not None and not is_pure_expr(ret_stmt.value):
+            violations.append(f"{source_path}:{ret_stmt.lineno}: guard return expression contains disallowed constructs")
+            return
+        if not current.orelse:
+            return
+        if len(current.orelse) == 1 and isinstance(current.orelse[0], ast.If):
+            current = current.orelse[0]
+            continue
+        if len(current.orelse) == 1 and isinstance(current.orelse[0], ast.Return):
+            ret_stmt = current.orelse[0]
+            if ret_stmt.value is not None and not is_pure_expr(ret_stmt.value):
+                violations.append(f"{source_path}:{ret_stmt.lineno}: guard return expression contains disallowed constructs")
+            return
+        violations.append(f"{source_path}:{current.lineno}: guard if else branch must return directly")
+        return
+
+
+def validate_lambda_purity(lambda_code: str, source_path: Path) -> List[str]:
+    violations: List[str] = []
+    try:
+        tree = ast.parse(lambda_code, filename=str(source_path))
+    except SyntaxError as exc:
+        violations.append(f"{source_path}: failed to parse lambda block ({exc})")
+        return violations
+
+    for node in tree.body:
+        if not isinstance(node, ast.FunctionDef):
+            violations.append(f"{source_path}:{getattr(node, 'lineno', '?')}: disallowed top-level statement {type(node).__name__}")
+            continue
+        if node.decorator_list:
+            violations.append(f"{source_path}:{node.lineno}: decorators are not allowed in lambda summaries")
+        for stmt in node.body:
+            if isinstance(stmt, ast.FunctionDef):
+                if stmt.decorator_list:
+                    violations.append(f"{source_path}:{stmt.lineno}: decorators are not allowed in helper definitions")
+                    continue
+                for inner in stmt.body:
+                    if isinstance(inner, ast.Assign):
+                        if len(inner.targets) != 1:
+                            violations.append(f"{source_path}:{inner.lineno}: multiple assignment targets not allowed")
+                            continue
+                        target = inner.targets[0]
+                        if isinstance(target, ast.Name):
+                            allowed_target = True
+                        elif isinstance(target, (ast.Tuple, ast.List)):
+                            allowed_target = all(isinstance(elt, ast.Name) for elt in target.elts)
+                        else:
+                            allowed_target = False
+                        if not allowed_target:
+                            violations.append(f"{source_path}:{inner.lineno}: helper assignments must target names or tuples of names")
+                        elif not is_pure_expr(inner.value):
+                            violations.append(f"{source_path}:{inner.lineno}: helper assignment uses disallowed expression")
+                    elif isinstance(inner, ast.Return):
+                        if inner.value is not None and not is_pure_expr(inner.value):
+                            violations.append(f"{source_path}:{inner.lineno}: helper return expression contains disallowed constructs")
+                    else:
+                        violations.append(f"{source_path}:{inner.lineno}: disallowed helper statement type {type(inner).__name__}")
+                continue
+            if isinstance(stmt, ast.Assign):
+                if len(stmt.targets) != 1:
+                    violations.append(f"{source_path}:{stmt.lineno}: multiple assignment targets not allowed")
+                    continue
+                target = stmt.targets[0]
+                if isinstance(target, ast.Name):
+                    allowed_target = True
+                elif isinstance(target, (ast.Tuple, ast.List)):
+                    allowed_target = all(isinstance(elt, ast.Name) for elt in target.elts)
+                else:
+                    allowed_target = False
+                if not allowed_target:
+                    violations.append(f"{source_path}:{stmt.lineno}: assignments must target names or tuples of names")
+                elif not is_pure_expr(stmt.value):
+                    violations.append(f"{source_path}:{stmt.lineno}: assignment uses disallowed expression")
+            elif isinstance(stmt, ast.If):
+                _validate_guard_if(stmt, source_path, violations)
+            elif isinstance(stmt, ast.Return):
+                if stmt.value is not None and not is_pure_expr(stmt.value):
+                    violations.append(f"{source_path}:{stmt.lineno}: return expression contains disallowed constructs")
+            else:
+                violations.append(f"{source_path}:{stmt.lineno}: disallowed statement type {type(stmt).__name__}")
+    return violations
+
+
 def build_stub_module(
     func_signatures: Dict[str, Tuple[List[str], str]],
     identifiers: Set[str],
     lambda_code: str,
 ) -> str:
     header_lines = [
-        "from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple",
+        "from typing import Any, Callable, Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple, TypeVar",
         "",
     ]
 
@@ -178,6 +327,15 @@ def build_stub_module(
         header_lines.extend(alias_lines)
         header_lines.append("")
 
+    helper_lines = [
+        "TGrid = TypeVar('TGrid')",
+        "TItem = TypeVar('TItem')",
+        "",
+        "def fold_repaint(initial: TGrid, items: List[TItem], update: Callable[[TGrid, TItem], TGrid]) -> TGrid:",
+        "    raise NotImplementedError",
+        "",
+    ]
+
     stub_lines: List[str] = []
     for name, (arg_types, return_type) in sorted(func_signatures.items()):
         params = ", ".join(f"arg{i}: {arg_types[i]}" for i in range(len(arg_types)))
@@ -185,7 +343,7 @@ def build_stub_module(
         stub_lines.append("    raise NotImplementedError")
         stub_lines.append("")
 
-    module_parts = header_lines + stub_lines
+    module_parts = header_lines + helper_lines + stub_lines
     if lambda_code:
         module_parts.append(lambda_code)
         module_parts.append("")
@@ -220,6 +378,7 @@ def main(argv: Sequence[str]) -> int:
         return 1
 
     modules: Dict[Path, str] = {}
+    purity_violations: List[str] = []
 
     for file_path in abstraction_files:
         text = file_path.read_text()
@@ -229,12 +388,19 @@ def main(argv: Sequence[str]) -> int:
         if not typed_ops or not lambda_code:
             continue
 
+        purity_violations.extend(validate_lambda_purity(lambda_code, file_path))
+
         identifiers = type_tokens | lambda_tokens
         module_source = build_stub_module(typed_ops, identifiers, lambda_code)
         modules[file_path] = module_source
 
     if not modules:
         print("No lambda representations found in the provided files.", file=sys.stderr)
+        return 1
+
+    if purity_violations:
+        for message in purity_violations:
+            print(f"purity violation: {message}", file=sys.stderr)
         return 1
 
     exit_code, output = run_mypy_on_modules(modules)
