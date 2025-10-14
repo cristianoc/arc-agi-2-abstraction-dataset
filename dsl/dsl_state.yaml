@@ -1,469 +1,1773 @@
-version: 66
-updated: 2025-10-13T11:05:00Z
+version: 68
+updated: 2025-10-14T16:15:00Z
 primitives:
-  - name: bbox
-    tasks: [0934a4d8]
-    description: "Return the axis-aligned bounding box for cells matching a predicate (e.g., specific color)."
-  - name: crop
-    tasks: [0934a4d8]
-    description: "Extract a subgrid defined by a bounding box or region."
-  - name: reflect_offset
-    tasks: [0934a4d8]
-    description: "Mirror a region across a given axis, optionally applying a fixed offset before sampling."
-  - name: flip
-    tasks: [0934a4d8]
-    description: "Flip a block along the specified axis (left-right or up-down)."
-  - name: count_color
-    tasks: [0934a4d8]
-    description: "Count occurrences of a color within a block for heuristic comparisons."
-  - name: periodic_majority
-    tasks: [135a2760]
-    description: "Infer the dominant repeating pattern within a 1D sequence up to a bounded period and tile it back."
-  - name: segment_rows
-    tasks: [136b0064]
-    description: "Group consecutive rows satisfying a predicate into row-interval segments."
-  - name: majority_color
-    tasks: [136b0064]
-    description: "Return the most frequent non-background color within a region."
-  - name: template_lookup
-    tasks: [136b0064]
-    description: "Select a template/glyph from a dictionary keyed by detected labels."
-  - name: overlay
-    tasks: [136b0064]
-    description: "Overlay a template or block onto a canvas at a specified position."
-  - name: components
-    tasks: [13e47133]
-    description: "Enumerate 4-connected components with metadata (cells, color, bounds)."
-  - name: stack_components
-    tasks: [16b78196]
-    description: "Stack a collection of components above or below an anchor while managing spacing, alignment, and boundary clamping."
-  - name: propagate_stride
-    tasks: [16de56c4]
-    description: "Extend repeated colors along rows or columns using stride/gcd inference from existing placements."
-  - name: match_kernel
-    tasks: [1818057f]
-    description: "Detect occurrences of a small von-Neumann or Moore neighborhood pattern (e.g., plus shapes)."
-  - name: propagate_pattern
-    tasks: [195c6913]
-    description: "Given a cyclic color pattern and anchor rows/columns, propagate it across fill regions while applying boundary caps."
-  - name: repeat_segments
-    tasks: [1ae2feb7]
-    description: "Repeat non-zero segments across a barrier using their segment length as spacing."
-  - name: fold_overlay
-    tasks: [20270e3b]
-    description: "Fold one side of the grid over a separator and overlay it onto the other side with alignment heuristics."
-  - name: band_glue
-    tasks: [20270e3b]
-    description: "Remove a special-colored band and glue the remaining parts together with offset-aware fill projection."
-  - name: recolor
-    tasks: [20270e3b]
-    description: "Recolor all occurrences of specified colors according to a mapping."
-  - name: segment_columns
-    tasks: [20a9e565]
-    description: "Group consecutive non-background columns by shared features (e.g., top color)."
-  - name: classify_column_pattern
-    tasks: [20a9e565]
-    description: "Classify column groups into structural types (e.g., cycle, banner, alternating)."
-  - name: render_column_pattern
-    tasks: [20a9e565]
-    description: "Render an output layout given a column-pattern classification and group metadata."
-  - name: stripe_projection
-    tasks: [221dfab4]
-    description: "Apply a periodic color pattern along selected columns."
-  - name: overlay_object_rows
-    tasks: [221dfab4]
-    description: "Overlay object colors onto specific rows based on modular indices."
-  - name: detect_axis_column
-    tasks: [247ef758]
-    description: "Detect the separator column whose entries share a constant non-background color."
-  - name: extract_markers
-    tasks: [247ef758]
-    description: "Extract marker positions from a designated border (e.g., top row or right column)."
-  - name: cartesian_project
-    tasks: [247ef758]
-    description: "Translate component footprints to every combination of row/column markers, honoring placement order."
-  - name: align_template
-    tasks: [269e22fb]
-    description: "Align an input grid within a canonical template, allowing dihedral transforms and color remapping."
-  - name: template_fill
-    tasks: [269e22fb]
-    description: "Embed the aligned subpattern into a copy of the canonical template."
-  - name: apply_transform
-    tasks: [269e22fb]
-    description: "Apply a named dihedral transform to a grid."
-  - name: remap_colors
-    tasks: [269e22fb]
-    description: "Remap colors according to a provided dictionary."
-  - name: bounded_gap_candidates
-    tasks: [28a6681f]
-    description: "Enumerate zero cells in rows whose neighbors on both sides are non-zero."
-  - name: relocate_supply
-    tasks: [28a6681f]
-    description: "Greedily relocate supply cells into candidate targets according to ordered priorities."
-  - name: normalize_orientation
-    tasks: [291dc1e1]
-    description: "Normalize grid orientation (e.g., transpose tall grids) and report whether a transpose was applied."
-  - name: extract_row_segments
-    tasks: [291dc1e1]
-    description: "Extract non-header color segments from each row after trimming the header column."
-  - name: group_contiguous_rows
-    tasks: [291dc1e1]
-    description: "Group consecutive rows that contain segments."
-  - name: weave_segments
-    tasks: [291dc1e1]
-    description: "Interleave row segment lists into the target output, respecting orientation and edge anchoring."
-  - name: paint_cross_runs
-    tasks: [2b83f449]
-    description: "Replace qualifying runs of a source color with cross-shaped motifs."
-  - name: boundary_recolor
-    tasks: [2b83f449]
-    description: "Recolor boundary cells using zero-distance heuristics and neighbor preservation rules."
-  - name: split_components_by_hollowness
-    tasks: [2ba387bc]
-    description: "Partition components into hollow vs. solid based on interior zeros."
-  - name: pair_components
-    tasks: [2ba387bc]
-    description: "Pair lists of components, padding the shorter side with blanks."
-  - name: canonical_block
-    tasks: [2ba387bc]
-    description: "Resample a component into a canonical block size."
-  - name: concat_blocks
-    tasks: [2ba387bc]
-    description: "Concatenate blocks horizontally and vertically into the final grid."
-  - name: axis_cross_reconstruction
-    tasks: [2c181942]
-    description: "Reconstruct axis-aligned crosses by detecting the axis, ranking colors, and painting vertical/horizontal arms with adjustments."
-  - name: template_reconstruction
+  - name: accentBoundingBox
+    signature: "Grid × Color -> Box"
     tasks: [2d0172a1]
-    description: "Select and render a pre-defined template based on accent bounding boxes and extend alternating patterns when required."
-  - name: sorted_stripes
-    tasks: [31f7f899]
-    description: "Identify central stripes, sort their lengths, and rebuild columns with monotonically increasing spans."
-  - name: relocate_zero_block
-    tasks: [332f06d7]
-    description: "Relocate the zero block based on adjacency cues to other colors with thresholded distance improvement."
-  - name: hull_shift
-    tasks: [35ab12c3]
-    description: "Construct base hulls for multi-point colors and shift them to anchor singleton colors."
-  - name: scaffold_wrap
-    tasks: [36a08778]
-    description: "Extend scaffold columns downward and wrap connected target runs with a halo."
-  - name: unique_block_column
-    tasks: [38007db0]
-    description: "Partition interior into blocks and retain the unique block per block-row while restoring borders."
-  - name: band_synthesis
-    tasks: [3a25b0d8]
-    description: "Crop interesting bands, adjust row patterns, and synthesize duplicated rows according to band heuristics."
-  - name: intruder_edge_push
-    tasks: [3dc255db]
-    description: "Relocate embedded components to host edges based on centroid offsets and component uniqueness."
-  - name: hint_path
-    tasks: [3e6067c3]
-    description: "Follow hint row ordering to paint corridors between colored nodes."
-  - name: centroid_projection
-    tasks: [409aa875]
-    description: "Lift selected components, normalize columns, and drop centroid markers with recoloring."
-  - name: grid_compactor
-    tasks: [446ef5d2]
-    description: "Compact per-color components into a near-square block and center it with border fill."
-  - name: stripe_rings
-    tasks: [45a5af55]
-    description: "Convert leading axis stripes into concentric rings after dropping the trailing stripe."
-  - name: corner_projection
-    tasks: [4a21e3da]
-    description: "Mirror sentinel-aligned subsets of a component into the corners with guarded ray painting."
-  - name: wedge_mirror_shift
-    tasks: [4c3d4a41]
-    description: "Shift right-side details upward based on left wedge presence, then mirror the wedge offset."
-  - name: corner_hooks
-    tasks: [4c416de3]
-    description: "Classify corner markers and paint hook patterns according to corner orientation and distances."
-  - name: zero_component_glyph
-    tasks: [4c7dc4dd]
-    description: "Collapse large zero components into a coarse glyph with highlighted axes and corner marker."
-  - name: type_priority_compactor
-    tasks: [4e34c42c]
-    description: "Classify components by shape, normalize them, and concatenate using priority ordering with redundancy filtering."
-  - name: mixed_component_tiling
-    tasks: [53fb4810]
-    description: "Detect 4-connected components containing colors {2,4} and tile their pattern upward."
-  - name: segment_consensus
-    tasks: [5545f144]
-    description: "Combine consensus highlights across repeated segments with alignment rules and special two-segment handling."
-  - name: full_alignment
-    tasks: [581f7754]
-    description: "Align components to shared anchors across columns/rows with drift-aware refinements."
-  - name: scoreboard_count8
-    tasks: [58490d8a]
-    description: "Count 8-connected components outside the zero board and encode totals on the scoreboard."
-  - name: color_scoreboard
-    tasks: [58f5dbd5]
-    description: "Cluster prominent colors, assign them to a layout, and render 5×5 glyph tiles."
-  - name: filtered_scaffold
-    tasks: [5961cc34]
-    description: "Build a sentinel-guided scaffold by filtering guides and extending rays before flood fill."
-  - name: hybrid_palette
-    tasks: [5dbc8537]
-    description: "Detect orientation and apply prelearned palettes for horizontal vs vertical legend regions."
-  - name: aggregated_overlap
-    tasks: [62593bfd]
-    description: "Aggregate column overlaps to orient color groups toward top/bottom edges and translate components accordingly."
-  - name: shadow_projection
-    tasks: [64efde09]
-    description: "Cast vertical and horizontal shadows alternating directions based on motif bounding boxes."
-  - name: two_colour_scan
-    tasks: [67e490f4]
-    description: "Scan for two-colour squares and repaint components using matched shapes elsewhere."
-  - name: slide_gap
-    tasks: [6e453dd6]
-    description: "Slide zero components toward a guide column and highlight rows based on gap heuristics."
-  - name: canonical_template
-    tasks: [6e4f6532]
-    description: "Match component signatures to prelearned templates and place them at marker offsets."
-  - name: color_dispatch_rotate
-    tasks: [6ffbe589]
-    description: "Dispatch to color-specific rotation recipes after cropping the active block."
-  - name: tip_halo
-    tasks: [71e489b6]
-    description: "Detect zero-component tips and paint guarded 7 halos with cleanup."
-  - name: panel_dispatch
-    tasks: [7491f3cf]
-    description: "Inspect panel shapes and dispatch to cross or block overlays accordingly."
-  - name: component_corridor
-    tasks: [7666fa5d]
-    description: "Fill corridor cells where adjacent diagonal components bracket the position."
-  - name: rotated_cycle
-    tasks: [78332cb0]
-    description: "Rotate separator-delimited blocks, cycle their order, and reassemble with separators."
-  - name: perimeter_tiling
-    tasks: [7b3084d4]
-    description: "Enumerate component placements to maximise perimeter/score within a compact square."
-  - name: top_row_histogram
-    tasks: [7b5033c1]
-    description: "Order colours by first occurrence and emit vertical histogram counts."
-  - name: column_snap
-    tasks: [7b80bb43]
-    description: "Regularise aligned linework via column/row masks with support-aware bridges."
-  - name: stamp_bottom
-    tasks: [7c66cb00]
-    description: "Extract prototype components from legend sections and stamp them onto target bands."
-  - name: nearest_axis_reflection
-    tasks: [7ed72f31]
-    description: "Reflect components across the nearest applicable symmetry axis."
-  - name: hybrid_knn
-    tasks: [800d221b]
-    description: "Use feature-based kNN with heuristics to recolor transition regions between fringe colours."
-  - name: handle_extension
-    tasks: [80a900e0]
-    description: "Extend diagonal handles into perpendicular stripes while guarding existing structure."
-  - name: column_priority_assignment
-    tasks: [8698868d]
-    description: "Assign shape tiles to background tiles using column-weighted matching and re-render grid."
-  - name: path_projection
-    tasks: [88bcf3b4]
-    description: "Trace accent paths from anchor columns to target components via heuristic corridor planning."
-  - name: block_template_lookup
-    tasks: [88e364bc]
-    description: "Map 5x5 digit templates to recolor positions using lookup tables."
-  - name: refined_stripe
-    tasks: [89565ca0]
-    description: "Summarise stripes with dominance/fallback rules to build prefix histograms."
-  - name: dynamic_scale_fill
-    tasks: [898e7135]
-    description: "Infer upscale factors from component areas and refill zero cavities accordingly."
-  - name: distance_filtered_fill
-    tasks: [8b7bacbf]
-    description: "Fill zero cavities when boundary colours are within distance thresholds of key colours."
-  - name: matched_corridors
-    tasks: [8b9c3697]
-    description: "Pair components with structures via corridor scoring and slide them along clear paths."
-  - name: global_color_symmetry
-    tasks: [8e5c0c38]
-    description: "Remove asymmetric pixels to enforce per-colour symmetry about a chosen axis."
-  - name: striped_frames
-    tasks: [8f215267]
-    description: "Reconstruct frame interiors using motif-driven stripe counts while clearing side noise."
-  - name: accessible_halo
-    tasks: [8f3a5a89]
-    description: "Colour the accessible frontier and diagonals around left-connected regions with guard rules."
-  - name: legend_guided_fill
-    tasks: [9385bd28]
-    description: "Apply legend-guided bounding-box recolouring with zero-pair handling."
-  - name: selective_cap_fill
-    tasks: [97d7923e]
-    description: "Fill sandwich columns when matching caps and support heuristics agree."
-  - name: row_col_match
-    tasks: [981571dc]
-    description: "Iteratively complete rows and columns by matching visible entries until symmetric."
-  - name: instruction_board
-    tasks: [9aaea919]
-    description: "Interpret scoreboard instructions to recolor columns and extend plus counts."
-  - name: separator_adjust
+  - name: adjustSeparatorRows
+    signature: "Grid × RowMetrics -> Grid"
     tasks: [9bbf930d]
-    description: "Adjust separator rows and sparse columns based on dominant-row comparisons."
-  - name: signature_dispatch
-    tasks: [a251c730]
-    description: "Dispatch to memorised outputs by colour-frequency signature with heuristic fallback."
-  - name: compact_components
-    tasks: [a25697e4]
-    description: "Compact components via orientation-aware relocation inside anchor holes."
-  - name: block_map_full
-    tasks: [a32d8b75]
-    description: "Map instruction strips to sprite blocks with tail template handling."
-  - name: template_transfer
-    tasks: [a395ee82]
-    description: "Replicate detected templates across a marker lattice with colour swapping."
-  - name: paired_plus_x
-    tasks: [a47bf94d]
-    description: "Place plus and X motifs on shared axes derived from square detections."
-  - name: augmented_projection
-    tasks: [a6f40cea]
-    description: "Project frame borders with alternating stripe heuristics and gap closing."
-  - name: component_tree_classify
-    tasks: [7b0280bc]
-    description: "Classify monochrome components via decision rules and recolor selected ones."
-  - name: mapped_tiles
-    tasks: [65b59efc]
-    description: "Segment the grid by separators and fill each cell using a template lookup with fallback tiling."
-  - name: segment_frame
-    tasks: [aa4ec2a5]
-    description: "Apply segment-aware framing to a component, including hole detection and selective recolouring."
-  - name: cell_knn_classifier
-    tasks: [abc82100]
-    description: "Train and apply a per-cell kNN classifier using engineered row/column features."
-  - name: segment_tiling
-    tasks: [b0039139]
-    description: "Replicate a template block across segments separated by dividers with orientation-aware spacing."
-  - name: ornament_template_expand
-    tasks: [b10624e5]
-    description: "Expand ornament colours around components using centre-aware horizontal and vertical halos."
-  - name: ring_lane_pack
-    tasks: [b5ca7ac4]
-    description: "Assign ring components to border lanes by outer colour while preventing overlaps."
-  - name: segment_digit_lookup
-    tasks: [b6f77b65]
-    description: "Decode segment activation strings and emit the corresponding digit templates."
-  - name: macro_mask_completion
+  - name: aggregateColumnCounts
+    signature: "Grid -> ColumnStats"
+    tasks: [62593bfd]
+  - name: alignColumnsToAnchor
+    signature: "Dict[Color, List Component] -> Dict[Color, List Component]"
+    tasks: [581f7754]
+  - name: alignFirstSegment
+    signature: "SegmentRow -> SegmentRow"
+    tasks: [5545f144]
+  - name: alignMask
+    signature: "MacroGrid × Tile -> MotifAlignment"
     tasks: [b99e7126]
-    description: "Complete macro tiles by repainting every position indicated by a minority mask tile."
-  - name: segmented_wedge_fill
-    tasks: [b9e38dc0]
-    description: "Grow wedge components toward barriers with orientation-aware clamping."
-  - name: mask_pattern_tiling
-    tasks: [bf45cf4b]
-    description: "Tile a multicolour component wherever a mask component evaluates to true."
-  - name: column_instruction_stack
-    tasks: [c4d067a0]
-    description: "Align and stack block columns according to instruction sequences and learned spacing."
-  - name: priority_digit_highlight
-    tasks: [d8e07eb2]
-    description: "Analyse digit headers, match column fingerprints, and paint priority-selected blocks with fallback rules."
-  - name: macro_dual_ring_tiling
-    tasks: [db0c5428]
-    description: "Lift 3×3 digit blocks into a 5×5 macro layout while reconciling corner and edge ring colours."
-  - name: diagonal_connect_extend
-    tasks: [db695cfb]
-    description: "Connect paired anchors along diagonals and extend extender colours along perpendicular diagonals."
-  - name: partner_cavity_fill
-    tasks: [dbff022c]
-    description: "Fill zero cavities using boundary colour, size, and adjacency-driven partner selection."
-  - name: balanced_ring_relocation
-    tasks: [dd6b8c4b]
-    description: "Score scattered tiles and relocate them into a central ring to rebalance directional counts."
-  - name: halo_realign_prune
-    tasks: [de809cff]
-    description: "Expand halos around zero pockets, realign secondary pixels, and prune stray cells."
-  - name: patch_dictionary_lookup
-    tasks: [dfadab01]
-    description: "Apply colour-conditioned patch templates learned from training examples to the grid."
-  - name: seeded_digit_expand
-    tasks: [e12f9a14]
-    description: "Expand seed blocks into digit glyphs by applying collision-aware template variants."
-  - name: hole_classify_recolor
-    tasks: [e3721c99]
-    description: "Classify components by internal holes and recolour them according to heuristic rules."
-  - name: color_variant_dispatch
+  - name: analyseHoles
+    signature: "List Cell -> HoleStats"
+    tasks: [a25697e4]
+  - name: analysePalette
+    signature: "Grid -> (Color, Color, Color, Color)"
     tasks: [c7f57c3e]
-    description: "Choose between colour-swapping variants based on adjacency tests for pivot and mid colours."
-  - name: corridor_dispatch
-    tasks: [cb2d8a2c]
-    description: "Derive horizontal or vertical corridor plans and render diagonal connections with extensions."
-  - name: connector_translate
-    tasks: [cbebaa4b]
-    description: "Translate gadgets by building connector graphs, voting deltas, and applying fallbacks."
-  - name: ring_sink_pair
-    tasks: [d35bdbdc]
-    description: "Detect coloured rings, pair centres with donors, and remove the remainder."
-  - name: targeted_room_fill
-    tasks: [d59b0160]
-    description: "Evaluate non-background rooms and fill those that satisfy edge-touch and height heuristics."
-  - name: median_line_alignment
-    tasks: [e376de54]
-    description: "Score candidate orientations, choose the median line, and remap every line to its canonical footprint."
-  - name: signature_sequence_lookup
-    tasks: [e8686506]
-    description: "Compute row colour signatures inside a bounding box and map them to stored templates with fallback handling."
-  - name: digit_nn_overlay
+  - name: analyseRows
+    signature: "Grid -> RowMetrics"
+    tasks: [9bbf930d]
+  - name: applyBoundaryRecolor
+    signature: "Grid × Grid × Set Cell -> Grid"
+    tasks: [2b83f449]
+  - name: applyColorShifts
+    signature: "Grid × ShiftPlan -> Grid"
+    tasks: [62593bfd]
+  - name: applyColumnRule
+    signature: "Grid × Grid -> Grid"
+    tasks: [16de56c4]
+  - name: applyCorridorMoves
+    signature: "Grid × Assignments -> Grid"
+    tasks: [8b9c3697]
+  - name: applyDiffMask
+    signature: "Grid × Int × Color × Mask -> Grid"
     tasks: [e87109e9]
-    description: "Extract digit blocks, compare them to training masks, and overlay the corresponding difference mask."
-  - name: legend_template_fill
-    tasks: [edb79dae]
-    description: "Infer block size and legend templates to repaint the framed region with recovered digits."
-  - name: neighbor_template_dispatch
-    tasks: [eee78d87]
-    description: "Classify neighbourhood structure around a centre cell and render the associated template."
-  - name: offset_oriented_remap
-    tasks: [f560132c]
-    description: "Rank components by quadrant offsets, rotate their masks, and place them into a remapped canvas."
-  - name: borrow_cycle_tiling
-    tasks: [f931b4a8]
-    description: "Cycle row and column patterns with fallback borrowing when zero-signature rows appear."
-  - name: composite_bridge_repair
-    tasks: [faa9f03d]
-    description: "Run the staged clean-up pipeline combining closures, infill, row extensions, and tail propagation."
-  - name: conditional_rotate_flip
-    tasks: [fc7cae8d]
-    description: "Crop the dominant component, rotate it 90° CCW, and mirror it when edge dominance requires."
-combinators:
-  - name: halo_router
-    tasks: [71e489b6, 8f3a5a89, de809cff]
-    description: "Coordinate halo detection, propagation, and pruning behaviours."
-  - name: scoreboard_router
-    tasks: [58490d8a, 58f5dbd5]
-    description: "Coordinate scoreboard counting and render pipelines."
-  - name: instruction_router
-    tasks: [c4d067a0, 9aaea919]
-    description: "Coordinate instruction parsing, column stacking, and board rendering."
-  - name: legend_router
-    tasks: [edb79dae, 9385bd28]
-    description: "Coordinate legend-driven inference and recolouring steps."
-  - name: propagate_router
-    tasks: [16de56c4, 195c6913]
-    description: "Coordinate propagation behaviours such as stride-based and pattern-based extensions."
-  - name: variant_dispatch
-    tasks: [c7f57c3e, cb2d8a2c, 6ffbe589, 7491f3cf, eee78d87, a251c730]
-    description: "Select among variant-specific pipelines based on a classifier outcome."
-  - name: projection_router
-    tasks: [221dfab4, 247ef758, 409aa875, 4a21e3da, 64efde09, 88bcf3b4, a6f40cea]
-    description: "Route projection logic through shared anchor detection and placement strategies."
-  - name: template_router
-    tasks: [136b0064, 269e22fb, 2d0172a1, edb79dae, b10624e5, 6e4f6532, 88e364bc, a395ee82]
-    description: "Coordinate template selection, alignment, and rendering across template-driven pipelines."
-  - name: overlay_router
-    tasks: [136b0064, 20270e3b, 221dfab4, e87109e9]
-    description: "Coordinate overlay selection and application across multiple overlay-based steps."
-  - name: cycle_router
-    tasks: [78332cb0, f931b4a8]
-    description: "Coordinate cyclic rearrangements and reuse logic for rotated/borrowed cycle patterns."
-  - name: branch
+  - name: applyFillGuards
+    signature: "ColumnIndex × CapPattern -> Bool"
+    tasks: [97d7923e]
+  - name: applyFillRules
+    signature: "Grid × RoomFillMap -> Grid"
+    tasks: [d59b0160]
+  - name: applyHullShifts
+    signature: "Grid × Hulls × Shifts -> Grid"
+    tasks: [35ab12c3]
+  - name: applyRowRule
+    signature: "Grid -> Grid"
+    tasks: [16de56c4]
+  - name: applySequenceHeuristics
+    signature: "Grid × Frame -> Grid"
+    tasks: [a6f40cea]
+  - name: applyTranslations
+    signature: "Grid × Graph -> Grid"
+    tasks: [cbebaa4b]
+  - name: applyVariantA
+    signature: "Grid × (Color, Color, Color, Color) -> Grid"
+    tasks: [c7f57c3e]
+  - name: applyVariantB
+    signature: "Grid × (Color, Color, Color, Color) -> Grid"
+    tasks: [c7f57c3e]
+  - name: assembleBlocks
+    signature: "List Block × Orientation × Color -> Grid"
+    tasks: [78332cb0]
+  - name: assembleDigits
+    signature: "List Grid -> Grid"
+    tasks: [b6f77b65]
+  - name: assignCorridors
+    signature: "CorridorCandidates -> Assignments"
+    tasks: [8b9c3697]
+  - name: assignRingLanes
+    signature: "List Ring × LanePlan -> LanePlacements"
+    tasks: [b5ca7ac4]
+  - name: assignShapesToTiles
+    signature: "TilePartition -> Assignment"
+    tasks: [8698868d]
+  - name: assignSlotsAndRender
+    signature: "Grid × Color × Dict[Color, Point] -> Layout -> Grid"
+    tasks: [58f5dbd5]
+  - name: augmentScaffold
+    signature: "Scaffold -> Scaffold"
+    tasks: [4c7dc4dd]
+  - name: axisApplicable
+    signature: "Axis × Cell -> Bool"
+    tasks: [7ed72f31]
+  - name: bbox
+    signature: "Grid -> BBox"
     tasks: [0934a4d8]
-    description: "Conditional selection between alternative pipelines based on a boolean guard."
-  - name: foreach
-    tasks: [135a2760]
-    description: "Iterate over a collection (rows, components, etc.) applying a sub-pipeline to each element."
-  - name: first_success
-    tasks: [20270e3b]
-    description: "Evaluate pipelines in order and return the first successful (non-null) result."
-  - name: dispatch
+  - name: bracketBackgroundCells
+    signature: "Grid × List Summary -> Set Cell"
+    tasks: [7666fa5d]
+  - name: bridgeSelectiveGaps
+    signature: "Grid × Color × ColourStats -> Grid"
+    tasks: [faa9f03d]
+  - name: buildColumnMasks
+    signature: "Matrix Bool × List Int -> ColumnMasks"
+    tasks: [7b80bb43]
+  - name: buildComponentMask
+    signature: "Grid × Component -> Mask"
+    tasks: [e3721c99]
+  - name: buildConnectorGraph
+    signature: "List Gadget × List ConnectorPair -> Graph"
+    tasks: [cbebaa4b]
+  - name: buildGuideGraph
+    signature: "Grid × List Motif -> Graph"
+    tasks: [5961cc34]
+  - name: buildHintPath
+    signature: "List Hint -> List Segment"
+    tasks: [3e6067c3]
+  - name: buildHistogramColumn
+    signature: "List (Color, Int) -> Grid"
+    tasks: [7b5033c1]
+  - name: buildHorizontalCorridor
+    signature: "Grid -> Path"
+    tasks: [cb2d8a2c]
+  - name: buildPrimaryHulls
+    signature: "Grid -> Hulls"
+    tasks: [35ab12c3]
+  - name: buildScaffold
+    signature: "List Rectangle -> Scaffold"
+    tasks: [4c7dc4dd]
+  - name: buildTargetMask
+    signature: "Grid × Int × Color -> Mask"
+    tasks: [e87109e9]
+  - name: buildTypeB
+    signature: "Groups -> Grid"
     tasks: [20a9e565]
-    description: "Route execution based on a discrete classification value."
+  - name: buildTypeC
+    signature: "Grid × Groups -> Grid"
+    tasks: [20a9e565]
+  - name: buildTypeS
+    signature: "Groups -> Grid"
+    tasks: [20a9e565]
+  - name: buildVerticalCorridor
+    signature: "Grid -> Path"
+    tasks: [cb2d8a2c]
+  - name: castHorizontalShadows
+    signature: "Grid × List Motif -> Grid"
+    tasks: [64efde09]
+  - name: castVerticalShadows
+    signature: "Grid × List Motif -> Grid"
+    tasks: [64efde09]
+  - name: catalogueExternalShapes
+    signature: "Grid × Box -> ShapeCatalogue"
+    tasks: [67e490f4]
+  - name: checkAdjacency
+    signature: "Grid × Color × Color -> Bool"
+    tasks: [c7f57c3e]
+  - name: chooseBridgeColour
+    signature: "ColourStats × HoleStats -> Color"
+    tasks: [a25697e4]
+  - name: chooseMinorityTile
+    signature: "MacroGrid -> Tile"
+    tasks: [b99e7126]
+  - name: chooseOrientation
+    signature: "Grid × Color × Color -> (Orientation, Bounds)"
+    tasks: [b9e38dc0]
+  - name: choosePartnerColour
+    signature: "Component -> Optional Color"
+    tasks: [dbff022c]
+  - name: chooseTargetEdge
+    signature: "Offset -> Edge"
+    tasks: [3dc255db]
+  - name: chooseTemplate
+    signature: "Box -> TemplateId"
+    tasks: [2d0172a1]
+  - name: chooseTemplate
+    signature: "ShapeId × ShapeId -> TemplateId"
+    tasks: [7491f3cf]
+  - name: classifyCells
+    signature: "List Feature -> List Label"
+    tasks: [800d221b]
+  - name: classifyColumns
+    signature: "Grid -> (Color, Color)"
+    tasks: [88bcf3b4]
+  - name: classifyComponent
+    signature: "Mask × Int -> Color"
+    tasks: [e3721c99]
+  - name: classifyComponentType
+    signature: "Component -> ComponentType"
+    tasks: [4e34c42c]
+  - name: classifyCorridorOrientation
+    signature: "Grid -> Orientation"
+    tasks: [cb2d8a2c]
+  - name: classifyHookFamily
+    signature: "List Marker -> HookFamily"
+    tasks: [4c416de3]
+  - name: classifyMotifComponents
+    signature: "Grid × Box × Color -> List ComponentInfo"
+    tasks: [67e490f4]
+  - name: classifyPaletteRoles
+    signature: "Grid -> (Color, Color, Color)"
+    tasks: [b9e38dc0]
+  - name: classifyPanelShape
+    signature: "Grid -> ShapeId"
+    tasks: [7491f3cf]
+  - name: classifyPattern
+    signature: "Groups -> Tag"
+    tasks: [20a9e565]
+  - name: classifyQuadrants
+    signature: "List Component -> QuadrantPlan"
+    tasks: [f560132c]
+  - name: classifyRoomFill
+    signature: "List Room -> RoomFillMap"
+    tasks: [d59b0160]
+  - name: clearAndPaintStripes
+    signature: "Grid × Frame × Int -> Grid"
+    tasks: [8f215267]
+  - name: clearBlockFours
+    signature: "Grid × Block -> Grid"
+    tasks: [88e364bc]
+  - name: clearNoise
+    signature: "Grid × List Frame -> Grid"
+    tasks: [8f215267]
+  - name: clearPrototypeRows
+    signature: "Grid × List Sections -> Grid"
+    tasks: [7c66cb00]
+  - name: clearRemoved
+    signature: "Grid × List Cell -> Grid"
+    tasks: [28a6681f]
+  - name: clearZeroPairs
+    signature: "Grid × LegendPairs -> Grid"
+    tasks: [9385bd28]
+  - name: closeGaps
+    signature: "Grid × Frame -> Grid"
+    tasks: [a6f40cea]
+  - name: collectAxisStripes
+    signature: "Grid × Axis -> List Color"
+    tasks: [45a5af55]
+  - name: collectBoundaryCells
+    signature: "Grid × Distances -> Set Cell"
+    tasks: [2b83f449]
+  - name: collectCandidateBlocks
+    signature: "Grid -> List Block"
+    tasks: [332f06d7]
+  - name: collectColoredCells
+    signature: "Grid -> (Color, List Cell)"
+    tasks: [e376de54]
+  - name: collectColorStats
+    signature: "Grid -> ColourStats"
+    tasks: [a25697e4]
+  - name: collectHeaderDigits
+    signature: "Grid -> HeaderCounts"
+    tasks: [d8e07eb2]
+  - name: collectMarkers
+    signature: "Grid -> MarkerMap"
+    tasks: [a395ee82]
+  - name: collectRuns
+    signature: "Grid -> List Run"
+    tasks: [36a08778]
+  - name: collectSegments
+    signature: "Row -> List Segment"
+    tasks: [1ae2feb7]
+  - name: collectStripeSpans
+    signature: "Grid × RowIndex × Row -> List Stripe"
+    tasks: [31f7f899]
+  - name: collectSupply
+    signature: "Grid -> List Cell"
+    tasks: [28a6681f]
+  - name: collectZeroTips
+    signature: "Grid × Matrix Int -> Set Cell"
+    tasks: [71e489b6]
+  - name: columnGroups
+    signature: "Grid -> (Groups, Count)"
+    tasks: [20a9e565]
+  - name: composeCanvas
+    signature: "MaskMap × ColourMap -> Grid"
+    tasks: [f560132c]
+  - name: composeUpscaledGrid
+    signature: "List Grid -> Grid"
+    tasks: [898e7135]
+  - name: compressFallback
+    signature: "Grid × Signature -> Grid"
+    tasks: [e8686506]
+  - name: compressRowsTowardAnchor
+    signature: "Dict[Color, List Component] -> Dict[Color, List Component]"
+    tasks: [581f7754]
+  - name: computeBoundingBoxes
+    signature: "Grid -> BoundingBoxes"
+    tasks: [9385bd28]
+  - name: computeCentroids
+    signature: "Grid × List Color -> Dict[Color, Point]"
+    tasks: [58f5dbd5]
+  - name: computeColourSignature
+    signature: "Grid -> Signature"
+    tasks: [a251c730]
+  - name: computeDrift
+    signature: "Component -> Offset"
+    tasks: [3dc255db]
+  - name: computeFeatures
+    signature: "Component × (Color, Color) -> List Feature"
+    tasks: [800d221b]
+  - name: computeForegroundMask
+    signature: "Grid -> (Color, Matrix Bool)"
+    tasks: [7b80bb43]
+  - name: computeLattice
+    signature: "MarkerMap -> Lattice"
+    tasks: [a395ee82]
+  - name: computeMaskLayout
+    signature: "Component -> GridBool"
+    tasks: [bf45cf4b]
+  - name: computeShiftTargets
+    signature: "Grid × List Color -> ShiftPlan"
+    tasks: [62593bfd]
+  - name: computeStripeDominators
+    signature: "Grid × ColourStats -> StripeDominators"
+    tasks: [89565ca0]
+  - name: concatenateComponents
+    signature: "List Component -> Grid"
+    tasks: [4e34c42c]
+  - name: conditionalMirror
+    signature: "Grid × Color -> Grid"
+    tasks: [fc7cae8d]
+  - name: constructLanes
+    signature: "Grid × List Ring -> LanePlan"
+    tasks: [b5ca7ac4]
+  - name: countBorderOccurrences
+    signature: "List Ring -> BorderCounts"
+    tasks: [d35bdbdc]
+  - name: countComponentsByColor
+    signature: "List Component -> Dict[Color, int]"
+    tasks: [58490d8a]
+  - name: countInternalHoles
+    signature: "Mask -> Int"
+    tasks: [e3721c99]
+  - name: countNeighbourDirections
+    signature: "Grid × Cell -> (Int, Int)"
+    tasks: [eee78d87]
+  - name: countZeroNeighbours
+    signature: "Grid -> Matrix Int"
+    tasks: [71e489b6]
+  - name: cropComponent
+    signature: "Grid × Component -> Grid"
+    tasks: [fc7cae8d]
+  - name: decodeDigitTemplates
+    signature: "Grid × Box × Int -> DigitTemplates"
+    tasks: [edb79dae]
+  - name: decodeInstructionSequences
+    signature: "Grid × ComponentSet -> (InstructionColumns, List Sequence)"
+    tasks: [c4d067a0]
+  - name: denoiseAndProfile
+    signature: "Grid -> (Grid, Color, ColourStats)"
+    tasks: [faa9f03d]
+  - name: deriveColumnOrder
+    signature: "TileQuadrants × RowPlan -> List ColId"
+    tasks: [f931b4a8]
+  - name: derivePrefixLengths
+    signature: "ColourStats × StripeDominators -> PrefixLengths"
+    tasks: [89565ca0]
+  - name: deriveRowOrder
+    signature: "TileQuadrants -> RowPlan"
+    tasks: [f931b4a8]
+  - name: deriveRowSignature
+    signature: "Grid -> Signature"
+    tasks: [e8686506]
+  - name: detect3x3Squares
+    signature: "Grid -> ColourCentres"
+    tasks: [a47bf94d]
+  - name: detectAxis
+    signature: "Grid -> Axis"
+    tasks: [2c181942]
+  - name: detectBorders
+    signature: "Grid -> BorderSpec"
+    tasks: [38007db0]
+  - name: detectCapPattern
+    signature: "List Run -> Optional CapPattern"
+    tasks: [97d7923e]
+  - name: detectDominantAxis
+    signature: "Grid -> Axis"
+    tasks: [45a5af55]
+  - name: detectExistingPatterns
+    signature: "Grid -> (ColourCentres, ColourCentres)"
+    tasks: [a47bf94d]
+  - name: detectFrame
+    signature: "Grid -> Frame"
+    tasks: [a6f40cea]
+  - name: detectInnerSegment
+    signature: "Row -> Segment"
+    tasks: [135a2760]
+  - name: detectObjectColors
+    signature: "Grid × Color -> Set Color"
+    tasks: [221dfab4]
+  - name: detectPaletteVariant
+    signature: "Grid -> Set Color"
+    tasks: [6ffbe589]
+  - name: detectRingObjects
+    signature: "Grid -> List Ring"
+    tasks: [b5ca7ac4]
+  - name: detectSeparatorColor
+    signature: "Grid -> Color"
+    tasks: [78332cb0]
+  - name: detectTargetColor
+    signature: "Grid × Set Color -> Color"
+    tasks: [e87109e9]
+  - name: detectZeroRectangles
+    signature: "Grid -> List Rectangle"
+    tasks: [4c7dc4dd]
+  - name: detectZeroSeeds
+    signature: "Grid -> List (Cell, Color)"
+    tasks: [de809cff]
+  - name: determineHighlightColors
+    signature: "Grid -> (Color, Color)"
+    tasks: [6e453dd6]
+  - name: determinePlacementCentres
+    signature: "ColourCentres × ColourCentres × ColourCentres -> PlacementMap"
+    tasks: [a47bf94d]
+  - name: dropTrailingStripe
+    signature: "List Color -> List Color"
+    tasks: [45a5af55]
+  - name: duplicateBands
+    signature: "List Row -> Grid"
+    tasks: [3a25b0d8]
+  - name: embedPackedGrid
+    signature: "PackedGrid × Color -> Grid"
+    tasks: [446ef5d2]
+  - name: encodeCellFeatures
+    signature: "Grid × RowInfo × ColInfo × Bounds -> FeatureVector"
+    tasks: [abc82100]
+  - name: enumerateArenaComponents
+    signature: "Grid -> List Component"
+    tasks: [58490d8a]
+  - name: enumerateBlocks5x5
+    signature: "Grid -> Iterable Block"
+    tasks: [88e364bc]
+  - name: enumerateCorridorCandidates
+    signature: "List Component × List Object -> CorridorCandidates"
+    tasks: [8b9c3697]
+  - name: enumerateInstructionIndices
+    signature: "Grid -> List Int"
+    tasks: [a32d8b75]
+  - name: enumeratePatterns
+    signature: "Segment -> List Pattern"
+    tasks: [135a2760]
+  - name: enumerateVariants
+    signature: "Component -> List Shape"
+    tasks: [7b3084d4]
+  - name: enumerateZeroCavities
+    signature: "Grid -> List Component"
+    tasks: [dbff022c]
+  - name: evaluateAxisCost
+    signature: "List Cell -> Axis"
+    tasks: [8e5c0c38]
+  - name: evaluateDecisionTree
+    signature: "Component -> Bool"
+    tasks: [7b0280bc]
+  - name: expandCollar
+    signature: "Grid × Box -> Box"
+    tasks: [5dbc8537]
+  - name: expandComponent
+    signature: "Component × Int -> Grid"
+    tasks: [898e7135]
+  - name: extendAlongAxis
+    signature: "Grid × HandleRuns × Color -> Grid"
+    tasks: [80a900e0]
+  - name: extendBackbones
+    signature: "Grid × Color -> Grid"
+    tasks: [faa9f03d]
+  - name: extendRightMargin
+    signature: "Grid × Box -> Grid"
+    tasks: [2d0172a1]
+  - name: extendRows
+    signature: "Matrix Bool × ColumnMasks -> Grid"
+    tasks: [7b80bb43]
+  - name: extendScaffolds
+    signature: "Grid × Set Column -> Grid"
+    tasks: [36a08778]
+  - name: extendSixDiagonals
+    signature: "Grid × SixSeeds -> Grid"
+    tasks: [db695cfb]
+  - name: extractAnchors
+    signature: "Grid -> Anchors"
+    tasks: [35ab12c3]
+  - name: extractAxes
+    signature: "Grid -> List Axis"
+    tasks: [7ed72f31]
+  - name: extractColumnMarkers
+    signature: "Grid × Column -> ColumnMarkerMap"
+    tasks: [247ef758]
+  - name: extractComponentPattern
+    signature: "Component -> Grid"
+    tasks: [53fb4810]
+  - name: extractComponents
+    signature: "Grid -> (Component, Component)"
+    tasks: [bf45cf4b]
+  - name: extractComponents
+    signature: "Grid -> ComponentSet"
+    tasks: [c4d067a0]
+  - name: extractComponents
+    signature: "Grid -> Components"
+    tasks: [8698868d]
+  - name: extractComponents
+    signature: "Grid -> List Component"
+    tasks: [2ba387bc, 4e34c42c, 6e4f6532, 7b3084d4, 898e7135, e12f9a14, f560132c]
+  - name: extractComponents
+    signature: "Grid × Color -> List Component"
+    tasks: [e3721c99]
+  - name: extractCrossColumns
+    signature: "Grid -> ColumnInfoMap"
+    tasks: [9aaea919]
+  - name: extractDiagonalComponents
+    signature: "Grid -> List Component"
+    tasks: [7666fa5d]
+  - name: extractDigitLists
+    signature: "Grid × List RowRange -> (DigitsLeft, DigitsRight)"
+    tasks: [136b0064]
+  - name: extractFrame
+    signature: "Grid -> Optional Frame"
+    tasks: [a251c730]
+  - name: extractFrames
+    signature: "Grid -> List Frame"
+    tasks: [8f215267]
+  - name: extractGadgetComponents
+    signature: "Grid -> List Gadget"
+    tasks: [cbebaa4b]
+  - name: extractGlyphs
+    signature: "Grid × Column -> GlyphMap"
+    tasks: [247ef758]
+  - name: extractIntruders
+    signature: "Grid -> List Component"
+    tasks: [3dc255db]
+  - name: extractLegendPairs
+    signature: "Grid -> LegendPairs"
+    tasks: [9385bd28]
+  - name: extractMainSquare
+    signature: "Grid -> Grid"
+    tasks: [6ffbe589]
+  - name: extractMedianPattern
+    signature: "Orientation × LineGroups -> Pattern"
+    tasks: [e376de54]
+  - name: extractMicroBlocks
+    signature: "Grid × Box -> MicroBlocks"
+    tasks: [db0c5428]
+  - name: extractMonoComponents
+    signature: "Grid × Set Color -> List Component"
+    tasks: [7b0280bc]
+  - name: extractMotifs
+    signature: "Grid -> List Motif"
+    tasks: [5961cc34]
+  - name: extractObjects
+    signature: "Grid -> List Object"
+    tasks: [8b9c3697]
+  - name: extractOneComponents
+    signature: "Grid -> List Component"
+    tasks: [aa4ec2a5]
+  - name: extractPalette
+    signature: "List Component -> Pattern"
+    tasks: [195c6913]
+  - name: extractPanels
+    signature: "Grid -> (Grid, Grid, Grid)"
+    tasks: [7491f3cf]
+  - name: extractPatch4x4
+    signature: "Grid × Cell -> Patch"
+    tasks: [dfadab01]
+  - name: extractPatternTile
+    signature: "Grid × Component -> Grid"
+    tasks: [bf45cf4b]
+  - name: extractPerColorComponents
+    signature: "Grid -> Dict[Color, List Component]"
+    tasks: [446ef5d2]
+  - name: extractPrototypes
+    signature: "Grid × List Sections × Color -> Dict[Color, List[Prototype]]"
+    tasks: [7c66cb00]
+  - name: extractRightBlocks
+    signature: "Grid × Set Row -> Dict[Row, Block]"
+    tasks: [4c3d4a41]
+  - name: extractRingGadgets
+    signature: "Grid -> List Ring"
+    tasks: [d35bdbdc]
+  - name: extractRowMarkers
+    signature: "Grid -> RowMarkerMap"
+    tasks: [247ef758]
+  - name: extractScaffoldColumns
+    signature: "Grid -> Set Column"
+    tasks: [36a08778]
+  - name: extractScoreboard
+    signature: "Grid -> Grid"
+    tasks: [58490d8a]
+  - name: extractSegments
+    signature: "Grid × SeparatorBreaks -> SegmentGroups"
+    tasks: [b0039139]
+  - name: extractSegments
+    signature: "Row -> List Segment"
+    tasks: [291dc1e1]
+  - name: extractSegmentsPerRow
+    signature: "Grid -> List SegmentRow"
+    tasks: [5545f144]
+  - name: extractSourceGlyph
+    signature: "Grid -> Component"
+    tasks: [4a21e3da]
+  - name: extractTargetComponents
+    signature: "Grid -> (Color, Color, List Component)"
+    tasks: [800d221b]
+  - name: extractTemplate
+    signature: "Grid -> (Template, Color)"
+    tasks: [a395ee82]
+  - name: extractTileQuadrants
+    signature: "Grid -> TileQuadrants"
+    tasks: [f931b4a8]
+  - name: extractTwoComponents
+    signature: "Grid -> List Component"
+    tasks: [8b9c3697, b10624e5]
+  - name: extractZeroComponents
+    signature: "Grid -> List Component"
+    tasks: [8b7bacbf]
+  - name: extractZeroComponents
+    signature: "Grid × Int -> List Component"
+    tasks: [6e453dd6]
+  - name: fallbackBlockSelection
+    signature: "HeaderCounts -> HighlightBlocks"
+    tasks: [d8e07eb2]
+  - name: fallbackRotate
+    signature: "Grid -> Grid"
+    tasks: [6ffbe589]
+  - name: fillBoxes
+    signature: "Grid × LegendPairs × BoundingBoxes -> Grid"
+    tasks: [9385bd28]
+  - name: fillCandidates
+    signature: "Grid × List Cell × List Cell -> (Grid, List Cell)"
+    tasks: [28a6681f]
+  - name: fillComponent
+    signature: "Grid × Component × Color -> Grid"
+    tasks: [dbff022c]
+  - name: fillCorridor
+    signature: "Grid × Set Cell × Color -> Grid"
+    tasks: [7666fa5d]
+  - name: fillIncompleteLines
+    signature: "Grid -> (Grid, Bool)"
+    tasks: [981571dc]
+  - name: fillVerticalArms
+    signature: "Grid × (TopColor, BottomColor) × Axis -> Grid"
+    tasks: [2c181942]
+  - name: filterByGuideCount
+    signature: "List Motif -> List Motif"
+    tasks: [5961cc34]
+  - name: filterNoise
+    signature: "Grid × Color -> Grid"
+    tasks: [446ef5d2]
+  - name: filterRunsByScaffold
+    signature: "List Run × Grid -> List Run"
+    tasks: [36a08778]
+  - name: filterSeedBlocks
+    signature: "List Component -> List Seed"
+    tasks: [e12f9a14]
+  - name: finaliseGrid
+    signature: "Grid × Grid -> Grid"
+    tasks: [db695cfb]
+  - name: findAlignment
+    signature: "Grid -> Alignment"
+    tasks: [269e22fb]
+  - name: findAxisColumn
+    signature: "Grid -> Optional Column"
+    tasks: [247ef758]
+  - name: findCandidates
+    signature: "Grid -> List Cell"
+    tasks: [28a6681f]
+  - name: findCenterCross
+    signature: "Grid -> (RowIndex, ColIndex)"
+    tasks: [b10624e5]
+  - name: findComponents
+    signature: "Grid -> List Component"
+    tasks: [13e47133]
+  - name: findConsensusColumns
+    signature: "List SegmentRow -> Set Column"
+    tasks: [5545f144]
+  - name: findCornerSentinels
+    signature: "Grid -> List Sentinel"
+    tasks: [4a21e3da]
+  - name: findFirstPosition
+    signature: "Grid -> Positions"
+    tasks: [7b5033c1]
+  - name: findFullLines
+    signature: "Grid -> SeparatorBreaks"
+    tasks: [b0039139]
+  - name: findHandleRuns
+    signature: "List (Color, List Cell) -> HandleRuns"
+    tasks: [80a900e0]
+  - name: findInteriorHoles
+    signature: "Grid × Component × Color -> (Bool, Set Cell)"
+    tasks: [aa4ec2a5]
+  - name: findLegendROI
+    signature: "Grid × Color -> Box"
+    tasks: [edb79dae]
+  - name: findMixedComponent
+    signature: "Grid -> Component"
+    tasks: [53fb4810]
+  - name: findSignificantColors
+    signature: "Grid -> (Color, List Color)"
+    tasks: [58f5dbd5]
+  - name: findTwoColourRegion
+    signature: "Grid -> (Color, Box)"
+    tasks: [5dbc8537]
+  - name: flipOutput
+    signature: "Candidate -> Block"
+    tasks: [0934a4d8]
+  - name: floodAccessibleBackground
+    signature: "Grid -> Set Cell"
+    tasks: [8f3a5a89]
+  - name: frameComponentRows
+    signature: "Grid × Component × Set Cell -> Grid"
+    tasks: [aa4ec2a5]
+  - name: gatherColorStats
+    signature: "Grid -> Stats"
+    tasks: [2c181942]
+  - name: generateHookTemplate
+    signature: "HookFamily × Marker -> Grid"
+    tasks: [4c416de3]
+  - name: generatePath
+    signature: "Grid × Cell × Cell × Set Cell × Int × Color -> List Cell"
+    tasks: [88bcf3b4]
+  - name: getComponents
+    signature: "Grid -> List Component"
+    tasks: [16b78196]
+  - name: groupAnchorsByDiagonal
+    signature: "Grid -> DiagonalGroups"
+    tasks: [db695cfb]
+  - name: groupByAnchorColor
+    signature: "Grid -> Dict[Color, List Component]"
+    tasks: [581f7754]
+  - name: groupByBand
+    signature: "Grid -> List Band"
+    tasks: [409aa875]
+  - name: groupCellsByColor
+    signature: "Grid -> ColourGroups"
+    tasks: [8e5c0c38]
+  - name: groupHandlesByColour
+    signature: "Grid -> List (Color, List Cell)"
+    tasks: [80a900e0]
+  - name: groupRows
+    signature: "List Bool -> List Range"
+    tasks: [291dc1e1]
+  - name: handleTailBlock
+    signature: "Grid × Int -> Grid"
+    tasks: [a32d8b75]
+  - name: highlightRowTail
+    signature: "Grid × Int × Color × Color -> Grid"
+    tasks: [6e453dd6]
+  - name: horizontalFold
+    signature: "Grid -> Optional Grid"
+    tasks: [20270e3b]
+  - name: identifyBands
+    signature: "Grid -> List Band"
+    tasks: [3a25b0d8]
+  - name: identifyForegroundColours
+    signature: "Grid -> (Color, Color)"
+    tasks: [7b0280bc]
+  - name: identifyFringeColours
+    signature: "Grid × List Component -> (Color, Color)"
+    tasks: [800d221b]
+  - name: identifyMotifs
+    signature: "Grid -> List Motif"
+    tasks: [64efde09]
+  - name: identifyRooms
+    signature: "Grid -> List Room"
+    tasks: [d59b0160]
+  - name: inferBlockSize
+    signature: "Grid × Box × Set Color -> Int"
+    tasks: [edb79dae]
+  - name: inferBoardLayout
+    signature: "Dict Color -> Layout"
+    tasks: [58f5dbd5]
+  - name: inferColumnGeometry
+    signature: "ComponentSet -> ColumnGeometry"
+    tasks: [c4d067a0]
+  - name: inferOrientation
+    signature: "Grid × Box -> Orientation"
+    tasks: [5dbc8537]
+  - name: inferOrnamentColours
+    signature: "Grid × Component × (RowIndex, ColIndex) -> OrnamentPalette"
+    tasks: [b10624e5]
+  - name: inferRingPalette
+    signature: "Grid × Box -> RingBlocks"
+    tasks: [db0c5428]
+  - name: inferScaleFactor
+    signature: "List Component -> Int"
+    tasks: [898e7135]
+  - name: invertTransform
+    signature: "Alignment × TemplateGrid -> Grid"
+    tasks: [269e22fb]
+  - name: isPlus
+    signature: "Grid × (Row,Col) -> Bool"
+    tasks: [1818057f]
+  - name: iterateCompletion
+    signature: "Grid -> Grid"
+    tasks: [981571dc]
+  - name: iterComponents
+    signature: "Grid -> List Component"
+    tasks: [195c6913]
+  - name: labelInaccessibleRegions
+    signature: "Grid × Set Cell -> RegionLabels"
+    tasks: [8f3a5a89]
+  - name: liftBands
+    signature: "List Band -> List Band"
+    tasks: [409aa875]
+  - name: loadTemplate
+    signature: "TemplateKey -> Template"
+    tasks: [13e47133]
+  - name: loadTrainingFeatures
+    signature: "Unit -> List (FeatureVector, Color)"
+    tasks: [abc82100]
+  - name: locateAnchors
+    signature: "Grid × Pattern -> List Anchor"
+    tasks: [195c6913]
+  - name: locateContactAndStart
+    signature: "Grid × Color × Color -> (Cell, Cell, Color, Set Cell, Int)"
+    tasks: [88bcf3b4]
+  - name: locateFiveColumn
+    signature: "Grid -> Optional Int"
+    tasks: [6e453dd6]
+  - name: locateForegroundCenter
+    signature: "Grid -> Cell"
+    tasks: [eee78d87]
+  - name: locateLeftWedge
+    signature: "Grid -> Set Row"
+    tasks: [4c3d4a41]
+  - name: locateNineBlock
+    signature: "Grid -> Optional Box"
+    tasks: [db0c5428]
+  - name: locateTwoColourSquare
+    signature: "Grid -> (Box, Color, Color)"
+    tasks: [67e490f4]
+  - name: locateZeroBlock
+    signature: "Grid -> Block"
+    tasks: [332f06d7]
+  - name: lookupBlockRule
+    signature: "Block -> Optional Position"
+    tasks: [88e364bc]
+  - name: lookupCellTemplate
+    signature: "CellRegion -> TemplateId"
+    tasks: [65b59efc]
+  - name: lookupDigitTemplate
+    signature: "Int × SegmentKey × Optional SegmentId -> Grid"
+    tasks: [b6f77b65]
+  - name: lookupMemorisedOutput
+    signature: "Signature -> Optional Grid"
+    tasks: [a251c730]
+  - name: lookupMiniature
+    signature: "Signature -> Optional Grid"
+    tasks: [e8686506]
+  - name: lookupPatchTemplate
+    signature: "Color × Patch -> Optional Patch"
+    tasks: [dfadab01]
+  - name: lookupPattern
+    signature: "Component -> Optional Pattern"
+    tasks: [6e4f6532]
+  - name: lookupSpriteRows
+    signature: "InstructionBlock -> Optional SpriteRows"
+    tasks: [a32d8b75]
+  - name: lookupStripeCount
+    signature: "Patch -> Int"
+    tasks: [8f215267]
+  - name: lookupTemplates
+    signature: "Component -> List TemplateKey"
+    tasks: [13e47133]
+  - name: majorityColor
+    signature: "Grid -> Color"
+    tasks: [221dfab4, 2d0172a1]
+  - name: mapInstructionsToColumns
+    signature: "InstructionSegments × ColumnInfoMap -> ColumnInstructionMap"
+    tasks: [9aaea919]
+  - name: markBandCentroids
+    signature: "Grid × List Band -> Grid"
+    tasks: [409aa875]
+  - name: markColumnJunctions
+    signature: "Grid × RowMetrics × SparseColumns -> Grid"
+    tasks: [9bbf930d]
+  - name: markComponentBody
+    signature: "Grid × Component × Bool -> Grid"
+    tasks: [aa4ec2a5]
+  - name: matchColumnFingerprint
+    signature: "HeaderCounts -> Optional HighlightBlocks"
+    tasks: [d8e07eb2]
+  - name: matchSingletons
+    signature: "Anchors × Hulls -> Shifts"
+    tasks: [35ab12c3]
+  - name: maybeTranspose
+    signature: "Grid -> (Grid, Bool)"
+    tasks: [291dc1e1]
+  - name: measureBoundaryDistances
+    signature: "Grid × List Component -> DistanceInfo"
+    tasks: [8b7bacbf]
+  - name: measureQuadrantImbalance
+    signature: "Grid -> Int"
+    tasks: [dd6b8c4b]
+  - name: mergeFilledRooms
+    signature: "Grid × Grid -> Grid"
+    tasks: [d59b0160]
+  - name: mergeShadowPasses
+    signature: "Grid × Grid × Grid -> Grid"
+    tasks: [64efde09]
+  - name: mergeWithOriginal
+    signature: "Grid × Grid -> Grid"
+    tasks: [53fb4810]
+  - name: mirrorDiagonalZeros
+    signature: "Grid -> Grid"
+    tasks: [981571dc]
+  - name: mirrorH
+    signature: "Grid × BBox -> Candidate"
+    tasks: [0934a4d8]
+  - name: mirrorV
+    signature: "Grid × BBox -> Candidate"
+    tasks: [0934a4d8]
+  - name: mirrorWedge
+    signature: "Grid × Set Row -> Grid"
+    tasks: [4c3d4a41]
+  - name: mirrorZeros
+    signature: "Grid -> Grid"
+    tasks: [8e5c0c38]
+  - name: nearestColour
+    signature: "FeatureVector × List (FeatureVector, Color) -> Color"
+    tasks: [abc82100]
+  - name: normaliseBandColumns
+    signature: "List Band -> List Band"
+    tasks: [409aa875]
+  - name: normalizeBandPatterns
+    signature: "List Band -> List Band"
+    tasks: [3a25b0d8]
+  - name: orderCandidates
+    signature: "List Cell -> List Cell"
+    tasks: [28a6681f]
+  - name: orderColoursByFirstSeen
+    signature: "Counter × Positions -> List (Color, Int)"
+    tasks: [7b5033c1]
+  - name: orderNarrow
+    signature: "List Component -> List Component"
+    tasks: [16b78196]
+  - name: overlayHooks
+    signature: "Grid × List Grid -> Grid"
+    tasks: [4c416de3]
+  - name: overlayObjects
+    signature: "Grid × Set Column × Set Color -> Grid"
+    tasks: [221dfab4]
+  - name: overlayTemplate
+    signature: "Grid × Template × Int × Int -> Grid"
+    tasks: [13e47133]
+  - name: packComponentsIntoGrid
+    signature: "Dict[Color, List Component] -> PackedGrid"
+    tasks: [446ef5d2]
+  - name: packPairs
+    signature: "List Grid4x4 × List Grid4x4 -> Grid"
+    tasks: [2ba387bc]
+  - name: paintColumnRun
+    signature: "Grid × ColumnIndex × Run × Color -> Grid"
+    tasks: [97d7923e]
+  - name: paintComponent
+    signature: "Grid × Component × Color -> Grid"
+    tasks: [8b7bacbf, e3721c99]
+  - name: paintCrossRuns
+    signature: "Grid -> Grid"
+    tasks: [2b83f449]
+  - name: paintDigitTemplate
+    signature: "Grid × Seed × List Offset -> Grid"
+    tasks: [e12f9a14]
+  - name: paintDominantBand
+    signature: "Grid × Component -> Grid"
+    tasks: [16b78196]
+  - name: paintFrontier
+    signature: "Grid × Set Cell -> Grid"
+    tasks: [8f3a5a89]
+  - name: paintHalos
+    signature: "Grid × List (Cell, Color) -> Grid"
+    tasks: [de809cff]
+  - name: paintHintPath
+    signature: "Grid × List Cell -> Grid"
+    tasks: [3e6067c3]
+  - name: paintMotifTiles
+    signature: "Grid × Tile × MotifAlignment -> Grid"
+    tasks: [b99e7126]
+  - name: paintOnePaths
+    signature: "Grid × DiagonalGroups -> (Grid, SixSeeds)"
+    tasks: [db695cfb]
+  - name: paintOrnaments
+    signature: "Grid × Component × OrnamentPalette -> Grid"
+    tasks: [b10624e5]
+  - name: paintReflections
+    signature: "Grid × List Axis -> Grid"
+    tasks: [7ed72f31]
+  - name: paintSegments
+    signature: "Grid × SegmentDict × Color -> Grid"
+    tasks: [b9e38dc0]
+  - name: paintStripes
+    signature: "Grid × Set Column × Color -> Grid"
+    tasks: [221dfab4]
+  - name: paintTipHalos
+    signature: "Grid × Set Cell × Matrix Int -> Grid"
+    tasks: [71e489b6]
+  - name: pairConnectors
+    signature: "List Gadget -> List ConnectorPair"
+    tasks: [cbebaa4b]
+  - name: parseColumnRuns
+    signature: "Grid -> ColumnRuns"
+    tasks: [97d7923e]
+  - name: parseHintRow
+    signature: "Grid -> List Hint"
+    tasks: [3e6067c3]
+  - name: partitionByHollowness
+    signature: "List Component -> (List Component, List Component)"
+    tasks: [2ba387bc]
+  - name: partitionIntoBlocks
+    signature: "Grid × BorderSpec -> List BlockRow"
+    tasks: [38007db0]
+  - name: pinBackboneRow
+    signature: "Grid -> (RowIndex, Row)"
+    tasks: [31f7f899]
+  - name: placeDiagonalX
+    signature: "Grid × Cell × Color -> Grid"
+    tasks: [a47bf94d]
+  - name: placeFourAtOffset
+    signature: "Grid × Block × Position -> Grid"
+    tasks: [88e364bc]
+  - name: placeGlyphs
+    signature: "Grid × Glyph × List Row × List Column -> Grid"
+    tasks: [247ef758]
+  - name: placeHorizontalArms
+    signature: "Grid × Stats × Axis -> Grid"
+    tasks: [2c181942]
+  - name: placeNarrowComponents
+    signature: "Grid × List Component × Component -> Grid"
+    tasks: [16b78196]
+  - name: placePlus
+    signature: "Grid × Cell × Color -> Grid"
+    tasks: [a47bf94d]
+  - name: placeTemplate
+    signature: "Grid × CellRegion × Grid -> Grid"
+    tasks: [65b59efc]
+  - name: placeThirdComponent
+    signature: "Grid × ColourStats × HoleStats -> Grid"
+    tasks: [a25697e4]
+  - name: placeWideComponents
+    signature: "Grid × List Component × Component -> Grid"
+    tasks: [16b78196]
+  - name: planDigitColumns
+    signature: "Grid × DigitsLeft × DigitsRight -> List Column"
+    tasks: [136b0064]
+  - name: precomputeAxisStats
+    signature: "Grid -> (List RowInfo, List ColInfo, Bounds)"
+    tasks: [abc82100]
+  - name: precomputeZeroDistances
+    signature: "Grid -> (MatrixAbove, MatrixBelow)"
+    tasks: [2b83f449]
+  - name: prioritiseComponents
+    signature: "List (Component, ComponentType) -> List Component"
+    tasks: [4e34c42c]
+  - name: projectBorderColours
+    signature: "Grid × Frame -> Grid"
+    tasks: [a6f40cea]
+  - name: projectFrameFallback
+    signature: "Grid × Frame -> Grid"
+    tasks: [a251c730]
+  - name: projectGlyphToCorners
+    signature: "Grid × Component × Dict[Sentinel, Offset] -> Grid"
+    tasks: [4a21e3da]
+  - name: propagateConsensus
+    signature: "Grid × Set Column × List SegmentRow -> Grid"
+    tasks: [5545f144]
+  - name: propagatePattern
+    signature: "Grid × Pattern × Anchor -> Grid"
+    tasks: [195c6913]
+  - name: propagateScaffold
+    signature: "Graph -> Grid"
+    tasks: [5961cc34]
+  - name: propagateSegments
+    signature: "Grid × Orientation × Seeds × PaletteRoles × Bounds -> SegmentDict"
+    tasks: [b9e38dc0]
+  - name: pruneLonelyOnes
+    signature: "Grid × Matrix Int -> Grid"
+    tasks: [71e489b6]
+  - name: pruneOnes
+    signature: "Grid × Set Cell -> Grid"
+    tasks: [8f3a5a89]
+  - name: pruneRings
+    signature: "Grid × List Ring × List Pair -> Grid"
+    tasks: [d35bdbdc]
+  - name: pruneStragglers
+    signature: "Grid × Grid -> Grid"
+    tasks: [de809cff]
+  - name: pushComponent
+    signature: "Grid × Component × Edge -> Grid"
+    tasks: [3dc255db]
+  - name: rankColorsByDominance
+    signature: "ColumnStats -> List Color"
+    tasks: [62593bfd]
+  - name: readCornerMarkers
+    signature: "Grid -> List Marker"
+    tasks: [4c416de3]
+  - name: readHeaderDigit
+    signature: "Grid × Int -> Optional Digit"
+    tasks: [e87109e9]
+  - name: readInstructionSegments
+    signature: "Grid -> InstructionSegments"
+    tasks: [9aaea919]
+  - name: readKeyLetter
+    signature: "Grid -> Optional SegmentId"
+    tasks: [b6f77b65]
+  - name: realignLines
+    signature: "Grid × Orientation × Pattern -> Grid"
+    tasks: [e376de54]
+  - name: realignSecondaryPixels
+    signature: "Grid × Grid -> Grid"
+    tasks: [de809cff]
+  - name: rebalanceNines
+    signature: "Grid × List Cell × List (Score, Cell) -> Grid"
+    tasks: [dd6b8c4b]
+  - name: rebuildByOrientation
+    signature: "Pattern × SegmentGroups -> Grid"
+    tasks: [b0039139]
+  - name: recolourFallback
+    signature: "Grid -> Grid"
+    tasks: [20270e3b]
+  - name: recolourMotif
+    signature: "List ComponentInfo × ShapeCatalogue × Color -> Grid"
+    tasks: [67e490f4]
+  - name: reflectAcrossAxis
+    signature: "Axis × Cell -> Cell"
+    tasks: [7ed72f31]
+  - name: relocateZeroBlock
+    signature: "Grid × Block × Block -> Grid"
+    tasks: [332f06d7]
+  - name: remapColors
+    signature: "Grid × Mapping -> Grid"
+    tasks: [269e22fb]
+  - name: renderAlignedComponents
+    signature: "Grid × Dict[Color, List Component] -> Grid"
+    tasks: [581f7754]
+  - name: renderBestTiling
+    signature: "Grid -> Grid"
+    tasks: [7b3084d4]
+  - name: renderByIds
+    signature: "RowPlan × List ColId -> Grid"
+    tasks: [f931b4a8]
+  - name: renderConcentricRings
+    signature: "Grid × List Color -> Grid"
+    tasks: [45a5af55]
+  - name: renderCorridorPath
+    signature: "Grid × Path -> Grid"
+    tasks: [cb2d8a2c]
+  - name: renderDigitBlocks
+    signature: "Grid × Box × Int × DigitTemplates -> Grid"
+    tasks: [edb79dae]
+  - name: renderDigits
+    signature: "Grid × List Column × List Digit -> Grid"
+    tasks: [136b0064]
+  - name: renderGlyph
+    signature: "Scaffold -> Grid"
+    tasks: [4c7dc4dd]
+  - name: renderHighlights
+    signature: "Grid × HighlightBlocks × Bool -> Grid"
+    tasks: [d8e07eb2]
+  - name: renderMacroTiling
+    signature: "Grid × Box × MicroBlocks × RingBlocks -> Grid"
+    tasks: [db0c5428]
+  - name: renderRingPlacements
+    signature: "LanePlacements × Color -> Grid"
+    tasks: [b5ca7ac4]
+  - name: renderSortedStripes
+    signature: "Grid × RowIndex × List Stripe -> Grid"
+    tasks: [31f7f899]
+  - name: renderSummaryRows
+    signature: "PrefixLengths × Color -> Grid"
+    tasks: [89565ca0]
+  - name: renderTemplate
+    signature: "TemplateId -> Grid"
+    tasks: [65b59efc, eee78d87]
+  - name: renderTemplate
+    signature: "TemplateId × Color × Color -> Grid"
+    tasks: [2d0172a1]
+  - name: renderTemplatePanel
+    signature: "TemplateId × Grid × Grid -> Grid"
+    tasks: [7491f3cf]
+  - name: renderTiledLayout
+    signature: "Grid × Assignment -> Grid"
+    tasks: [8698868d]
+  - name: renderUniqueBlocks
+    signature: "Grid × BorderSpec × List Block -> Grid"
+    tasks: [38007db0]
+  - name: repaintByLabels
+    signature: "Grid × Component × List Label × (Color, Color, Color) -> Grid"
+    tasks: [800d221b]
+  - name: repaintColumn
+    signature: "Grid × ColumnInfo × Instruction -> Grid"
+    tasks: [9aaea919]
+  - name: repaintComponents
+    signature: "Grid × List Component -> Grid"
+    tasks: [7b0280bc]
+  - name: repaintPlus
+    signature: "Grid × (Row,Col) -> Grid"
+    tasks: [1818057f]
+  - name: repaintWithPalette
+    signature: "Grid × Box × Orientation -> Grid"
+    tasks: [5dbc8537]
+  - name: repeatSegments
+    signature: "Row × List Segment -> Row"
+    tasks: [1ae2feb7]
+  - name: resampleToFour
+    signature: "Component -> Grid4x4"
+    tasks: [2ba387bc]
+  - name: restoreOrientation
+    signature: "Grid × Bool -> Grid"
+    tasks: [291dc1e1]
+  - name: rewritePath
+    signature: "Grid × Set Cell × List Cell -> Grid"
+    tasks: [88bcf3b4]
+  - name: rotateAndCycleBlocks
+    signature: "List List Block -> (List Block, Orientation)"
+    tasks: [78332cb0]
+  - name: rotateComponentMask
+    signature: "QuadrantPlan × Label -> Mask"
+    tasks: [f560132c]
+  - name: rotateCounterClockwise
+    signature: "Grid -> Grid"
+    tasks: [fc7cae8d]
+  - name: scoreCandidates
+    signature: "Block × List Block -> List (Block, Int)"
+    tasks: [332f06d7]
+  - name: scoreExistingNines
+    signature: "Grid -> List (Score, Cell)"
+    tasks: [dd6b8c4b]
+  - name: scoreOrientations
+    signature: "List Cell -> (Orientation, LineGroups)"
+    tasks: [e376de54]
+  - name: scorePattern
+    signature: "Segment × Pattern -> Score"
+    tasks: [135a2760]
+  - name: searchTilings
+    signature: "List Shape -> (Grid, Score)"
+    tasks: [7b3084d4]
+  - name: seedSegments
+    signature: "Grid × Orientation × Color -> Seeds"
+    tasks: [b9e38dc0]
+  - name: segmentBoardCells
+    signature: "Grid -> List CellRegion"
+    tasks: [65b59efc]
+  - name: segmentIntoBlocks
+    signature: "Grid × Color -> List List Block"
+    tasks: [78332cb0]
+  - name: segmentKeyForDigit
+    signature: "Grid × Int -> SegmentKey"
+    tasks: [b6f77b65]
+  - name: selectAccent
+    signature: "Grid × Color -> Color"
+    tasks: [2d0172a1]
+  - name: selectBestPattern
+    signature: "List Pattern -> Pattern"
+    tasks: [135a2760]
+  - name: selectCandidate
+    signature: "Candidate × Candidate -> Candidate"
+    tasks: [0934a4d8]
+  - name: selectCornerOffsets
+    signature: "List Sentinel × Component -> Dict[Sentinel, Offset]"
+    tasks: [4a21e3da]
+  - name: selectDiffMask
+    signature: "Digit × Mask -> Optional Mask"
+    tasks: [e87109e9]
+  - name: selectDigitVariant
+    signature: "Seed -> Optional List Offset"
+    tasks: [e12f9a14]
+  - name: selectFrontierCells
+    signature: "Grid × Set Cell × RegionLabels -> Set Cell"
+    tasks: [8f3a5a89]
+  - name: selectInteriorComponent
+    signature: "Grid -> Component"
+    tasks: [fc7cae8d]
+  - name: selectKeyColumns
+    signature: "Matrix Bool -> List Int"
+    tasks: [7b80bb43]
+  - name: selectOffset
+    signature: "Component × TemplateCandidates -> Offset"
+    tasks: [13e47133]
+  - name: selectRingTargets
+    signature: "Grid × Int -> List Cell"
+    tasks: [dd6b8c4b]
+  - name: selectSinkPairs
+    signature: "List Ring × BorderCounts -> List Pair"
+    tasks: [d35bdbdc]
+  - name: selectSparseColumns
+    signature: "Grid -> SparseColumns"
+    tasks: [9bbf930d]
+  - name: selectStripeColumns
+    signature: "Grid -> Set Column"
+    tasks: [221dfab4]
+  - name: selectTemplateKey
+    signature: "(Int, Int) -> TemplateId"
+    tasks: [eee78d87]
+  - name: selectUniqueBlockPerRow
+    signature: "List BlockRow -> List Block"
+    tasks: [38007db0]
+  - name: selectVerticalColors
+    signature: "Stats × Axis -> (TopColor, BottomColor)"
+    tasks: [2c181942]
+  - name: separateBackgroundAndShapes
+    signature: "Components -> TilePartition"
+    tasks: [8698868d]
+  - name: shiftBlocksUpwards
+    signature: "Grid × Dict[Row, Block] -> Grid"
+    tasks: [4c3d4a41]
+  - name: shouldFill
+    signature: "Component × DistanceInfo -> Bool"
+    tasks: [8b7bacbf]
+  - name: sliceInstructionBlock
+    signature: "Grid × Int -> InstructionBlock"
+    tasks: [a32d8b75]
+  - name: sliceInstructionPatch
+    signature: "Grid × Frame -> Patch"
+    tasks: [8f215267]
+  - name: slideComponentsRight
+    signature: "Grid × List Component × Int -> Grid"
+    tasks: [6e453dd6]
+  - name: sortStripesByHeight
+    signature: "List Stripe -> List Stripe"
+    tasks: [31f7f899]
+  - name: splitBlocks
+    signature: "Grid -> List RowRange"
+    tasks: [136b0064]
+  - name: splitByWidth
+    signature: "List Component -> (Component, List Component, List Component)"
+    tasks: [16b78196]
+  - name: splitHeaderBody
+    signature: "Grid -> (Grid, Grid)"
+    tasks: [e87109e9]
+  - name: splitMacroTiles
+    signature: "Grid -> MacroGrid"
+    tasks: [b99e7126]
+  - name: splitObjectsAndMarkers
+    signature: "List Component -> (List Object, List Marker)"
+    tasks: [6e4f6532]
+  - name: splitSections
+    signature: "Grid × Color -> List (RowStart, RowEnd)"
+    tasks: [7c66cb00]
+  - name: stackColumns
+    signature: "ColumnGeometry × List Sequence -> Grid"
+    tasks: [c4d067a0]
+  - name: stampBottomAnchored
+    signature: "Grid × Dict[Color, List[Prototype]] × List Sections -> Grid"
+    tasks: [7c66cb00]
+  - name: stampPatternAtMarker
+    signature: "Grid × Pattern × Marker -> Grid"
+    tasks: [6e4f6532]
+  - name: stampTemplate
+    signature: "Grid × Patch × Cell -> Grid"
+    tasks: [dfadab01]
+  - name: stripPalette
+    signature: "Grid × Pattern -> Grid"
+    tasks: [195c6913]
+  - name: summariseComponents
+    signature: "List Component -> List (Sum, DiffRange)"
+    tasks: [7666fa5d]
+  - name: summarisePattern
+    signature: "Segment × Color -> Pattern"
+    tasks: [b0039139]
+  - name: synthesiseBandRows
+    signature: "List Band -> List Row"
+    tasks: [3a25b0d8]
+  - name: tailPropagation
+    signature: "Grid -> Grid"
+    tasks: [faa9f03d]
+  - name: tallyColours
+    signature: "Grid -> ColourStats"
+    tasks: [89565ca0]
+  - name: tallyColours
+    signature: "Grid -> Counter"
+    tasks: [7b5033c1]
+  - name: tilePatternByMask
+    signature: "GridBool × Grid -> Grid"
+    tasks: [bf45cf4b]
+  - name: tilePatternUpward
+    signature: "Grid × Grid -> Grid"
+    tasks: [53fb4810]
+  - name: tileSegment
+    signature: "Row × Pattern -> Row"
+    tasks: [135a2760]
+  - name: tileTemplate
+    signature: "Template × Lattice -> Grid"
+    tasks: [a395ee82]
+  - name: traceSegmentCells
+    signature: "Grid × Segment -> List Cell"
+    tasks: [3e6067c3]
+  - name: transformVariant
+    signature: "Grid × Set Color -> Optional Grid"
+    tasks: [6ffbe589]
+  - name: trimAsymmetricCells
+    signature: "Grid × List Cell × Axis -> Grid"
+    tasks: [8e5c0c38]
+  - name: trimHeader
+    signature: "Grid -> Grid"
+    tasks: [291dc1e1]
+  - name: verticalFold
+    signature: "Grid -> Optional Grid"
+    tasks: [20270e3b]
+  - name: weaveSegments
+    signature: "List Range × List[List Segment] × Int -> Grid"
+    tasks: [291dc1e1]
+  - name: wrapRunsWithHalo
+    signature: "Grid × List Run -> Grid"
+    tasks: [36a08778]
+  - name: writeCountsToBoard
+    signature: "Grid × Dict[Color, int] -> Grid"
+    tasks: [58490d8a]
+  - name: writeSpriteRows
+    signature: "Grid × Int × SpriteRows -> Grid"
+    tasks: [a32d8b75]
+  - name: writeTemplate
+    signature: "Alignment -> TemplateGrid"
+    tasks: [269e22fb]
+types:
+  - name: Alignment
+    tasks: [269e22fb]
+  - name: Anchor
+    tasks: [195c6913]
+  - name: Anchors
+    tasks: [35ab12c3]
+  - name: Assignment
+    tasks: [8698868d]
+  - name: Assignments
+    tasks: [8b9c3697]
+  - name: Axis
+    tasks: [2c181942, 45a5af55, 7ed72f31, 8e5c0c38]
+  - name: Band
+    tasks: [3a25b0d8, 409aa875]
+  - name: BBox
+    tasks: [0934a4d8]
+  - name: Block
+    tasks: [0934a4d8, 332f06d7, 38007db0, 4c3d4a41, 78332cb0, 88e364bc]
+  - name: BlockRow
+    tasks: [38007db0]
+  - name: Bool
+    tasks: [1818057f, 291dc1e1, 7b0280bc, 7b80bb43, 7ed72f31, 8b7bacbf, 97d7923e, 981571dc, aa4ec2a5, c7f57c3e, d8e07eb2]
+  - name: BorderCounts
+    tasks: [d35bdbdc]
+  - name: BorderSpec
+    tasks: [38007db0]
+  - name: BottomColor
+    tasks: [2c181942]
+  - name: BoundingBoxes
+    tasks: [9385bd28]
+  - name: Bounds
+    tasks: [abc82100, b9e38dc0]
+  - name: Box
+    tasks: [2d0172a1, 5dbc8537, 67e490f4, db0c5428, edb79dae]
+  - name: Candidate
+    tasks: [0934a4d8]
+  - name: CapPattern
+    tasks: [97d7923e]
+  - name: Cell
+    tasks: [28a6681f, 2b83f449, 3e6067c3, 71e489b6, 7666fa5d, 7ed72f31, 80a900e0, 88bcf3b4, 8e5c0c38, 8f3a5a89, a25697e4, a47bf94d, aa4ec2a5, dd6b8c4b, de809cff, dfadab01, e376de54, eee78d87]
+  - name: CellRegion
+    tasks: [65b59efc]
+  - name: Col
+    tasks: [1818057f]
+  - name: ColId
+    tasks: [f931b4a8]
+  - name: ColIndex
+    tasks: [b10624e5]
+  - name: ColInfo
+    tasks: [abc82100]
+  - name: Color
+    tasks: [221dfab4, 2d0172a1, 446ef5d2, 45a5af55, 581f7754, 58490d8a, 58f5dbd5, 5dbc8537, 62593bfd, 67e490f4, 6e453dd6, 6ffbe589, 7666fa5d, 78332cb0, 7b0280bc, 7b5033c1, 7b80bb43, 7c66cb00, 800d221b, 80a900e0, 88bcf3b4, 89565ca0, 8b7bacbf, 97d7923e, a25697e4, a395ee82, a47bf94d, aa4ec2a5, abc82100, b0039139, b5ca7ac4, b9e38dc0, c7f57c3e, dbff022c, de809cff, dfadab01, e3721c99, e376de54, e87109e9, edb79dae, faa9f03d, fc7cae8d]
+  - name: ColourCentres
+    tasks: [a47bf94d]
+  - name: ColourGroups
+    tasks: [8e5c0c38]
+  - name: ColourMap
+    tasks: [f560132c]
+  - name: ColourStats
+    tasks: [89565ca0, a25697e4, faa9f03d]
+  - name: Column
+    tasks: [136b0064, 221dfab4, 247ef758, 36a08778, 5545f144]
+  - name: ColumnGeometry
+    tasks: [c4d067a0]
+  - name: ColumnIndex
+    tasks: [97d7923e]
+  - name: ColumnInfo
+    tasks: [9aaea919]
+  - name: ColumnInfoMap
+    tasks: [9aaea919]
+  - name: ColumnInstructionMap
+    tasks: [9aaea919]
+  - name: ColumnMarkerMap
+    tasks: [247ef758]
+  - name: ColumnMasks
+    tasks: [7b80bb43]
+  - name: ColumnRuns
+    tasks: [97d7923e]
+  - name: ColumnStats
+    tasks: [62593bfd]
+  - name: Component
+    tasks: [13e47133, 16b78196, 195c6913, 2ba387bc, 3dc255db, 446ef5d2, 4a21e3da, 4e34c42c, 53fb4810, 581f7754, 58490d8a, 6e453dd6, 6e4f6532, 7666fa5d, 7b0280bc, 7b3084d4, 800d221b, 898e7135, 8b7bacbf, 8b9c3697, aa4ec2a5, b10624e5, bf45cf4b, dbff022c, e12f9a14, e3721c99, f560132c, fc7cae8d]
+  - name: ComponentInfo
+    tasks: [67e490f4]
+  - name: Components
+    tasks: [8698868d]
+  - name: ComponentSet
+    tasks: [c4d067a0]
+  - name: ComponentType
+    tasks: [4e34c42c]
+  - name: ConnectorPair
+    tasks: [cbebaa4b]
+  - name: CorridorCandidates
+    tasks: [8b9c3697]
+  - name: Count
+    tasks: [20a9e565]
+  - name: Counter
+    tasks: [7b5033c1]
+  - name: DiagonalGroups
+    tasks: [db695cfb]
+  - name: Dict
+    tasks: [446ef5d2, 4a21e3da, 4c3d4a41, 581f7754, 58490d8a, 58f5dbd5, 7c66cb00]
+  - name: DiffRange
+    tasks: [7666fa5d]
+  - name: Digit
+    tasks: [136b0064, e87109e9]
+  - name: DigitsLeft
+    tasks: [136b0064]
+  - name: DigitsRight
+    tasks: [136b0064]
+  - name: DigitTemplates
+    tasks: [edb79dae]
+  - name: DistanceInfo
+    tasks: [8b7bacbf]
+  - name: Distances
+    tasks: [2b83f449]
+  - name: Edge
+    tasks: [3dc255db]
+  - name: Feature
+    tasks: [800d221b]
+  - name: FeatureVector
+    tasks: [abc82100]
+  - name: Frame
+    tasks: [8f215267, a251c730, a6f40cea]
+  - name: Gadget
+    tasks: [cbebaa4b]
+  - name: Glyph
+    tasks: [247ef758]
+  - name: GlyphMap
+    tasks: [247ef758]
+  - name: Graph
+    tasks: [5961cc34, cbebaa4b]
+  - name: Grid
+    tasks: [0934a4d8, 136b0064, 13e47133, 16b78196, 16de56c4, 1818057f, 195c6913, 20270e3b, 20a9e565, 221dfab4, 247ef758, 269e22fb, 28a6681f, 291dc1e1, 2b83f449, 2ba387bc, 2c181942, 2d0172a1, 31f7f899, 332f06d7, 35ab12c3, 36a08778, 38007db0, 3a25b0d8, 3dc255db, 3e6067c3, 409aa875, 446ef5d2, 45a5af55, 4a21e3da, 4c3d4a41, 4c416de3, 4c7dc4dd, 4e34c42c, 53fb4810, 5545f144, 581f7754, 58490d8a, 58f5dbd5, 5961cc34, 5dbc8537, 62593bfd, 64efde09, 65b59efc, 67e490f4, 6e453dd6, 6e4f6532, 6ffbe589, 71e489b6, 7491f3cf, 7666fa5d, 78332cb0, 7b0280bc, 7b3084d4, 7b5033c1, 7b80bb43, 7c66cb00, 7ed72f31, 800d221b, 80a900e0, 8698868d, 88bcf3b4, 88e364bc, 89565ca0, 898e7135, 8b7bacbf, 8b9c3697, 8e5c0c38, 8f215267, 8f3a5a89, 9385bd28, 97d7923e, 981571dc, 9aaea919, 9bbf930d, a251c730, a25697e4, a32d8b75, a395ee82, a47bf94d, a6f40cea, aa4ec2a5, abc82100, b0039139, b10624e5, b5ca7ac4, b6f77b65, b99e7126, b9e38dc0, bf45cf4b, c4d067a0, c7f57c3e, cb2d8a2c, cbebaa4b, d35bdbdc, d59b0160, d8e07eb2, db0c5428, db695cfb, dbff022c, dd6b8c4b, de809cff, dfadab01, e12f9a14, e3721c99, e376de54, e8686506, e87109e9, edb79dae, eee78d87, f560132c, f931b4a8, faa9f03d, fc7cae8d]
+  - name: Grid4x4
+    tasks: [2ba387bc]
+  - name: GridBool
+    tasks: [bf45cf4b]
+  - name: Groups
+    tasks: [20a9e565]
+  - name: HandleRuns
+    tasks: [80a900e0]
+  - name: HeaderCounts
+    tasks: [d8e07eb2]
+  - name: HighlightBlocks
+    tasks: [d8e07eb2]
+  - name: Hint
+    tasks: [3e6067c3]
+  - name: HoleStats
+    tasks: [a25697e4]
+  - name: HookFamily
+    tasks: [4c416de3]
+  - name: Hulls
+    tasks: [35ab12c3]
+  - name: Instruction
+    tasks: [9aaea919]
+  - name: InstructionBlock
+    tasks: [a32d8b75]
+  - name: InstructionColumns
+    tasks: [c4d067a0]
+  - name: InstructionSegments
+    tasks: [9aaea919]
+  - name: Int
+    tasks: [13e47133, 291dc1e1, 332f06d7, 6e453dd6, 71e489b6, 7b5033c1, 7b80bb43, 88bcf3b4, 898e7135, 8f215267, a32d8b75, b6f77b65, dd6b8c4b, e3721c99, e87109e9, edb79dae, eee78d87]
+  - name: int
+    tasks: [58490d8a]
+  - name: Iterable
+    tasks: [88e364bc]
+  - name: Label
+    tasks: [800d221b, f560132c]
+  - name: LanePlacements
+    tasks: [b5ca7ac4]
+  - name: LanePlan
+    tasks: [b5ca7ac4]
+  - name: Lattice
+    tasks: [a395ee82]
+  - name: Layout
+    tasks: [58f5dbd5]
+  - name: LegendPairs
+    tasks: [9385bd28]
+  - name: LineGroups
+    tasks: [e376de54]
+  - name: List
+    tasks: [135a2760, 136b0064, 13e47133, 16b78196, 195c6913, 1ae2feb7, 247ef758, 28a6681f, 291dc1e1, 2ba387bc, 31f7f899, 332f06d7, 36a08778, 38007db0, 3a25b0d8, 3dc255db, 3e6067c3, 409aa875, 446ef5d2, 45a5af55, 4a21e3da, 4c416de3, 4c7dc4dd, 4e34c42c, 5545f144, 581f7754, 58490d8a, 58f5dbd5, 5961cc34, 62593bfd, 64efde09, 65b59efc, 67e490f4, 6e453dd6, 6e4f6532, 7666fa5d, 78332cb0, 7b0280bc, 7b3084d4, 7b5033c1, 7b80bb43, 7c66cb00, 7ed72f31, 800d221b, 80a900e0, 88bcf3b4, 898e7135, 8b7bacbf, 8b9c3697, 8e5c0c38, 8f215267, 97d7923e, a25697e4, a32d8b75, aa4ec2a5, abc82100, b10624e5, b5ca7ac4, b6f77b65, c4d067a0, cbebaa4b, d35bdbdc, d59b0160, dbff022c, dd6b8c4b, de809cff, e12f9a14, e3721c99, e376de54, f560132c, f931b4a8]
+  - name: MacroGrid
+    tasks: [b99e7126]
+  - name: Mapping
+    tasks: [269e22fb]
+  - name: Marker
+    tasks: [4c416de3, 6e4f6532]
+  - name: MarkerMap
+    tasks: [a395ee82]
+  - name: Mask
+    tasks: [e3721c99, e87109e9, f560132c]
+  - name: MaskMap
+    tasks: [f560132c]
+  - name: Matrix
+    tasks: [71e489b6, 7b80bb43]
+  - name: MatrixAbove
+    tasks: [2b83f449]
+  - name: MatrixBelow
+    tasks: [2b83f449]
+  - name: MicroBlocks
+    tasks: [db0c5428]
+  - name: Motif
+    tasks: [5961cc34, 64efde09]
+  - name: MotifAlignment
+    tasks: [b99e7126]
+  - name: Object
+    tasks: [6e4f6532, 8b9c3697]
+  - name: Offset
+    tasks: [13e47133, 3dc255db, 4a21e3da, e12f9a14]
+  - name: Optional
+    tasks: [20270e3b, 247ef758, 6e453dd6, 6e4f6532, 6ffbe589, 88e364bc, 97d7923e, a251c730, a32d8b75, b6f77b65, d8e07eb2, db0c5428, dbff022c, dfadab01, e12f9a14, e8686506, e87109e9]
+  - name: Orientation
+    tasks: [5dbc8537, 78332cb0, b9e38dc0, cb2d8a2c, e376de54]
+  - name: OrnamentPalette
+    tasks: [b10624e5]
+  - name: PackedGrid
+    tasks: [446ef5d2]
+  - name: Pair
+    tasks: [d35bdbdc]
+  - name: PaletteRoles
+    tasks: [b9e38dc0]
+  - name: Patch
+    tasks: [8f215267, dfadab01]
+  - name: Path
+    tasks: [cb2d8a2c]
+  - name: Pattern
+    tasks: [135a2760, 195c6913, 6e4f6532, b0039139, e376de54]
+  - name: PlacementMap
+    tasks: [a47bf94d]
+  - name: Point
+    tasks: [58f5dbd5]
+  - name: Position
+    tasks: [88e364bc]
+  - name: Positions
+    tasks: [7b5033c1]
+  - name: PrefixLengths
+    tasks: [89565ca0]
+  - name: Prototype
+    tasks: [7c66cb00]
+  - name: QuadrantPlan
+    tasks: [f560132c]
+  - name: Range
+    tasks: [291dc1e1]
+  - name: Rectangle
+    tasks: [4c7dc4dd]
+  - name: RegionLabels
+    tasks: [8f3a5a89]
+  - name: Ring
+    tasks: [b5ca7ac4, d35bdbdc]
+  - name: RingBlocks
+    tasks: [db0c5428]
+  - name: Room
+    tasks: [d59b0160]
+  - name: RoomFillMap
+    tasks: [d59b0160]
+  - name: Row
+    tasks: [135a2760, 1818057f, 1ae2feb7, 247ef758, 291dc1e1, 31f7f899, 3a25b0d8, 4c3d4a41]
+  - name: RowEnd
+    tasks: [7c66cb00]
+  - name: RowIndex
+    tasks: [31f7f899, b10624e5]
+  - name: RowInfo
+    tasks: [abc82100]
+  - name: RowMarkerMap
+    tasks: [247ef758]
+  - name: RowMetrics
+    tasks: [9bbf930d]
+  - name: RowPlan
+    tasks: [f931b4a8]
+  - name: RowRange
+    tasks: [136b0064]
+  - name: RowStart
+    tasks: [7c66cb00]
+  - name: Run
+    tasks: [36a08778, 97d7923e]
+  - name: Scaffold
+    tasks: [4c7dc4dd]
+  - name: Score
+    tasks: [135a2760, 7b3084d4, dd6b8c4b]
+  - name: Sections
+    tasks: [7c66cb00]
+  - name: Seed
+    tasks: [e12f9a14]
+  - name: Seeds
+    tasks: [b9e38dc0]
+  - name: Segment
+    tasks: [135a2760, 1ae2feb7, 291dc1e1, 3e6067c3, b0039139]
+  - name: SegmentDict
+    tasks: [b9e38dc0]
+  - name: SegmentGroups
+    tasks: [b0039139]
+  - name: SegmentId
+    tasks: [b6f77b65]
+  - name: SegmentKey
+    tasks: [b6f77b65]
+  - name: SegmentRow
+    tasks: [5545f144]
+  - name: Sentinel
+    tasks: [4a21e3da]
+  - name: SeparatorBreaks
+    tasks: [b0039139]
+  - name: Sequence
+    tasks: [c4d067a0]
+  - name: Set
+    tasks: [221dfab4, 2b83f449, 36a08778, 4c3d4a41, 5545f144, 6ffbe589, 71e489b6, 7666fa5d, 7b0280bc, 88bcf3b4, 8f3a5a89, aa4ec2a5, e87109e9, edb79dae]
+  - name: Shape
+    tasks: [7b3084d4]
+  - name: ShapeCatalogue
+    tasks: [67e490f4]
+  - name: ShapeId
+    tasks: [7491f3cf]
+  - name: ShiftPlan
+    tasks: [62593bfd]
+  - name: Shifts
+    tasks: [35ab12c3]
+  - name: Signature
+    tasks: [a251c730, e8686506]
+  - name: SixSeeds
+    tasks: [db695cfb]
+  - name: SparseColumns
+    tasks: [9bbf930d]
+  - name: SpriteRows
+    tasks: [a32d8b75]
+  - name: Stats
+    tasks: [2c181942]
+  - name: Stripe
+    tasks: [31f7f899]
+  - name: StripeDominators
+    tasks: [89565ca0]
+  - name: Sum
+    tasks: [7666fa5d]
+  - name: Summary
+    tasks: [7666fa5d]
+  - name: Tag
+    tasks: [20a9e565]
+  - name: Template
+    tasks: [13e47133, a395ee82]
+  - name: TemplateCandidates
+    tasks: [13e47133]
+  - name: TemplateGrid
+    tasks: [269e22fb]
+  - name: TemplateId
+    tasks: [2d0172a1, 65b59efc, 7491f3cf, eee78d87]
+  - name: TemplateKey
+    tasks: [13e47133]
+  - name: Tile
+    tasks: [b99e7126]
+  - name: TilePartition
+    tasks: [8698868d]
+  - name: TileQuadrants
+    tasks: [f931b4a8]
+  - name: TopColor
+    tasks: [2c181942]
+  - name: Unit
+    tasks: [abc82100]
+combinators:
+  - name: fold_repaint
+    tasks: [13e47133, 1818057f, 195c6913, 247ef758, 3dc255db, 65b59efc, 6e4f6532, 80a900e0, 800d221b, 88e364bc, 8b7bacbf, 8e5c0c38, 8f215267, 97d7923e, 9aaea919, a32d8b75, a47bf94d, aa4ec2a5, b10624e5, dbff022c, dfadab01, e12f9a14, e3721c99, e87109e9]
+    description: "Iterate over ordered items, applying an update callback to accumulate the repainted grid."
