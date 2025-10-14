@@ -39,16 +39,16 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [x] 2ba387bc — Hollow/solid pairing blocks abstraction documented.
 - [x] 2c181942 — Axis-cross reconstruction DSL summary added.
 - [x] 2d0172a1 — Template reconstruction / alternating extension described.
-- [ ] 31f7f899
-- [ ] 332f06d7
-- [ ] 35ab12c3
-- [ ] 36a08778
-- [ ] 38007db0
-- [ ] 3a25b0d8
-- [ ] 3dc255db
-- [ ] 3e6067c3
-- [ ] 409aa875
-- [ ] 446ef5d2
+- [x] 31f7f899 — Stripe sorting backbone DSL captured.
+- [x] 332f06d7 — Zero-block relocation threshold DSL documented.
+- [x] 35ab12c3 — Hull-shift anchor pipeline summarised.
+- [x] 36a08778 — Scaffold wrap filtering operations listed.
+- [x] 38007db0 — Unique block column partition DSL recorded.
+- [x] 3a25b0d8 — Band synthesis typed operations described.
+- [x] 3dc255db — Intruder edge push typed ops added.
+- [x] 3e6067c3 — Hint-path corridor reconstruction noted.
+- [x] 409aa875 — Band lift and centroid marker DSL captured.
+- [x] 446ef5d2 — Grid compactor packing DSL documented.
 - [ ] 45a5af55
 - [ ] 4a21e3da
 - [ ] 4c3d4a41
