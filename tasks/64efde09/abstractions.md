@@ -13,3 +13,13 @@ Final solver uses the `full_shadow` abstraction, with the vertical and horizonta
   - `castHorizontalShadows : Grid × List Motif -> Grid` — project alternating horizontal shadows for wide motifs based on column parity.
   - `mergeShadowPasses : Grid × Grid × Grid -> Grid` — combine the vertical and horizontal shadow canvases with the original grid.
 - **Solver summary**: "Identify motifs, cast vertical shadows, cast orientation-aware horizontal shadows, and merge the passes with the original grid."
+
+## Lambda Representation
+
+```python
+def solve_64efde09(grid: Grid) -> Grid:
+    motifs = identifyMotifs(grid)
+    vertical = castVerticalShadows(grid, motifs)
+    horizontal = castHorizontalShadows(grid, motifs)
+    return mergeShadowPasses(grid, vertical, horizontal)
+```

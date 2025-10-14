@@ -12,3 +12,18 @@
   - `classifyCells : List Feature -> List Label` — apply rule-based shortcuts and the embedded kNN to label cells as `left`, `right`, or `mid`.
   - `repaintByLabels : Grid × Component × List Label × (Color, Color, Color) -> Grid` — recolour component cells according to their labels while preserving mid-cells.
 - **Solver summary**: "Extract transition components, choose flank colours, compute feature vectors for each component cell, classify them via heuristics + kNN, and repaint according to the predicted labels."
+
+## Lambda Representation
+
+```python
+def solve_800d221b(grid: Grid) -> Grid:
+    transition, background, components = extractTargetComponents(grid)
+    left_colour, right_colour = identifyFringeColours(grid, components)
+
+    def repaint(canvas: Grid, component: Component) -> Grid:
+        features = computeFeatures(component, (left_colour, right_colour))
+        labels = classifyCells(features)
+        return repaintByLabels(canvas, component, labels, (left_colour, right_colour, transition))
+
+    return fold_repaint(grid, components, repaint)
+```

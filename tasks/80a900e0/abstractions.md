@@ -8,7 +8,21 @@ Final refinement uses `handle_extension_guarded`, yielding the diagonal-stripe p
 
 ## DSL Structure
 - **Typed operations**
-  - `groupHandlesByColour : Grid -> Dict Color -> List Cell` — collect non-background colours that form diagonal handles.
-  - `findHandleRuns : Dict Color -> List Cell -> (Set Sum, Set Diff)` — detect long diagonal runs per colour and record target diagonals to extend.
-  - `extendAlongAxis : Grid × Set Sum × Set Diff × Color -> Grid` — extend stripes along the perpendicular axis while guarding against overwriting non-background cells.
+  - `groupHandlesByColour : Grid -> List (Color, List Cell)` — collect non-background colours that form diagonal handles.
+  - `findHandleRuns : List (Color, List Cell) -> HandleRuns` — detect long diagonal runs per colour and record target diagonals to extend.
+  - `extendAlongAxis : Grid × HandleRuns × Color -> Grid` — extend stripes along the perpendicular axis while guarding against overwriting non-background cells.
 - **Solver summary**: "Group handles by colour, detect which diagonals should grow, and extend those diagonals along the perpendicular axis with overwrite guards."
+
+## Lambda Representation
+
+```python
+def solve_80a900e0(grid: Grid) -> Grid:
+    handles = groupHandlesByColour(grid)
+    handle_runs = findHandleRuns(handles)
+    colours = [colour for colour, _ in handles]
+
+    def extend(canvas: Grid, colour: Color) -> Grid:
+        return extendAlongAxis(canvas, handle_runs, colour)
+
+    return fold_repaint(grid, colours, extend)
+```

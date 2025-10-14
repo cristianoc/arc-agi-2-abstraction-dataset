@@ -14,3 +14,13 @@
   - `bracketBackgroundCells : Grid × List Summary -> Set Cell` — for each background cell, require supporting components on both sides of its diagonal and collect eligible locations.
   - `fillCorridor : Grid × Set Cell × Color -> Grid` — paint the collected cells with colour 2 while leaving other cells untouched.
 - **Solver summary**: "Extract diagonal components, summarise their diagonal sums/diff ranges, test each background cell for bracketing components, and fill the corridor with colour 2."
+
+## Lambda Representation
+
+```python
+def solve_7666fa5d(grid: Grid) -> Grid:
+    components = extractDiagonalComponents(grid)
+    summaries = summariseComponents(components)
+    corridor = bracketBackgroundCells(grid, summaries)
+    return fillCorridor(grid, corridor, 2)
+```

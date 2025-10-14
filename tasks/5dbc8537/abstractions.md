@@ -11,3 +11,13 @@
   - `expandCollar : Grid × Box -> Box` — grow the bounding box outward while preserving background collars.
   - `repaintWithPalette : Grid × Box × Orientation -> Grid` — recolour the block using the orientation-specific hard-coded palette maps.
 - **Solver summary**: "Find the two-colour instruction block, infer its orientation, expand the bounding box to include collars, then repaint the block with the corresponding palette."
+
+## Lambda Representation
+
+```python
+def solve_5dbc8537(grid: Grid) -> Grid:
+    fill_color, box = findTwoColourRegion(grid)
+    orientation = inferOrientation(grid, box)
+    expanded = expandCollar(grid, box)
+    return repaintWithPalette(grid, expanded, orientation)
+```

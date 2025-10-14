@@ -7,7 +7,17 @@
 ## DSL Structure
 - **Typed operations**
   - `tallyColours : Grid -> Counter` — count occurrences of every colour.
-  - `findFirstPosition : Grid -> Dict Color -> (Row, Col)` — record the first (row, column) where each colour appears.
-  - `orderColoursByFirstSeen : Counter × Dict -> List (Color, Int)` — sort non-background colours by their first position and retain their counts.
+  - `findFirstPosition : Grid -> Positions` — record the first (row, column) where each colour appears.
+  - `orderColoursByFirstSeen : Counter × Positions -> List (Color, Int)` — sort non-background colours by their first position and retain their counts.
   - `buildHistogramColumn : List (Color, Int) -> Grid` — expand each colour into a vertical run equal to its count to form the output column.
 - **Solver summary**: "Count colours, track the earliest appearance of each one, sort by that position, and build the vertical histogram column in that order."
+
+## Lambda Representation
+
+```python
+def solve_7b5033c1(grid: Grid) -> Grid:
+    counts = tallyColours(grid)
+    first_seen = findFirstPosition(grid)
+    ordered = orderColoursByFirstSeen(counts, first_seen)
+    return buildHistogramColumn(ordered)
+```

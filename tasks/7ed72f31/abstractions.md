@@ -13,3 +13,11 @@ Final approach: prefer the nearest-axis reflection abstraction because it alread
   - `reflectAcrossAxis : Axis × Cell -> Cell` — mirror a cell’s coordinates around the chosen axis centre.
   - `paintReflections : Grid × List Axis -> Grid` — for each non-background cell, choose the nearest applicable axis and reflect it onto background cells.
 - **Solver summary**: "Identify axis components, determine which axis applies to each coloured cell, reflect the cell across the chosen axis, and paint the reflection if the target cell is background."
+
+## Lambda Representation
+
+```python
+def solve_7ed72f31(grid: Grid) -> Grid:
+    axes = extractAxes(grid)
+    return paintReflections(grid, axes)
+```

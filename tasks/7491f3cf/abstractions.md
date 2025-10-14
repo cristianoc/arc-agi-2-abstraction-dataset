@@ -12,3 +12,15 @@
   - `chooseTemplate : ShapeId × ShapeId -> TemplateId` — select the overlay routine (cross subset vs. block template) based on panel pairings.
   - `renderTemplatePanel : TemplateId × Grid × Grid -> Grid` — apply the chosen overlay, preserving borders and copying accents to form the final panel.
 - **Solver summary**: "Slice the panels, classify their interior shapes, pick the appropriate overlay template, and render that template into the output panel before copying it to the right section."
+
+## Lambda Representation
+
+```python
+def solve_7491f3cf(grid: Grid) -> Grid:
+    left, centre, right = extractPanels(grid)
+    left_shape = classifyPanelShape(left)
+    centre_shape = classifyPanelShape(centre)
+    template = chooseTemplate(left_shape, centre_shape)
+    rendered = renderTemplatePanel(template, left, centre)
+    return renderTemplatePanel(template, rendered, right)
+```

@@ -8,6 +8,16 @@
 - **Typed operations**
   - `computeForegroundMask : Grid -> (Color, Matrix Bool)` — identify the dominant foreground colour and build a mask of its cells.
   - `selectKeyColumns : Matrix Bool -> List Int` — pick columns whose foreground counts exceed dynamic thresholds (with fallbacks when sparse).
-  - `buildColumnMasks : Matrix Bool × List Int -> Dict Int -> List Bool` — keep or bridge vertical runs in each key column using support tests and gap limits.
-  - `extendRows : Matrix Bool × Dict Int -> List Bool -> Grid` — merge vertical masks with horizontal row segments, bridge short gaps on the pivot row, and paint the regularised structure.
+  - `buildColumnMasks : Matrix Bool × List Int -> ColumnMasks` — keep or bridge vertical runs in each key column using support tests and gap limits.
+  - `extendRows : Matrix Bool × ColumnMasks -> Grid` — merge vertical masks with horizontal row segments, bridge short gaps on the pivot row, and paint the regularised structure.
 - **Solver summary**: "Compute the foreground mask, choose key columns, refine column masks with gap bridging, then extend rows (including guarded bridges) to produce the cleaned linework."
+
+## Lambda Representation
+
+```python
+def solve_7b80bb43(grid: Grid) -> Grid:
+    foreground_color, mask = computeForegroundMask(grid)
+    key_columns = selectKeyColumns(mask)
+    column_masks = buildColumnMasks(mask, key_columns)
+    return extendRows(mask, column_masks)
+```
