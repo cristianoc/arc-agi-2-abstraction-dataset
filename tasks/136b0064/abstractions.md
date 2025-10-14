@@ -6,8 +6,17 @@
 ## DSL Structure
 - **Typed operations**
   - `splitBlocks : Grid -> List RowRange` — find row intervals containing left-side digits.
-  - `extractDigits : Grid × RowRange -> Digits` — read dominant colours to identify digits on both sides of the separator.
-  - `glyphSize : Digit -> (Height, Width)` — fetch glyph dimensions from predefined templates.
-  - `planPositions : Digits × AnchorInfo -> List Column` — run the placement heuristic to sequence starting columns.
-  - `renderDigits : Grid × List Column × Digits -> Grid` — paint glyph patterns into the target panel in order.
+  - `extractDigitLists : Grid × List RowRange -> (DigitsLeft, DigitsRight)` — read dominant colours to identify the digit sequence on each side of the separator.
+  - `planDigitColumns : Grid × DigitsLeft × DigitsRight -> List Column` — run the placement heuristic that decides starting columns for the combined digit stream.
+  - `renderDigits : Grid × List Column × List Digit -> Grid` — paint glyph patterns into the target panel in order.
 - **Solver summary**: "Decode digits on the left blocks, plan their column positions via the heuristic, then render the glyph templates sequentially on the right panel."
+
+## Lambda Representation
+
+```python
+def solve_136b0064(grid: Grid) -> Grid:
+    blocks = splitBlocks(grid)
+    left_digits, right_digits = extractDigitLists(grid, blocks)
+    sequence = planDigitColumns(grid, left_digits, right_digits)
+    return renderDigits(grid, sequence, left_digits + right_digits)
+```

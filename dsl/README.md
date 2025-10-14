@@ -1,9 +1,10 @@
 # DSL Overview
 
-This directory tracks the evolving abstraction DSL used while surveying the ARC‑AGI‑2 evaluation tasks.  The current DSL snapshot is described in `dsl_state.yaml` (version `66`, timestamp `2025-10-13T11:05:00Z`).  Two additional companion files capture the running analysis:
+This directory tracks the evolving abstraction DSL used while surveying the ARC‑AGI‑2 evaluation tasks.  The current DSL snapshot is described in `dsl_state.yaml` (version `66`, timestamp `2025-10-13T11:05:00Z`).  Companion files capture auxiliary analysis and tooling:
 
 - `task_log.md` – narrative entries for every processed task, including the DSL sketch, gaps, and new primitive/combinator notes.
 - `task_progress.yaml` – bookkeeping for processed versus yet-to-be-reviewed tasks.
+- `check_lambda_types.py` – utility that extracts typed-operation declarations and lambda snippets from each `abstractions.md`, emits typed stubs, and runs `mypy` to spot signature drift.
 
 The sections below summarise the structure recorded in `dsl_state.yaml`; consult that file for the authoritative list of primitive descriptions.
 
@@ -38,6 +39,16 @@ No other control flow is in use; complex behaviour is implemented by composing p
 4. **Commit** – capture the changes on the working branch (see existing commit messages for convention).
 
 The expectation is that every new primitive/combinator mentioned in the log has a matching definition in the YAML file.  When deleting or renaming primitives, update historical log entries for clarity.
+
+## Type-Checking Lambda Blocks
+
+Every abstraction file now ends with a `## Lambda Representation` snippet.  To verify that those lambdas remain consistent with the DSL signatures, run:
+
+```bash
+python3 dsl/check_lambda_types.py tasks/**/abstractions.md
+```
+
+The script builds lightweight stubs for each abstraction, calls `mypy`, and reports undefined helpers, arity mismatches, or other drift.  Run it whenever the DSL summaries change to ensure everything stays aligned.
 
 ## Future Work
 

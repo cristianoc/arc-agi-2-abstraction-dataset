@@ -9,8 +9,20 @@ Final refinement: scaffold filtered abstraction composed with the original grid 
 
 ## DSL Structure
 - **Typed operations**
-  - `extractScaffoldColumns : Grid -> List Column` — detect the seed columns (colour 6) that act as scaffolds.
-  - `propagateScaffolds : Grid × List Column -> Dict Column -> Segment` — extend each scaffold downward while recording the segments the scaffold touches.
-  - `selectWrapTargets : Dict Column -> Segment -> List Segment` — filter candidate colour-2 runs to those contacted by an active scaffold.
-  - `wrapSegmentsWithHalo : Grid × List Segment -> Grid` — surround the selected runs with the halo colour while leaving untouched runs unchanged.
+  - `extractScaffoldColumns : Grid -> Set Column` — detect the seed columns (colour 6) that act as scaffolds.
+  - `extendScaffolds : Grid × Set Column -> Grid` — propagate each scaffold downward until a colour-2 barrier is hit, writing the scaffold colour into the canvas.
+  - `collectRuns : Grid -> List Run` — enumerate horizontal colour-2 runs together with their row and span.
+  - `filterRunsByScaffold : List Run × Grid -> List Run` — keep only runs that touch the propagated scaffolding.
+  - `wrapRunsWithHalo : Grid × List Run -> Grid` — surround the selected runs with the halo colour while leaving untouched runs unchanged.
 - **Solver summary**: "Find scaffold columns, propagate them through the grid, select only the 2-runs touched by those scaffolds, then wrap the selected segments with the halo."
+
+## Lambda Representation
+
+```python
+def solve_36a08778(grid: Grid) -> Grid:
+    scaffold_cols = extractScaffoldColumns(grid)
+    scaffolded = extendScaffolds(grid, scaffold_cols)
+    runs = collectRuns(grid)
+    wrap_targets = filterRunsByScaffold(runs, scaffolded)
+    return wrapRunsWithHalo(scaffolded, wrap_targets)
+```

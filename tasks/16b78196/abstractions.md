@@ -10,8 +10,22 @@ Final refinement: `compressed_width_stack`, which preserves the dominant strip w
 ## DSL Structure
 - **Typed operations**
   - `getComponents : Grid -> List Component` — extract non-zero components with bounding boxes and shapes.
-  - `splitByWidth : List Component -> (Dominant, Wide, Narrow)` — identify the dominant component and partition others by width.
-  - `stackWide : List Component × Anchor -> Grid` — stack wide components above the dominant block using the spacing heuristic.
+  - `splitByWidth : List Component -> (Component, List Component, List Component)` — identify the dominant component and partition the remainder into wide and narrow sets.
+  - `paintDominantBand : Grid × Component -> Grid` — copy the dominant strip onto a fresh canvas.
+  - `placeWideComponents : Grid × List Component × Component -> Grid` — stack wide components above the dominant band using the spacing heuristic.
   - `orderNarrow : List Component -> List Component` — compute the bespoke ordering for narrow components (colour buckets and tails).
-  - `stackNarrow : List Component × Anchor -> Grid` — stack the narrow components relative to the dominant band and averaged columns.
+  - `placeNarrowComponents : Grid × List Component × Component -> Grid` — tuck the ordered narrow components beneath the dominant band while preserving alignment.
 - **Solver summary**: "Keep the dominant band, stack wide components above it, order and stack the narrow components below, and render the combined arrangement on a fresh canvas."
+
+## Lambda Representation
+
+```python
+def solve_16b78196(grid: Grid) -> Grid:
+    components = getComponents(grid)
+    dominant, wide, narrow = splitByWidth(components)
+    
+    result = paintDominantBand(grid, dominant)
+    result = placeWideComponents(result, wide, dominant)
+    ordered_narrow = orderNarrow(narrow)
+    return placeNarrowComponents(result, ordered_narrow, dominant)
+```

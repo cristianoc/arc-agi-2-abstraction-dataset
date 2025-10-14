@@ -7,8 +7,27 @@
 ## DSL Structure
 - **Typed operations**
   - `findAxisColumn : Grid -> Optional Column` — locate the separator column whose values are constant and non-zero.
-  - `extractGlyphs : Grid × Column -> Dict Color -> Glyph` — collect each left-side glyph (list of cell offsets) keyed by colour.
-  - `extractColumnMarkers : Grid × Column -> Dict Color -> Set Column` — read top-row markers to determine target columns per colour.
-  - `extractRowMarkers : Grid -> Dict Color -> Set Row` — read last-column markers to determine target rows per colour.
-  - `placeGlyphs : Grid × Glyph × Set Row × Set Column -> Grid` — clear the source glyph and stamp it at every row/column combination via its offsets.
+  - `extractGlyphs : Grid × Column -> GlyphMap` — collect each left-side glyph keyed by colour.
+  - `extractColumnMarkers : Grid × Column -> ColumnMarkerMap` — read top-row markers to determine target columns per colour.
+  - `extractRowMarkers : Grid -> RowMarkerMap` — read last-column markers to determine target rows per colour.
+  - `placeGlyphs : Grid × Glyph × List Row × List Column -> Grid` — clear the source glyph and stamp it at every row/column combination via its offsets.
 - **Solver summary**: "Find the axis column, extract each coloured glyph, read its row/column markers from the borders, then place the glyph at every marker combination."
+
+## Lambda Representation
+
+```python
+def solve_247ef758(grid: Grid) -> Grid:
+    axis_col = findAxisColumn(grid)
+    if axis_col is None:
+        return grid
+    
+    glyphs = extractGlyphs(grid, axis_col)
+    col_markers = extractColumnMarkers(grid, axis_col)
+    row_markers = extractRowMarkers(grid)
+    
+    result = grid
+    for color, glyph in glyphs.items():
+        result = placeGlyphs(result, glyph, row_markers[color], col_markers[color])
+    
+    return result
+```

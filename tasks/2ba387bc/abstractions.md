@@ -10,6 +10,19 @@ Final solver: `hollow_vs_solid` abstraction — converts each hollow component t
 - **Typed operations**
   - `extractComponents : Grid -> List Component` — gather components with metadata (colour, bounding box, hollowness).
   - `partitionByHollowness : List Component -> (List Component, List Component)` — split components into hollow vs. solid lists.
-  - `resampleToFour : Pattern -> Grid4x4` — resize each component pattern to a 4×4 block via nearest-neighbour sampling.
+  - `resampleToFour : Component -> Grid4x4` — resize each component mask to a 4×4 block via nearest-neighbour sampling.
   - `packPairs : List Grid4x4 × List Grid4x4 -> Grid` — zip hollow/solid blocks (padding with zeros) and stitch them side by side.
 - **Solver summary**: "Extract components, split into hollow vs. solid, resample each to 4×4, and stitch the paired blocks horizontally."
+
+## Lambda Representation
+
+```python
+def solve_2ba387bc(grid: Grid) -> Grid:
+    components = extractComponents(grid)
+    hollows, solids = partitionByHollowness(components)
+    
+    hollow_blocks = [resampleToFour(comp) for comp in hollows]
+    solid_blocks = [resampleToFour(comp) for comp in solids]
+    
+    return packPairs(hollow_blocks, solid_blocks)
+```

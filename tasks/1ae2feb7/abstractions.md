@@ -7,5 +7,16 @@
 ## DSL Structure
 - **Typed operations**
   - `collectSegments : Row -> List Segment` — find colour segments to the left of the barrier column.
-  - `extendSegment : Row × Segment -> Row` — repeat each segment to the right of the barrier at its own length spacing.
+  - `repeatSegments : Row × List Segment -> Row` — copy each segment to the right of the barrier at its own length spacing.
 - **Solver summary**: "For each row, record the colour segments before the barrier and repeat each segment to the right across the barrier at matching spacing."
+
+## Lambda Representation
+
+```python
+def solve_1ae2feb7(grid: Grid) -> Grid:
+    def processRow(row: Row) -> Row:
+        segments = collectSegments(row)
+        return repeatSegments(row, segments)
+    
+    return [processRow(row) for row in grid]
+```
