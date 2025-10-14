@@ -8,8 +8,26 @@ Final refinement adopts `block_map_full`, which exactly matches the training out
 
 ## DSL Structure
 - **Typed operations**
-  - `sliceInstructionBlock : Grid × Int -> Tuple Tuple Int` — read each 3×6 instruction strip on the left side.
-  - `lookupSpriteRows : Tuple Tuple Int -> Optional List Row` — fetch the precomputed 3×24 sprite rows for the instruction block.
-  - `writeSpriteRows : Grid × Int × List Row -> Grid` — overwrite the corresponding rows on the right portion with the looked-up sprite.
+  - `enumerateInstructionIndices : Grid -> List Int` — determine the indices of 3×6 instruction strips on the left.
+  - `sliceInstructionBlock : Grid × Int -> InstructionBlock` — read each 3×6 instruction strip on the left side.
+  - `lookupSpriteRows : InstructionBlock -> Optional SpriteRows` — fetch the precomputed 3×24 sprite rows for the instruction block.
+  - `writeSpriteRows : Grid × Int × SpriteRows -> Grid` — overwrite the corresponding rows on the right portion with the looked-up sprite.
   - `handleTailBlock : Grid × Int -> Grid` — apply the specialised two-row templates for leftover rows at the bottom.
 - **Solver summary**: "Slice each instruction strip, map it to the stored sprite rows, write those rows onto the right-hand canvas, and handle any trailing rows with the tail templates."
+
+## Lambda Representation
+
+```python
+def solve_a32d8b75(grid: Grid) -> Grid:
+    indices = enumerateInstructionIndices(grid)
+
+    def paint_block(canvas: Grid, idx: int) -> Grid:
+        block = sliceInstructionBlock(grid, idx)
+        sprite_rows = lookupSpriteRows(block)
+        if sprite_rows is None:
+            return canvas
+        return writeSpriteRows(canvas, idx, sprite_rows)
+
+    rendered = fold_repaint(grid, indices, paint_block)
+    return handleTailBlock(rendered, len(indices))
+```

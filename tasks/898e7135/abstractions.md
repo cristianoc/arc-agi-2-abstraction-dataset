@@ -13,3 +13,13 @@ Final approach: use the dynamic abstraction (implemented in `analysis/arc2_sampl
   - `expandComponent : Component × Int -> Grid` — blow up each component by the inferred scale while filling enclosed zeros.
   - `composeUpscaledGrid : List Grid -> Grid` — stitch the upscaled components back into the output grid respecting their relative positions.
 - **Solver summary**: "Extract components, infer the upscale factor from their areas, expand each component accordingly, and compose the scaled components into the final grid."
+
+## Lambda Representation
+
+```python
+def solve_898e7135(grid: Grid) -> Grid:
+    components = extractComponents(grid)
+    scale = inferScaleFactor(components)
+    upscaled = [expandComponent(component, scale) for component in components]
+    return composeUpscaledGrid(upscaled)
+```

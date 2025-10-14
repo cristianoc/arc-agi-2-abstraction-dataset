@@ -7,8 +7,19 @@
 ## DSL Structure
 - **Typed operations**
   - `floodAccessibleBackground : Grid -> Set Cell` — flood-fill colour-8 cells reachable from the left edge.
-  - `labelInaccessibleRegions : Grid × Set Cell -> Dict Cell -> Bool` — classify other background cells by whether their components touch the border.
+  - `labelInaccessibleRegions : Grid × Set Cell -> RegionLabels` — classify other background cells by whether their components touch the border.
   - `pruneOnes : Grid × Set Cell -> Grid` — remove colour-1 components that neither touch the left edge nor border the accessible background.
-  - `selectFrontierCells : Grid × Set Cell × Dict Cell -> Set Cell` — choose accessible background cells that neighbour the exterior or diagonal obstacles.
+  - `selectFrontierCells : Grid × Set Cell × RegionLabels -> Set Cell` — choose accessible background cells that neighbour the exterior or diagonal obstacles.
   - `paintFrontier : Grid × Set Cell -> Grid` — colour the selected frontier cells with 7 and leave the rest as 8.
 - **Solver summary**: "Flood the left-accessible background, label the remaining background components, prune irrelevant `1`s, select the frontier cells adjacent to obstacles or the exterior, and paint those frontier cells with colour 7."
+
+## Lambda Representation
+
+```python
+def solve_8f3a5a89(grid: Grid) -> Grid:
+    accessible = floodAccessibleBackground(grid)
+    region_labels = labelInaccessibleRegions(grid, accessible)
+    pruned = pruneOnes(grid, accessible)
+    frontier = selectFrontierCells(pruned, accessible, region_labels)
+    return paintFrontier(pruned, frontier)
+```

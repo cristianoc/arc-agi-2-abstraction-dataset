@@ -259,13 +259,14 @@ def validate_lambda_purity(lambda_code: str, source_path: Path) -> List[str]:
                             violations.append(f"{source_path}:{inner.lineno}: multiple assignment targets not allowed")
                             continue
                         target = inner.targets[0]
-                        if isinstance(target, ast.Name):
-                            allowed_target = True
-                        elif isinstance(target, (ast.Tuple, ast.List)):
-                            allowed_target = all(isinstance(elt, ast.Name) for elt in target.elts)
-                        else:
-                            allowed_target = False
-                        if not allowed_target:
+                        def _allowed_target(node: ast.AST) -> bool:
+                            if isinstance(node, ast.Name):
+                                return True
+                            if isinstance(node, (ast.Tuple, ast.List)):
+                                return all(_allowed_target(elt) for elt in node.elts)
+                            return False
+
+                        if not _allowed_target(target):
                             violations.append(f"{source_path}:{inner.lineno}: helper assignments must target names or tuples of names")
                         elif not is_pure_expr(inner.value):
                             violations.append(f"{source_path}:{inner.lineno}: helper assignment uses disallowed expression")
@@ -282,13 +283,15 @@ def validate_lambda_purity(lambda_code: str, source_path: Path) -> List[str]:
                     violations.append(f"{source_path}:{stmt.lineno}: multiple assignment targets not allowed")
                     continue
                 target = stmt.targets[0]
-                if isinstance(target, ast.Name):
-                    allowed_target = True
-                elif isinstance(target, (ast.Tuple, ast.List)):
-                    allowed_target = all(isinstance(elt, ast.Name) for elt in target.elts)
-                else:
-                    allowed_target = False
-                if not allowed_target:
+
+                def _allowed_target(node: ast.AST) -> bool:
+                    if isinstance(node, ast.Name):
+                        return True
+                    if isinstance(node, (ast.Tuple, ast.List)):
+                        return all(_allowed_target(elt) for elt in node.elts)
+                    return False
+
+                if not _allowed_target(target):
                     violations.append(f"{source_path}:{stmt.lineno}: assignments must target names or tuples of names")
                 elif not is_pure_expr(stmt.value):
                     violations.append(f"{source_path}:{stmt.lineno}: assignment uses disallowed expression")

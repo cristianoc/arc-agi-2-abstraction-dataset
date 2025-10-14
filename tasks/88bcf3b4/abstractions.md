@@ -8,7 +8,17 @@ Final solver uses `path_projection` alone—the identity baseline only informed 
 ## DSL Structure
 - **Typed operations**
   - `classifyColumns : Grid -> (Color, Color)` — detect the anchor column colour and adjacent accent colour by scanning column components.
-  - `locateContactAndStart : Grid × Color × Color -> (Cell, Cell, Color)` — find the accent contact point next to the anchor and choose the starting component for the path.
-  - `_PathGenerator.generate : Grid × Cell × Cell × Int × Set Cell × Color -> List Cell` — compute the monotone king-move path following approach/plateau/departure heuristics.
+  - `locateContactAndStart : Grid × Color × Color -> (Cell, Cell, Color, Set Cell, Int)` — find the accent contact point next to the anchor and choose the starting component for the path.
+  - `generatePath : Grid × Cell × Cell × Set Cell × Int × Color -> List Cell` — compute the monotone king-move path following approach/plateau/departure heuristics.
   - `rewritePath : Grid × Set Cell × List Cell -> Grid` — clear the original accent cells and draw the generated path onto the grid.
 - **Solver summary**: "Identify the anchor and accent columns, locate the contact/starting cells, generate the king-move path according to the learned heuristics, and redraw the accent along that path."
+
+## Lambda Representation
+
+```python
+def solve_88bcf3b4(grid: Grid) -> Grid:
+    anchor_color, accent_color = classifyColumns(grid)
+    contact, start, start_color, accent_cells, anchor_x = locateContactAndStart(grid, anchor_color, accent_color)
+    path_cells = generatePath(grid, contact, start, accent_cells, anchor_x, start_color)
+    return rewritePath(grid, accent_cells, path_cells)
+```

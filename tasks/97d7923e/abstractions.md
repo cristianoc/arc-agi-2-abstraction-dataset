@@ -6,8 +6,28 @@
 
 ## DSL Structure
 - **Typed operations**
-  - `parseColumnRuns : Grid -> Dict Int -> List Run` — for each column, compute colour runs with lengths and start rows.
-  - `detectCapPattern : List Run -> Optional (Run, Run, Run)` — identify top/mid/bottom runs where top and bottom colours match and the middle is zero.
-  - `applyFillGuards : ColumnIndex × (Run, Run, Run) -> Bool` — evaluate heuristics (upstream caps, row-3 tall runs, right-edge towers) to decide whether to fill the middle run.
+  - `parseColumnRuns : Grid -> ColumnRuns` — for each column, compute colour runs with lengths and start rows.
+  - `detectCapPattern : List Run -> Optional CapPattern` — identify top/mid/bottom runs where top and bottom colours match and the middle is zero.
+  - `applyFillGuards : ColumnIndex × CapPattern -> Bool` — evaluate heuristics (upstream caps, row-3 tall runs, right-edge towers) to decide whether to fill the middle run.
   - `paintColumnRun : Grid × ColumnIndex × Run × Color -> Grid` — recolour qualifying middle runs with the cap colour.
 - **Solver summary**: "Parse column runs, find zero runs sandwiched by matching caps, keep only those that pass the learned guards, and paint the middle runs with the cap colour."
+
+## Lambda Representation
+
+```python
+def solve_97d7923e(grid: Grid) -> Grid:
+    column_runs = parseColumnRuns(grid)
+    entries = list(column_runs.items())
+
+    def repaint(canvas: Grid, entry):
+        column_index, runs = entry
+        pattern = detectCapPattern(runs)
+        if pattern is None:
+            return canvas
+        top, middle, bottom = pattern
+        if not applyFillGuards(column_index, pattern):
+            return canvas
+        return paintColumnRun(canvas, column_index, middle, top.color)
+
+    return fold_repaint(grid, entries, repaint)
+```

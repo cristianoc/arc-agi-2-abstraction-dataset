@@ -13,3 +13,12 @@ The final row_col_match pipeline generates a symmetric 30×30 grid on the test i
   - `iterateCompletion : Grid -> Grid` — alternate between row and column completion until no further changes occur.
   - `mirrorDiagonalZeros : Grid -> Grid` — copy non-zero values across the main diagonal to eliminate remaining zeros.
 - **Solver summary**: "Iteratively complete rows and columns by borrowing matching lines, repeat until stable, and mirror any leftover zeros across the diagonal."
+
+## Lambda Representation
+
+```python
+def solve_981571dc(grid: Grid) -> Grid:
+    filled, _ = fillIncompleteLines(grid)
+    completed = iterateCompletion(filled)
+    return mirrorDiagonalZeros(completed)
+```
