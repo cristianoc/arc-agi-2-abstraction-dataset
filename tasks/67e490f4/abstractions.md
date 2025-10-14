@@ -5,3 +5,10 @@
 
 Final pipeline: apply `two_colour_scan`, then recolour each motif component with the dominant matching shape colour gathered from the rest of the grid.
 
+## DSL Structure
+- **Typed operations**
+  - `locateTwoColourSquare : Grid -> (Box, Color, Color)` — search for the largest square whose palette has exactly two colours and whose components fit the size thresholds.
+  - `catalogueExternalShapes : Grid × Box -> Dict Shape -> Counter Color` — enumerate connected components outside the square, canonicalise their shapes, and tally their colours.
+  - `classifyMotifComponents : Grid × Box × Color -> List (Shape, Cells, Category)` — segment motif components within the square and assign semantic categories (corner/edge/ring/centre) based on position.
+  - `recolourMotif : List (Shape, Cells, Category) × Dict Shape -> Counter Color × Color -> Grid` — map each category to the most frequent matching colour from the external catalogue and paint the motif accordingly.
+- **Solver summary**: "Find the defining two-colour square, catalogue external component shapes, classify each motif component inside the square, and recolour it with the dominant matching shape colour."
