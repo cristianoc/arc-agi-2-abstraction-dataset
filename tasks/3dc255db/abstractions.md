@@ -19,12 +19,11 @@ Final solver: `intruder_edge_push` applied directly in `analysis/arc2_samples/3d
 ```python
 def solve_3dc255db(grid: Grid) -> Grid:
     intruders = extractIntruders(grid)
-    result = grid
     
-    for component in intruders:
+    def push(canvas: Grid, component: Component) -> Grid:
         drift = computeDrift(component)
         edge = chooseTargetEdge(drift)
-        result = pushComponent(result, component, edge)
+        return pushComponent(canvas, component, edge)
     
-    return result
+    return fold_repaint(grid, intruders, push)
 ```

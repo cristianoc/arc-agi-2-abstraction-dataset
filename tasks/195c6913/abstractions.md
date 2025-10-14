@@ -34,8 +34,8 @@ def solve_195c6913(grid: Grid) -> Grid:
     result = stripPalette(grid, pattern)
     anchors = locateAnchors(result, pattern)
     
-    for anchor in anchors:
-        result = propagatePattern(result, pattern, anchor)
+    def propagate(canvas: Grid, anchor: Anchor) -> Grid:
+        return propagatePattern(canvas, pattern, anchor)
     
-    return result
+    return fold_repaint(result, anchors, propagate)
 ``` 

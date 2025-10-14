@@ -20,16 +20,16 @@ The released solver uses the `templates_final` abstraction, which combines ancho
 ```python
 def solve_13e47133(grid: Grid) -> Grid:
     components = findComponents(grid)
-    result = grid
     
-    for comp in components:
+    def overlay_component(canvas: Grid, comp: Component) -> Grid:
         template_keys = lookupTemplates(comp)
         offset = selectOffset(comp, template_keys)
-        if offset is not None:
-            template = loadTemplate((comp.color, comp.height, comp.size, offset))
-            start_row = comp.min_row + offset[0]
-            start_col = comp.min_col + offset[1]
-            result = overlayTemplate(result, template, start_row, start_col)
+        if offset is None:
+            return canvas
+        template = loadTemplate((comp.color, comp.height, comp.size, offset))
+        start_row = comp.min_row + offset[0]
+        start_col = comp.min_col + offset[1]
+        return overlayTemplate(canvas, template, start_row, start_col)
     
-    return result
+    return fold_repaint(grid, components, overlay_component)
 ```

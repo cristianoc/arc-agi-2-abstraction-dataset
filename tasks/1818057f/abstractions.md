@@ -15,12 +15,12 @@ Final solver mirrors the `plus_painter` abstraction directly; no additional hybr
 
 ```python
 def solve_1818057f(grid: Grid) -> Grid:
-    result = grid
+    candidates = [(r, c) for r in range(1, len(grid) - 1) for c in range(1, len(grid[0]) - 1)]
     
-    for r in range(1, len(grid) - 1):
-        for c in range(1, len(grid[0]) - 1):
-            if isPlus(grid, (r, c)):
-                result = repaintPlus(result, (r, c))
+    def repaint(canvas: Grid, position: Tuple[int, int]) -> Grid:
+        if isPlus(grid, position):
+            return repaintPlus(canvas, position)
+        return canvas
     
-    return result
-``` 
+    return fold_repaint(grid, candidates, repaint)
+```
