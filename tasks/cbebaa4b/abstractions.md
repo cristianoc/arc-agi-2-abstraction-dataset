@@ -13,3 +13,13 @@ The connector graph abstraction also produces plausible layouts on the two test 
   - `buildConnectorGraph : List Gadget × List ConnectorPair -> Graph` — assemble the gadget connectivity graph rooted at the door block.
   - `applyTranslations : Grid × Graph -> Grid` — translate each gadget according to the graph while moving its connectors.
 - **Solver summary**: "Extract gadget components with connectors, pair the connectors to find translation deltas, build the connector graph, and translate each gadget accordingly."
+
+## Lambda Representation
+
+```python
+def solve_cbebaa4b(grid: Grid) -> Grid:
+    gadgets = extractGadgetComponents(grid)
+    pairs = pairConnectors(gadgets)
+    graph = buildConnectorGraph(gadgets, pairs)
+    return applyTranslations(grid, graph)
+```

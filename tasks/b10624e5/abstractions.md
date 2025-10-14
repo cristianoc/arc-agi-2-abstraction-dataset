@@ -1,4 +1,3 @@
-<***EOF
 # Task b10624e5 – Abstraction Notes
 
 - **naive** – copies horizontal and vertical ornaments from the reference colour-2 blocks without distinguishing inner/outer colours; succeeds on only 1/2 train grids (fails train[0]).
@@ -13,4 +12,17 @@ Final solver adopts the refined template expansion; it extracts the cross axes f
   - `inferOrnamentColours : Grid × Component × (RowIndex, ColIndex) -> OrnamentPalette` — sample neighbouring cells to choose inner/outer horizontal and vertical colours, dropping redundant inner bands.
   - `paintOrnaments : Grid × Component × OrnamentPalette -> Grid` — expand each component horizontally and vertically according to the inferred palette while preserving the frame.
 - **Solver summary**: "Find the centre cross, extract each colour-2 component, infer the horizontal/vertical ornament colours from surrounding cells, and paint those ornaments around the components."
-***EOF
+
+## Lambda Representation
+
+```python
+def solve_b10624e5(grid: Grid) -> Grid:
+    cross = findCenterCross(grid)
+    components = extractTwoComponents(grid)
+
+    def repaint(canvas: Grid, component: Component) -> Grid:
+        palette = inferOrnamentColours(canvas, component, cross)
+        return paintOrnaments(canvas, component, palette)
+
+    return fold_repaint(grid, components, repaint)
+```

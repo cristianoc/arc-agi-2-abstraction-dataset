@@ -12,3 +12,18 @@ Final solver uses the `partner_rule` abstraction.
   - `choosePartnerColour : Component -> Optional Color` — apply the partner heuristics to decide the fill colour for a cavity.
   - `fillComponent : Grid × Component × Color -> Grid` — repaint the cavity cells with the chosen partner colour.
 - **Solver summary**: "Enumerate zero cavities with their metadata, pick the partner colour per cavity, then fill the cavity cells accordingly."
+
+## Lambda Representation
+
+```python
+def solve_dbff022c(grid: Grid) -> Grid:
+    cavities = enumerateZeroCavities(grid)
+
+    def fill(canvas: Grid, component: Component) -> Grid:
+        colour = choosePartnerColour(component)
+        if colour is None:
+            return canvas
+        return fillComponent(canvas, component, colour)
+
+    return fold_repaint(grid, cavities, fill)
+```

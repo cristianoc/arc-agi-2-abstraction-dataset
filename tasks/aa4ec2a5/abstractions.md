@@ -13,3 +13,17 @@ Final approach: `segment_frame` (packaged in the production solver), which combi
   - `frameComponentRows : Grid × Component × Set Cell -> Grid` — extend per-row segments to recolour adjacent background cells (colour 2) while skipping hole cells.
   - `markComponentBody : Grid × Component × Bool -> Grid` — recolour the component itself to colour 8 when a hole exists and annotate hole cells with colour 6.
 - **Solver summary**: "Extract each colour-1 component, detect whether it encloses holes, frame neighbouring background cells per row, and recolour the component/hole cells accordingly."
+
+## Lambda Representation
+
+```python
+def solve_aa4ec2a5(grid: Grid) -> Grid:
+    components = extractOneComponents(grid)
+
+    def repaint(canvas: Grid, component: Component) -> Grid:
+        has_hole, hole_cells = findInteriorHoles(canvas, component, 0)
+        framed = frameComponentRows(canvas, component, hole_cells)
+        return markComponentBody(framed, component, has_hole)
+
+    return fold_repaint(grid, components, repaint)
+```

@@ -13,3 +13,12 @@ The final solver implements the hybrid pipeline with the tuned offset rules that
   - `buildVerticalCorridor : Grid -> Path` — transpose logic for vertical layouts with adjusted buffer rules.
   - `renderCorridorPath : Grid × Path -> Grid` — paint the corridor onto the grid while respecting the one-cell buffer from colour-2 stripes.
 - **Solver summary**: "Classify the corridor orientation, build the matching zig-zag path, and render it onto the grid with the required buffers."
+
+## Lambda Representation
+
+```python
+def solve_cb2d8a2c(grid: Grid) -> Grid:
+    orientation = classifyCorridorOrientation(grid)
+    path = buildHorizontalCorridor(grid) if orientation == "horizontal" else buildVerticalCorridor(grid)
+    return renderCorridorPath(grid, path)
+```

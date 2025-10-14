@@ -10,3 +10,13 @@
   - `applySequenceHeuristics : Grid × Frame -> Grid` — inject alternating stripe sequences derived from side patches and adjust offsets.
   - `closeGaps : Grid × Frame -> Grid` — fill single-cell gaps horizontally and vertically to smooth the projection.
 - **Solver summary**: "Detect the frame, project border colours into the interior, apply the learned sequence heuristics for alternating bands, and close any remaining gaps."
+
+## Lambda Representation
+
+```python
+def solve_a6f40cea(grid: Grid) -> Grid:
+    frame = detectFrame(grid)
+    projected = projectBorderColours(grid, frame)
+    sequenced = applySequenceHeuristics(projected, frame)
+    return closeGaps(sequenced, frame)
+```
