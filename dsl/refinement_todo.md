@@ -38,7 +38,7 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [x] 2b83f449 — Cross repaint + boundary recolour DSL written up.
 - [x] 2ba387bc — Hollow/solid pairing blocks abstraction documented.
 - [x] 2c181942 — Axis-cross reconstruction DSL summary added.
-- [x] 2d0172a1 — Template reconstruction / alternating extension described.
+- [x] 2d0172a1 — Template reconstruction (size bins + alternating extension) DSL documented.
 - [x] 31f7f899 — Stripe sorting backbone DSL captured.
 - [x] 332f06d7 — Zero-block relocation threshold DSL documented.
 - [x] 35ab12c3 — Hull-shift anchor pipeline summarised.
