@@ -5,8 +5,18 @@
 
 ## DSL Structure
 - **Typed operations**
-  - `extractAnchors : Grid -> Dict Color -> Anchor` — gather per-colour anchor points and singleton cells that guide hull placement.
-  - `buildPrimaryHulls : Grid -> Dict Color -> Hull` — construct base hull polygons for colours with multiple cells.
-  - `matchSingletons : Dict Color -> Anchor × Hull -> Dict Color -> Shift` — pair singleton anchors with neighbouring hulls and compute the required shifts.
-  - `applyHullShifts : Grid × Dict Color -> Hull × Shift -> Grid` — translate hulls according to the computed shifts and paint the resulting layers back into the grid.
+  - `extractAnchors : Grid -> Anchors` — gather per-colour anchor points and singleton cells that guide hull placement.
+  - `buildPrimaryHulls : Grid -> Hulls` — construct base hull polygons for colours with multiple cells.
+  - `matchSingletons : Anchors × Hulls -> Shifts` — pair singleton anchors with neighbouring hulls and compute the required shifts.
+  - `applyHullShifts : Grid × Hulls × Shifts -> Grid` — translate hulls according to the computed shifts and paint the resulting layers back into the grid.
 - **Solver summary**: "Collect anchors, build base hulls for multi-cell colours, compute shifts that align singleton anchors with those hulls, then render the shifted hulls into the output grid."
+
+## Lambda Representation
+
+```python
+def solve_35ab12c3(grid: Grid) -> Grid:
+    anchors = extractAnchors(grid)
+    primary_hulls = buildPrimaryHulls(grid)
+    shifts = matchSingletons(anchors, primary_hulls)
+    return applyHullShifts(grid, primary_hulls, shifts)
+```

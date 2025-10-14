@@ -7,8 +7,18 @@ Final refinement: use `sorted_stripes` alone. It preserves the central backbone 
 
 ## DSL Structure
 - **Typed operations**
-  - `pinBackboneRow : Grid -> Row` — locate the anchor row whose pattern stays fixed (the dense middle stripe).
-  - `collectStripeSpans : Grid × Row -> List Stripe` — extract each coloured vertical stripe with its height and column index relative to the backbone.
+  - `pinBackboneRow : Grid -> (RowIndex, Row)` — locate the anchor row whose pattern stays fixed (the dense middle stripe).
+  - `collectStripeSpans : Grid × RowIndex × Row -> List Stripe` — extract each coloured vertical stripe with its height and column index relative to the backbone.
   - `sortStripesByHeight : List Stripe -> List Stripe` — reorder the stripe list by height while preserving colour metadata.
-  - `renderSortedStripes : Grid × Row × List Stripe -> Grid` — rebuild the grid by writing stripes back in column order, keeping the backbone unchanged.
+  - `renderSortedStripes : Grid × RowIndex × List Stripe -> Grid` — rebuild the grid by writing stripes back in column order, keeping the backbone unchanged.
 - **Solver summary**: "Detect and pin the central backbone row, collect stripe spans with heights, sort them by height, then render the stripes back alongside the untouched backbone."
+
+## Lambda Representation
+
+```python
+def solve_31f7f899(grid: Grid) -> Grid:
+    center_row_idx, center_row = pinBackboneRow(grid)
+    stripes = collectStripeSpans(grid, center_row_idx, center_row)
+    sorted_stripes = sortStripesByHeight(stripes)
+    return renderSortedStripes(grid, center_row_idx, sorted_stripes)
+```

@@ -7,8 +7,20 @@
 ## DSL Structure
 - **Typed operations**
   - `gatherColorStats : Grid -> Stats` — collect per-colour counts, row lists, column lists, and cell sets.
-  - `detectAxis : Grid -> (AxisColumn, AxisCounts, AxisCells)` — locate the best 2-column axis and tally colours appearing there.
-  - `selectVerticalColors : Stats × AxisCounts -> (TopColor, BottomColor)` — choose the colours that occupy the axis vertically, ordered by mean row.
+  - `detectAxis : Grid -> Axis` — locate the best 2-column axis and capture its column, counts, and cell metadata.
+  - `selectVerticalColors : Stats × Axis -> (TopColor, BottomColor)` — choose the colours that occupy the axis vertically, ordered by mean row.
   - `fillVerticalArms : Grid × (TopColor, BottomColor) × Axis -> Grid` — build the vertical arms around the axis and apply the top flare adjustment.
   - `placeHorizontalArms : Grid × Stats × Axis -> Grid` — pick horizontal colours by centroid offsets and paint their row counts left/right of the axis.
 - **Solver summary**: "Analyse the colour stats, detect the axis, fill vertical arms (with top flare adjustment), then choose horizontal colours by centroid and paint their arms around the axis."
+
+## Lambda Representation
+
+```python
+def solve_2c181942(grid: Grid) -> Grid:
+    stats = gatherColorStats(grid)
+    axis = detectAxis(grid)
+    top_color, bottom_color = selectVerticalColors(stats, axis)
+    
+    result = fillVerticalArms(grid, (top_color, bottom_color), axis)
+    return placeHorizontalArms(result, stats, axis)
+```

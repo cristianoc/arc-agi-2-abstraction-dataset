@@ -12,5 +12,24 @@ The released solver uses the `templates_final` abstraction, which combines ancho
   - `lookupTemplates : Component -> List TemplateKey` — gather template candidates keyed by colour, height, and size.
   - `selectOffset : Component × TemplateCandidates -> Offset` — choose the correct row/column offset for the template.
   - `loadTemplate : TemplateKey -> Template` — retrieve the stored template with `None` placeholders.
-  - `overlayTemplate : Grid × Template × Offset -> Grid` — paste the template onto the output grid at the computed position.
+  - `overlayTemplate : Grid × Template × Int × Int -> Grid` — paste the template onto the output grid at the provided row/column position.
 - **Solver summary**: "Match each component to the template library, select the proper offset, and overlay the template onto the canvas."
+
+## Lambda Representation
+
+```python
+def solve_13e47133(grid: Grid) -> Grid:
+    components = findComponents(grid)
+    result = grid
+    
+    for comp in components:
+        template_keys = lookupTemplates(comp)
+        offset = selectOffset(comp, template_keys)
+        if offset is not None:
+            template = loadTemplate((comp.color, comp.height, comp.size, offset))
+            start_row = comp.min_row + offset[0]
+            start_col = comp.min_col + offset[1]
+            result = overlayTemplate(result, template, start_row, start_col)
+    
+    return result
+```
