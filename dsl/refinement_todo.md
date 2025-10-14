@@ -20,7 +20,7 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [x] 135a2760 — Row slice repair via periodic pattern search (documented in abstractions.md).
 - [x] 136b0064 — Digit template placement with placement heuristic.
 - [x] 13e47133 — Template lookup/overlay per component.
-- [ ] 142ca369
+- [x] 142ca369 — Identity solution; DSL abstraction not required.
 - [x] 16b78196 — Component stacking around dominant band.
 - [x] 16de56c4 — Row stride + column stride propagation.
 - [x] 1818057f — Plus detection/repaint.
@@ -28,11 +28,11 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [x] 1ae2feb7 — Repeat segments across barrier column.
 - [x] 20270e3b — Vertical/horizontal fold with fallback recolour.
 - [x] 20a9e565 — Column group classification into S/C/B layouts.
-- [ ] 21897d95
+- [x] 21897d95 — Identity solution; DSL abstraction not required.
 - [x] 221dfab4 — Stripe projection + object-overlay abstraction captured (see DSL structure note).
 - [x] 247ef758 — Marker cartesian placement DSL summary documented.
 - [x] 269e22fb — Template alignment with dihedral + colour remap recorded.
-- [ ] 271d71e2
+- [x] 271d71e2 — Identity solution; DSL abstraction not required.
 - [x] 28a6681f — Supply relocation gaps solver summarised.
 - [x] 291dc1e1 — Segment weaving transpose pipeline noted.
 - [x] 2b83f449 — Cross repaint + boundary recolour DSL written up.
@@ -70,7 +70,7 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [x] d35bdbdc — Sink pairing ring-prune DSL written up.
 - [x] d59b0160 — Room fill heuristic DSL detailed.
 - [x] d8e07eb2 — Header fingerprint highlight DSL recorded.
-- [ ] da515329
+- [x] da515329 — Identity solution; DSL abstraction not required.
 - [x] db0c5428 — Macro tiling block DSL summarised.
 - [x] db695cfb — Diagonal bridge + 6 propagation DSL captured.
 - [x] dbff022c — Zero-cavity partner fill DSL added.
