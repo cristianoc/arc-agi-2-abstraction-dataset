@@ -1,6 +1,6 @@
 # DSL Overview
 
-This directory tracks the evolving abstraction DSL used while surveying the ARC‑AGI‑2 evaluation tasks. The current snapshot is encoded in `dsl_state.yaml` (version `68`, timestamp `2025-10-14T16:15:00Z`). Companion files:
+This directory tracks the evolving abstraction DSL used while surveying the ARC‑AGI‑2 evaluation tasks. The current snapshot is encoded in `dsl_state.yaml` (version `68`, timestamp `2025-10-14T16:15:00Z`). For a narrative dive into the design motivation, see `DSL_Research_Note.md`. Companion files:
 
 - `DSL.md` – canonical description of the DSL conventions (typed operations, lambda syntax, validation tools).
 - `check_lambda_types.py` – extracts typed-operation declarations and lambda snippets from every `abstractions.md`, emits typed stubs, runs `mypy`, and enforces the DSL/purity rules from the reference.
