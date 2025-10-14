@@ -5,3 +5,11 @@
 - `shift_rows_with_left_presence`: copies each right block upward wherever the source row still carries left-wedge 5s, then mirrors the wedge; this matches both training examples (2/2) and is the final solver.
 
 The final strategy layers the selective upward copy with the mirroring step, producing the published solver in `arc2_samples/4c3d4a41.py`.
+
+## DSL Structure
+- **Typed operations**
+  - `locateLeftWedge : Grid -> Set Row` — identify rows containing the left wedge colour `5`.
+  - `extractRightBlocks : Grid -> Dict Row -> Block` — gather the right-hand blocks that correspond to each wedge row.
+  - `shiftBlocksUpwards : Dict Row -> Block -> Dict Row -> Block` — move each block upward while the originating row still contains wedge cells.
+  - `mirrorWedge : Grid × Set Row -> Grid` — mirror the left wedge onto the right side after the upward shifts.
+- **Solver summary**: "Find the wedge rows, extract and shift their right-side blocks upward when wedge cells persist, then mirror the wedge to finish the overlay."

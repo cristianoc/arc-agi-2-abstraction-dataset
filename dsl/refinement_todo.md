@@ -49,16 +49,16 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [x] 3e6067c3 — Hint-path corridor reconstruction noted.
 - [x] 409aa875 — Band lift and centroid marker DSL captured.
 - [x] 446ef5d2 — Grid compactor packing DSL documented.
-- [ ] 45a5af55
-- [ ] 4a21e3da
-- [ ] 4c3d4a41
-- [ ] 4c416de3
-- [ ] 4c7dc4dd
-- [ ] 4e34c42c
-- [ ] 53fb4810
-- [ ] 5545f144
-- [ ] 581f7754
-- [ ] 58490d8a
+- [x] 45a5af55 — Concentric ring synthesis DSL documented.
+- [x] 4a21e3da — Corner projection typed operations captured.
+- [x] 4c3d4a41 — Wedge shift + mirror DSL summarised.
+- [x] 4c416de3 — Corner hook templating DSL listed.
+- [x] 4c7dc4dd — Zero-rectangle scaffold DSL recorded.
+- [x] 4e34c42c — Component priority concatenation DSL noted.
+- [x] 53fb4810 — Mixed component tiling DSL added.
+- [x] 5545f144 — Consensus + alignment DSL captured.
+- [x] 581f7754 — Anchor alignment compression DSL described.
+- [x] 58490d8a — Scoreboard counting DSL documented.
 - [ ] 58f5dbd5
 - [ ] 5961cc34
 - [ ] 5dbc8537
