@@ -4,7 +4,8 @@ This directory tracks the evolving abstraction DSL used while surveying the ARC�
 
 - `task_log.md` – narrative entries for every processed task, including the DSL sketch, gaps, and new primitive/combinator notes.
 - `task_progress.yaml` – bookkeeping for processed versus yet-to-be-reviewed tasks.
-- `check_lambda_types.py` – utility that extracts typed-operation declarations and lambda snippets from each `abstractions.md`, emits typed stubs, and runs `mypy` to spot signature drift.
+- `DSL.md` – canonical description of the DSL conventions (typed operations, lambda syntax, validation tools).
+- `check_lambda_types.py` – utility that extracts typed-operation declarations and lambda snippets from each `abstractions.md`, emits typed stubs, runs `mypy`, and enforces the DSL/purity rules from the reference.
 
 The sections below summarise the structure recorded in `dsl_state.yaml`; consult that file for the authoritative list of primitive descriptions.
 
@@ -48,7 +49,7 @@ Every abstraction file now ends with a `## Lambda Representation` snippet.  To v
 python3 dsl/check_lambda_types.py tasks/**/abstractions.md
 ```
 
-The script builds lightweight stubs for each abstraction, calls `mypy`, and reports undefined helpers, arity mismatches, or other drift.  Run it whenever the DSL summaries change to ensure everything stays aligned.
+The script builds lightweight stubs for each abstraction, calls `mypy`, and reports undefined helpers, arity mismatches, or other drift.  It also enforces the lambda-style constraints documented in `DSL.md`.  Run the checker whenever the DSL summaries change to track both signature drift and lambda compliance.
 
 ## Future Work
 
