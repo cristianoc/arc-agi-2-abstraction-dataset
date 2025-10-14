@@ -100,26 +100,26 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [x] c4d067a0 — Column-aligned stacking DSL captured.
 - [x] c7f57c3e — Variant switch recolour DSL written up.
 - [x] 67e490f4 — Motif shape recolour DSL summarised.
-- [ ] 6e453dd6
-- [ ] 6e4f6532
-- [ ] 6ffbe589
-- [ ] 71e489b6
-- [ ] 7491f3cf
-- [ ] 7666fa5d
-- [ ] 78332cb0
-- [ ] 7b0280bc
-- [ ] 7b3084d4
-- [ ] 7b5033c1
-- [ ] 7b80bb43
-- [ ] 7c66cb00
-- [ ] 7ed72f31
-- [ ] 800d221b
-- [ ] 80a900e0
-- [ ] 8698868d
-- [ ] 88bcf3b4
-- [ ] 88e364bc
-- [ ] 89565ca0
-- [ ] 898e7135
+- [x] 6e453dd6 — Zero-slide + highlight DSL added.
+- [x] 6e4f6532 — Template stamping DSL documented.
+- [x] 6ffbe589 — Variant rotation DSL recorded.
+- [x] 71e489b6 — Tip halo DSL summarised.
+- [x] 7491f3cf — Panel overlay DSL captured.
+- [x] 7666fa5d — Diagonal corridor DSL noted.
+- [x] 78332cb0 — Block rotation stack DSL written up.
+- [x] 7b0280bc — Component decision-tree DSL added.
+- [x] 7b3084d4 — DFS tiling DSL documented.
+- [x] 7b5033c1 — Histogram column DSL recorded.
+- [x] 7b80bb43 — Column snap refinement DSL described.
+- [x] 7c66cb00 — Bottom-stamp prototype DSL captured.
+- [x] 7ed72f31 — Axis reflection DSL noted.
+- [x] 800d221b — Heuristic + kNN recolour DSL summarised.
+- [x] 80a900e0 — Diagonal handle extension DSL added.
+- [x] 8698868d — Tile assignment DSL recorded.
+- [x] 88bcf3b4 — Path projection DSL detailed.
+- [x] 88e364bc — Digit template relocation DSL noted.
+- [x] 89565ca0 — Stripe summary DSL described.
+- [x] 898e7135 — Dynamic upscale DSL captured.
 - [ ] 8b7bacbf
 - [ ] 8b9c3697
 - [ ] 8e5c0c38
