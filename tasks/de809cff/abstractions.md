@@ -7,3 +7,11 @@
 - **final_solver** – wrapper around `solve_de809cff`, which reuses the final abstraction pipeline for submission (2/2 train, handles the test case without ground truth).
 
 `analysis/taskde809cff_abstractions.py` exposes these pipelines and the small evaluation harness.
+
+## DSL Structure
+- **Typed operations**
+  - `detectZeroSeeds : Grid -> List (Cell, Color)` — find zero cells with ≥3 matching non-zero neighbours and record their host colour.
+  - `paintHalos : Grid × List (Cell, Color) -> Grid` — promote seeds to colour 8 and paint the surrounding halo with the opposite colour.
+  - `realignSecondaryPixels : Grid × Grid -> Grid` — flip secondary-colour pixels that are supported by ≥3 primary neighbours.
+  - `pruneStragglers : Grid × Grid -> Grid` — remove pixels that retain ≥3 zero neighbours, restoring the cleaned background.
+- **Solver summary**: "Detect strong zero pockets, paint haloes around them, realign secondary pixels near primary clusters, and prune residual stragglers."

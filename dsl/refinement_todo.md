@@ -69,17 +69,17 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [x] cbebaa4b — Connector graph translation DSL captured.
 - [x] d35bdbdc — Sink pairing ring-prune DSL written up.
 - [x] d59b0160 — Room fill heuristic DSL detailed.
-- [ ] d8e07eb2
+- [x] d8e07eb2 — Header fingerprint highlight DSL recorded.
 - [ ] da515329
-- [ ] db0c5428
-- [ ] db695cfb
-- [ ] dbff022c
-- [ ] dd6b8c4b
-- [ ] de809cff
-- [ ] dfadab01
-- [ ] e12f9a14
-- [ ] e3721c99
-- [ ] e376de54
+- [x] db0c5428 — Macro tiling block DSL summarised.
+- [x] db695cfb — Diagonal bridge + 6 propagation DSL captured.
+- [x] dbff022c — Zero-cavity partner fill DSL added.
+- [x] dd6b8c4b — Ring relocation scoring DSL documented.
+- [x] de809cff — Halo expansion/prune DSL listed.
+- [x] dfadab01 — Patch dictionary tiling DSL described.
+- [x] e12f9a14 — Digit seed variant DSL captured.
+- [x] e3721c99 — Hole-classified recolour DSL added.
+- [x] e376de54 — Median line alignment DSL noted.
 - [ ] e8686506
 - [ ] e87109e9
 - [ ] edb79dae
