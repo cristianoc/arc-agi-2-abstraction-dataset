@@ -3,3 +3,11 @@
 - `unique_block_column`: Segments the grid into border-delimited blocks and keeps the unique block per block-row; passes all training examples (2/2 train) and yields plausible 6×6 interiors on test inputs.
 
 Final refinement: Implement the `unique_block_column` abstraction in the solver by detecting non-border block runs and copying only the odd block out per block-row while restoring outer borders.
+
+## DSL Structure
+- **Typed operations**
+  - `detectBorders : Grid -> BorderSpec` — capture the constant border colours and their thickness.
+  - `partitionIntoBlocks : Grid × BorderSpec -> List BlockRow` — split the interior into block rows separated by border columns.
+  - `selectUniqueBlockPerRow : List BlockRow -> List Block` — choose the block whose pattern is unique within each block row.
+  - `renderUniqueBlocks : Grid × BorderSpec × List Block -> Grid` — reconstruct the grid using the original borders while writing back only the selected unique blocks.
+- **Solver summary**: "Detect the border specification, partition the interior into bordered block rows, keep the unique block per row, and render those blocks with the original borders restored."

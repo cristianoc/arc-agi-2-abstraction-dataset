@@ -6,3 +6,10 @@
 
 Final solver: `intruder_edge_push` applied directly in `analysis/arc2_samples/3dc255db.py`, producing the expected behaviour on train and the computed test prediction.
 
+## DSL Structure
+- **Typed operations**
+  - `extractIntruders : Grid -> List Component` — gather non-background components with centroid and bounding-box metadata.
+  - `computeDrift : Component -> Offset` — calculate the signed offset between each component’s centroid and the host region centre.
+  - `chooseTargetEdge : Offset -> Edge` — select the destination edge opposite the dominant drift axis (resolving ties via uniqueness checks).
+  - `pushComponent : Grid × Component × Edge -> Grid` — translate the component along the chosen axis until it contacts the edge, repainting vacated cells with background.
+- **Solver summary**: "Extract intruding components, compute their centroid drift, pick the edge opposite that drift, and push each component flush to the chosen edge."

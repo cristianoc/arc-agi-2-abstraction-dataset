@@ -6,3 +6,10 @@
 
 Final approach: apply the `grid_compactor` to all non-background colors after removing noise (color `4`), embed the resulting rectangle over an `8` background, and reuse the dominant color for borders/separators. Test predictions are produced by the same pipeline.
 
+## DSL Structure
+- **Typed operations**
+  - `filterNoise : Grid × Color -> Grid` — drop the spurious colour-4 cells before packing.
+  - `extractPerColorComponents : Grid -> Dict Color -> List Component` — gather components per colour with width/height metadata.
+  - `packComponentsIntoGrid : Dict Color -> List Component -> PackedGrid` — arrange each colour’s components into a near-square grid ordered by component height.
+  - `embedPackedGrid : PackedGrid × Color -> Grid` — centre the packed rectangle on an `8` background and draw the dominant-colour border.
+- **Solver summary**: "Filter out noise, collect components per colour, pack them into a balanced grid, then embed the packed rectangle on the background with the dominant border."
