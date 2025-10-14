@@ -9,4 +9,18 @@ Final solver mirrors the `plus_painter` abstraction directly; no additional hybr
 - **Typed operations**
   - `isPlus : Grid × (Row,Col) -> Bool` — check whether the cell and its four orthogonal neighbours all carry colour 4.
   - `repaintPlus : Grid × (Row,Col) -> Grid` — recolour a detected plus (centre and arms) to colour 8.
-- **Solver summary**: "Scan the grid for 4-coloured plus motifs and recolour each detected plus (centre and arms) to 8." 
+- **Solver summary**: "Scan the grid for 4-coloured plus motifs and recolour each detected plus (centre and arms) to 8."
+
+## Lambda Representation
+
+```python
+def solve_1818057f(grid: Grid) -> Grid:
+    result = grid
+    
+    for r in range(1, len(grid) - 1):
+        for c in range(1, len(grid[0]) - 1):
+            if isPlus(grid, (r, c)):
+                result = repaintPlus(result, (r, c))
+    
+    return result
+``` 

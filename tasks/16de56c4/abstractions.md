@@ -11,4 +11,12 @@ The final solver adopts the `row_then_column` pipeline: first extend structured 
 - **Typed operations**
   - `applyRowRule : Grid -> Grid` — extend colours along each row using gcd-based spacing from the original grid.
   - `applyColumnRule : Grid × Grid -> Grid` — extend colours along each column, referencing the original grid to guard conflicts.
-- **Solver summary**: "Extend rows with the stride rule, then extend columns with the column rule while consulting the original grid for guards." 
+- **Solver summary**: "Extend rows with the stride rule, then extend columns with the column rule while consulting the original grid for guards."
+
+## Lambda Representation
+
+```python
+def solve_16de56c4(grid: Grid) -> Grid:
+    after_rows = applyRowRule(grid)
+    return applyColumnRule(after_rows, grid)
+``` 

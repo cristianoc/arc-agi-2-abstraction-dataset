@@ -11,3 +11,13 @@
   - `collectBoundaryCells : Grid × Distances -> Set Cell` — evaluate neighbourhood rules to pick boundary cells to recolour to 3.
   - `applyBoundaryRecolor : Grid × Grid × Set Cell -> Grid` — copy the cross-painted grid and apply the 3-boundary recolouring.
 - **Solver summary**: "Precompute zero distances, repaint length-3 runs as 6-crosses, identify boundary cells via neighbourhood rules, and recolour those cells to 3."
+
+## Lambda Representation
+
+```python
+def solve_2b83f449(grid: Grid) -> Grid:
+    distances = precomputeZeroDistances(grid)
+    cross_painted = paintCrossRuns(grid)
+    boundary_cells = collectBoundaryCells(grid, distances)
+    return applyBoundaryRecolor(grid, cross_painted, boundary_cells)
+```

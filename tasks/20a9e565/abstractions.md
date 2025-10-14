@@ -13,3 +13,18 @@
   - `buildTypeC : Grid × Groups -> Grid` — build the type-C template using bounding-box widths.
   - `buildTypeB : Groups -> Grid` — create the fallback type-B template (alternating bars).
 - **Solver summary**: "Group non-zero columns, classify the pattern, and emit the corresponding template layout (S, C, or B)."
+
+## Lambda Representation
+
+```python
+def solve_20a9e565(grid: Grid) -> Grid:
+    groups, total_cols = columnGroups(grid)
+    tag = classifyPattern(groups)
+    
+    if tag == "S":
+        return buildTypeS(groups)
+    elif tag == "C":
+        return buildTypeC(grid, groups)
+    else:  # tag == "B"
+        return buildTypeB(groups)
+```

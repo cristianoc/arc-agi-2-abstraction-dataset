@@ -23,4 +23,19 @@ The final abstraction extends the palette pattern across selected rows and colum
   - `stripPalette : Grid × Pattern -> Grid` — remove palette and cap components from the working grid.
   - `locateAnchors : Grid × Pattern -> List Anchor` — find anchor rows with pattern start indices and boundaries.
   - `propagatePattern : Grid × Pattern × Anchor -> Grid` — propagate the repeating palette across anchor rows and neighbouring regions, inserting cap colours.
-- **Solver summary**: "Decode the palette from legend components, clear them out, locate anchor rows, propagate the repeating pattern across anchors, and add caps where needed." 
+- **Solver summary**: "Decode the palette from legend components, clear them out, locate anchor rows, propagate the repeating pattern across anchors, and add caps where needed."
+
+## Lambda Representation
+
+```python
+def solve_195c6913(grid: Grid) -> Grid:
+    components = iterComponents(grid)
+    pattern = extractPalette(components)
+    result = stripPalette(grid, pattern)
+    anchors = locateAnchors(result, pattern)
+    
+    for anchor in anchors:
+        result = propagatePattern(result, pattern, anchor)
+    
+    return result
+``` 

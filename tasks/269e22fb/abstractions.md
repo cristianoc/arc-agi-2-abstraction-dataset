@@ -13,3 +13,13 @@
   - `invertTransform : Alignment × TemplateGrid -> Grid` — apply the inverse dihedral transform to map the template back to input orientation.
   - `remapColors : Grid × Mapping -> Grid` — restore original colours via the reverse mapping.
 - **Solver summary**: "Find the alignment of the input within the canonical template, write it into the base pattern, invert the transform, and remap colours to obtain the 20×20 output."
+
+## Lambda Representation
+
+```python
+def solve_269e22fb(grid: Grid) -> Grid:
+    alignment = findAlignment(grid)
+    template = writeTemplate(alignment)
+    inverted = invertTransform(alignment, template)
+    return remapColors(inverted, alignment.mapping)
+```
