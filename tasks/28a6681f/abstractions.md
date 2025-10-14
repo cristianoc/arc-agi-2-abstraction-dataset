@@ -14,3 +14,14 @@ Bottom-greedy supply (final) — iterate candidates bottom-right first, consume 
   - `fillCandidates : Grid × List Cell × List Cell -> (Grid, List Cell)` — relocate supply cells into candidates while recording removed sources.
   - `clearRemoved : Grid × List Cell -> Grid` — zero out the original supply positions that were moved.
 - **Solver summary**: "Collect colour-1 supply cells, gather bottom-right gap candidates, relocate supply into those gaps in order, and clear the original positions."
+
+## Lambda Representation
+
+```python
+def solve_28a6681f(grid: Grid) -> Grid:
+    supply = collectSupply(grid)
+    candidates = findCandidates(grid)
+    ordered_candidates = orderCandidates(candidates)
+    result, removed = fillCandidates(grid, ordered_candidates, supply)
+    return clearRemoved(result, removed)
+```

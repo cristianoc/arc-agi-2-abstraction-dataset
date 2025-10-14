@@ -11,4 +11,15 @@ hybrid_offset2 — select between horizontal and vertical mirrors by comparing t
   - `mirrorV : Grid × BBox -> Candidate` — create a vertically mirrored candidate `{ block, distance, count8 }`.
   - `selectCandidate : Candidate × Candidate -> Candidate` — pick the farther candidate, breaking ties by the count of 8s.
   - `flipOutput : Candidate -> Block` — flip the chosen candidate along the relevant axis to emit the final block.
-- **Solver summary**: "Find the 8-block’s bounding box, generate horizontal and vertical mirrored candidates, select the farther one (tie-breaking on 8-count), then flip that block to produce the output."
+- **Solver summary**: "Find the 8-block's bounding box, generate horizontal and vertical mirrored candidates, select the farther one (tie-breaking on 8-count), then flip that block to produce the output."
+
+## Lambda Representation
+
+```python
+def solve_0934a4d8(grid: Grid) -> Block:
+    bbox_val = bbox(grid)
+    h_candidate = mirrorH(grid, bbox_val)
+    v_candidate = mirrorV(grid, bbox_val)
+    chosen = selectCandidate(h_candidate, v_candidate)
+    return flipOutput(chosen)
+```

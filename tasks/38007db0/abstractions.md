@@ -11,3 +11,13 @@ Final refinement: Implement the `unique_block_column` abstraction in the solver 
   - `selectUniqueBlockPerRow : List BlockRow -> List Block` — choose the block whose pattern is unique within each block row.
   - `renderUniqueBlocks : Grid × BorderSpec × List Block -> Grid` — reconstruct the grid using the original borders while writing back only the selected unique blocks.
 - **Solver summary**: "Detect the border specification, partition the interior into bordered block rows, keep the unique block per row, and render those blocks with the original borders restored."
+
+## Lambda Representation
+
+```python
+def solve_38007db0(grid: Grid) -> Grid:
+    border_spec = detectBorders(grid)
+    block_rows = partitionIntoBlocks(grid, border_spec)
+    unique_blocks = selectUniqueBlockPerRow(block_rows)
+    return renderUniqueBlocks(grid, border_spec, unique_blocks)
+```

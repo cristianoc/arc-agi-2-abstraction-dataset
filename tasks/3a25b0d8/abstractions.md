@@ -12,4 +12,14 @@ Test outputs are unavailable for this evaluation split, so only training matches
   - `normalizeBandPatterns : List Band -> List Band` — widen/shrink band motifs (e.g., stretching 7s, removing singleton 4s) to the canonical widths.
   - `synthesiseBandRows : List Band -> List Row` — build the output bands by combining adjusted motifs with the preserved separators.
   - `duplicateBands : List Row -> Grid` — replicate selected bands to satisfy the expected row counts and assemble the final grid.
-- **Solver summary**: "Extract the horizontal bands, normalise each band’s motif, synthesise the rows for the adjusted bands, then duplicate the required bands to rebuild the output."
+- **Solver summary**: "Extract the horizontal bands, normalise each band's motif, synthesise the rows for the adjusted bands, then duplicate the required bands to rebuild the output."
+
+## Lambda Representation
+
+```python
+def solve_3a25b0d8(grid: Grid) -> Grid:
+    bands = identifyBands(grid)
+    normalized = normalizeBandPatterns(bands)
+    band_rows = synthesiseBandRows(normalized)
+    return duplicateBands(band_rows)
+```

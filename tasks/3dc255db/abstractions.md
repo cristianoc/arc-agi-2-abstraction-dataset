@@ -13,3 +13,18 @@ Final solver: `intruder_edge_push` applied directly in `analysis/arc2_samples/3d
   - `chooseTargetEdge : Offset -> Edge` — select the destination edge opposite the dominant drift axis (resolving ties via uniqueness checks).
   - `pushComponent : Grid × Component × Edge -> Grid` — translate the component along the chosen axis until it contacts the edge, repainting vacated cells with background.
 - **Solver summary**: "Extract intruding components, compute their centroid drift, pick the edge opposite that drift, and push each component flush to the chosen edge."
+
+## Lambda Representation
+
+```python
+def solve_3dc255db(grid: Grid) -> Grid:
+    intruders = extractIntruders(grid)
+    result = grid
+    
+    for component in intruders:
+        drift = computeDrift(component)
+        edge = chooseTargetEdge(drift)
+        result = pushComponent(result, component, edge)
+    
+    return result
+```

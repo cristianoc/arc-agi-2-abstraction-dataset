@@ -13,4 +13,19 @@ The arc-gen split is empty.
   - `verticalFold : Grid -> Optional Grid` — fold across a background column, overlaying the right block onto the left.
   - `horizontalFold : Grid -> Optional Grid` — remove the special band and glue the remaining parts with an offset.
   - `recolourFallback : Grid -> Grid` — recolour special cells to the fill colour when no folding applies.
-- **Solver summary**: "Try the vertical fold; if it fails, try the horizontal glue; if both fail, recolour the special cells to the fill colour." 
+- **Solver summary**: "Try the vertical fold; if it fails, try the horizontal glue; if both fail, recolour the special cells to the fill colour."
+
+## Lambda Representation
+
+```python
+def solve_20270e3b(grid: Grid) -> Grid:
+    result = verticalFold(grid)
+    if result is not None:
+        return result
+    
+    result = horizontalFold(grid)
+    if result is not None:
+        return result
+    
+    return recolourFallback(grid)
+``` 

@@ -12,3 +12,16 @@ No test or arc_gen samples were available for evaluation.
   - `selectBestPattern : List Pattern -> Pattern` — pick the lowest-score pattern.
   - `tileSegment : Row × Pattern -> Row` — overwrite the interior slice with the repeating pattern.
 - **Solver summary**: "For each row, isolate the inner slice, find the dominant repeating pattern (period ≤ 6) by mismatch score, and retile that slice accordingly."
+
+## Lambda Representation
+
+```python
+def solve_135a2760(grid: Grid) -> Grid:
+    def fixRow(row: Row) -> Row:
+        segment = detectInnerSegment(row)
+        patterns = enumeratePatterns(segment)
+        best = selectBestPattern(patterns)
+        return tileSegment(row, best)
+    
+    return [fixRow(row) for row in grid]
+```
