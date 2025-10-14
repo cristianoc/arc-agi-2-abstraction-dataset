@@ -72,21 +72,17 @@ Example operations:
 
 ### 2.2 Lambda Representation (per task)
 
-The **Lambda Representation** is a short, Python-flavored code snippet that captures the solver's control flow within a restricted pure subset:
+The **Lambda Representation** is a short, Python-syntax code snippet that captures the solver's control flow within a restricted pure subset. It uses familiar Python syntax but enforces lambda calculus semantics: no loops, no mutation, no side effects.
 
-**Allowed**: 
-- Single top-level function definition
-- Pure expressions and function calls
-- List/dict comprehensions (pure)
-- Guard-style `if` with immediate `return`
-- Optional pure helper functions
-
-**Forbidden**:
-- Mutation (assignment to existing variables)
-- Loops (`for`, `while`)
-- Stateful constructs (`try`, `with`, `class`)
+**Key restrictions**:
+- Immutable bindings only (no reassignment)
+- Comprehensions instead of `for` loops
+- Guard-style conditionals (each branch must `return`)
+- No stateful constructs (`try`, `with`, `class`)
 
 A dedicated checker extracts these snippets, generates type stubs for all operations, and runs `mypy` to verify type consistency. This ensures the lambda representation correctly uses the declared operations—catching errors like calling a function with the wrong number or types of arguments, or composing operations whose types don't align.
+
+**For complete syntax specification**, see `DSL.md` (Section: Lambda Representation).
 
 ### 2.3 Global Registry
 
@@ -127,6 +123,8 @@ The lambda checker enforces a restricted syntax that approximates simply-typed, 
 - **Optional helpers**: additional pure `def`s are allowed for factoring sub-expressions
 
 These restrictions guarantee referential transparency and enable equational reasoning about solver behavior.
+
+**For the complete list of allowed/forbidden constructs**, see `DSL.md` (Section: Lambda Representation).
 
 ### 4.2 Registry invariants
 
@@ -362,5 +360,7 @@ While the DSL provides substantial benefits, some challenges and opportunities f
 - [ ] All operation names match helper functions in `solution.py`
 - [ ] Type checker passes (`mypy` succeeds)
 - [ ] Registry validator passes (no structural errors)
+
+**For detailed syntax rules and troubleshooting**, see `DSL.md`.
 
 This workflow ensures every change maintains the corpus's integrity and keeps documentation synchronized with code.
