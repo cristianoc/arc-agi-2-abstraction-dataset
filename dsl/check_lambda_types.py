@@ -177,6 +177,8 @@ def is_pure_expr(node: ast.AST) -> bool:
         return is_pure_expr(node.value) and is_pure_expr(node.slice)
     if isinstance(node, ast.UnaryOp):
         return is_pure_expr(node.operand)
+    if isinstance(node, ast.IfExp):
+        return is_pure_expr(node.test) and is_pure_expr(node.body) and is_pure_expr(node.orelse)
     if isinstance(node, ast.ListComp):
         if not is_pure_expr(node.elt):
             return False
@@ -270,6 +272,8 @@ def validate_lambda_purity(lambda_code: str, source_path: Path) -> List[str]:
                     elif isinstance(inner, ast.Return):
                         if inner.value is not None and not is_pure_expr(inner.value):
                             violations.append(f"{source_path}:{inner.lineno}: helper return expression contains disallowed constructs")
+                    elif isinstance(inner, ast.If):
+                        _validate_guard_if(inner, source_path, violations)
                     else:
                         violations.append(f"{source_path}:{inner.lineno}: disallowed helper statement type {type(inner).__name__}")
                 continue

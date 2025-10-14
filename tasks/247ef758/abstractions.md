@@ -24,10 +24,11 @@ def solve_247ef758(grid: Grid) -> Grid:
     glyphs = extractGlyphs(grid, axis_col)
     col_markers = extractColumnMarkers(grid, axis_col)
     row_markers = extractRowMarkers(grid)
+    glyph_entries = list(glyphs.items())
     
-    result = grid
-    for color, glyph in glyphs.items():
-        result = placeGlyphs(result, glyph, row_markers[color], col_markers[color])
+    def place(canvas: Grid, entry: Tuple[Color, Glyph]) -> Grid:
+        color, glyph = entry
+        return placeGlyphs(canvas, glyph, row_markers[color], col_markers[color])
     
-    return result
+    return fold_repaint(grid, glyph_entries, place)
 ```
