@@ -11,3 +11,13 @@
   - `searchTilings : List Shape -> (Grid, Score)` — depth-first search the space of placements on the target square, maximising perimeter and a weighted feature score.
   - `renderBestTiling : Grid -> Grid` — convert the best placement board into the final coloured grid.
 - **Solver summary**: "Extract all components, generate their dihedral variants, search for the perimeter-maximising tiling of the square canvas, and render the highest scoring placement."
+
+## Lambda Representation
+
+```python
+def solve_7b3084d4(grid: Grid) -> Grid:
+    components = extractComponents(grid)
+    shapes = [shape for component in components for shape in enumerateVariants(component)]
+    board, _ = searchTilings(shapes)
+    return renderBestTiling(board)
+```

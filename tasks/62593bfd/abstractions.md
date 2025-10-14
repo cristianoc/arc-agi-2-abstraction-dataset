@@ -6,8 +6,18 @@
 
 ## DSL Structure
 - **Typed operations**
-  - `aggregateColumnCounts : Grid -> Dict Color -> Counter` — sum column occupancies per colour to measure overlap dominance.
-  - `rankColorsByDominance : Dict Color -> Counter -> List Color` — order colours by their aggregated dominance to decide movement priorities.
-  - `computeShiftTargets : Grid × List Color -> Dict Color -> Shift` — derive target rows for each colour using dominance plus median min-row placement.
-  - `applyColorShifts : Grid × Dict Color -> Shift -> Grid` — translate each colour’s components toward its target row while preserving column order.
+  - `aggregateColumnCounts : Grid -> ColumnStats` — sum column occupancies per colour to measure overlap dominance.
+  - `rankColorsByDominance : ColumnStats -> List Color` — order colours by their aggregated dominance to decide movement priorities.
+  - `computeShiftTargets : Grid × List Color -> ShiftPlan` — derive target rows for each colour using dominance plus median min-row placement.
+  - `applyColorShifts : Grid × ShiftPlan -> Grid` — translate each colour’s components toward its target row while preserving column order.
 - **Solver summary**: "Aggregate column counts by colour, rank colours by dominance, compute per-colour shift targets, and apply those shifts to realign the components."
+
+## Lambda Representation
+
+```python
+def solve_62593bfd(grid: Grid) -> Grid:
+    column_counts = aggregateColumnCounts(grid)
+    ordered_colors = rankColorsByDominance(column_counts)
+    targets = computeShiftTargets(grid, ordered_colors)
+    return applyColorShifts(grid, targets)
+```

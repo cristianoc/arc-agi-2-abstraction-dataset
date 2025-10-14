@@ -13,3 +13,13 @@ Final pipeline: use `rotated_cycle`, which respects tile orientation and separat
   - `rotateAndCycleBlocks : List List Block -> (List Block, Orientation)` — rotate the block grid clockwise and cycle starting positions to choose vertical vs. horizontal stacking.
   - `assembleBlocks : List Block × Orientation × Color -> Grid` — stitch the ordered blocks back together, inserting separator rows or columns.
 - **Solver summary**: "Detect the separator colour, cut the grid into blocks, rotate/cycle the blocks to choose the stack orientation, and assemble them with separator lines."
+
+## Lambda Representation
+
+```python
+def solve_78332cb0(grid: Grid) -> Grid:
+    separator = detectSeparatorColor(grid)
+    blocks = segmentIntoBlocks(grid, separator)
+    ordered_blocks, orientation = rotateAndCycleBlocks(blocks)
+    return assembleBlocks(list(ordered_blocks), orientation, separator)
+```

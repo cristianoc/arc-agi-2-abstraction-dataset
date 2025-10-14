@@ -12,3 +12,18 @@ The deployed solver uses the mapped-tiles abstraction, which reproduces the full
   - `renderTemplate : TemplateId -> Grid` — fetch or synthesise the template corresponding to the mapped tile.
   - `placeTemplate : Grid × CellRegion × Grid -> Grid` — write the template into the region, falling back to the dominant colour when no mapping exists.
 - **Solver summary**: "Segment the board into cell regions, look up each region’s template, render the template, and place it into the output with fallback dominant fills."
+
+## Lambda Representation
+
+```python
+def solve_65b59efc(grid: Grid) -> Grid:
+    regions = segmentBoardCells(grid)
+    tiles = [(region, lookupCellTemplate(region)) for region in regions]
+
+    def place(canvas: Grid, entry: Tuple[CellRegion, TemplateId]) -> Grid:
+        region, template_id = entry
+        template = renderTemplate(template_id)
+        return placeTemplate(canvas, region, template)
+
+    return fold_repaint(grid, tiles, place)
+```

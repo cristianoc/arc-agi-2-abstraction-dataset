@@ -9,6 +9,20 @@
 - **Typed operations**
   - `locateFiveColumn : Grid -> Optional Int` — return the first column containing colour 5 to act as the sliding barrier.
   - `extractZeroComponents : Grid × Int -> List Component` — gather zero-valued components strictly to the left of the 5-column.
-  - `slideComponentsRight : List Component × Int -> Grid` — shift each zero-component rightward so its right edge touches the 5-column.
+  - `determineHighlightColors : Grid -> (Color, Color)` — choose the background and highlight colours used by the tail rule.
+  - `slideComponentsRight : Grid × List Component × Int -> Grid` — shift each zero-component rightward so its right edge touches the 5-column.
   - `highlightRowTail : Grid × Int × Color × Color -> Grid` — scan rows with `background,0,5` at the barrier, and repaint cells to the right with the highlight colour.
 - **Solver summary**: "Find the 5-column, slide every zero-component against it, restore the right region, then highlight rows whose zeros border a background gap next to the 5."
+
+## Lambda Representation
+
+```python
+def solve_6e453dd6(grid: Grid) -> Grid:
+    five_col = locateFiveColumn(grid)
+    if five_col is None:
+        return grid
+    components = extractZeroComponents(grid, five_col)
+    shifted = slideComponentsRight(grid, components, five_col)
+    background, highlight = determineHighlightColors(grid)
+    return highlightRowTail(shifted, five_col, background, highlight)
+```

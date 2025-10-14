@@ -10,3 +10,13 @@
   - `evaluateDecisionTree : Component -> Bool` — apply the handcrafted thresholds on colour, size, and position to decide whether to recolour the component.
   - `repaintComponents : Grid × List Component -> Grid` — map qualifying major components to colour 5 and minor components to colour 3.
 - **Solver summary**: "Select the two dominant colours, extract their monochrome components, run each through the learned decision tree, and recolour qualifying components."
+
+## Lambda Representation
+
+```python
+def solve_7b0280bc(grid: Grid) -> Grid:
+    major, minor = identifyForegroundColours(grid)
+    components = extractMonoComponents(grid, set((major, minor)))
+    selected = [component for component in components if evaluateDecisionTree(component)]
+    return repaintComponents(grid, selected)
+```

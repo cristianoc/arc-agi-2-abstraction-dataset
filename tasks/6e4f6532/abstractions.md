@@ -11,3 +11,19 @@
   - `lookupPattern : Component -> Optional Pattern` — match the component’s colour histogram against the precomputed pattern table.
   - `stampPatternAtMarker : Grid × Pattern × Marker -> Grid` — clear the object’s original cells, then stamp the pattern relative to the marker anchor.
 - **Solver summary**: "Extract components, split figures from markers, look up the template that matches each figure’s colour counts, and stamp that pattern at the associated marker."
+
+## Lambda Representation
+
+```python
+def solve_6e4f6532(grid: Grid) -> Grid:
+    components = extractComponents(grid)
+    objects, markers = splitObjectsAndMarkers(components)
+    entries = list(zip(objects, markers))
+
+    def stamp(canvas: Grid, entry: Tuple[Component, Marker]) -> Grid:
+        obj, marker = entry
+        pattern = lookupPattern(obj)
+        return stampPatternAtMarker(canvas, pattern, marker) if pattern is not None else canvas
+
+    return fold_repaint(grid, entries, stamp)
+```
