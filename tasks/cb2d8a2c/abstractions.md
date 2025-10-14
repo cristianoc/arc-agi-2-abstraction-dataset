@@ -6,3 +6,10 @@
 
 The final solver implements the hybrid pipeline with the tuned offset rules that keep the 3-path one cell away from converted 2-stripes while routing around future obstacles.
 
+## DSL Structure
+- **Typed operations**
+  - `classifyCorridorOrientation : Grid -> Orientation` — decide whether the dominant components are horizontal or vertical.
+  - `buildHorizontalCorridor : Grid -> Path` — generate the zig-zag corridor for horizontal layouts using anchor offsets.
+  - `buildVerticalCorridor : Grid -> Path` — transpose logic for vertical layouts with adjusted buffer rules.
+  - `renderCorridorPath : Grid × Path -> Grid` — paint the corridor onto the grid while respecting the one-cell buffer from colour-2 stripes.
+- **Solver summary**: "Classify the corridor orientation, build the matching zig-zag path, and render it onto the grid with the required buffers."
