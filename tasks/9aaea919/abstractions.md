@@ -4,3 +4,11 @@
 - `instruction_driven`: Interprets the bottom-row markers, recolors flagged columns to color 5, and stacks plus-shaped digits according to the counts encoded by the color-2 columns. Achieves 3/3 matches on the train split; generated test output forms a consistent extended scoreboard.
 
 Final choice: `instruction_driven` abstraction.
+
+## DSL Structure
+- **Typed operations**
+  - `extractCrossColumns : Grid -> Dict Column -> ColumnInfo` — detect plus-shaped columns (colour 9) and record their positions and row stacks.
+  - `readInstructionSegments : Grid -> List (Color, Range)` — parse the bottom-row segments to determine colour-coded instructions.
+  - `mapInstructionsToColumns : List (Color, Range) × Dict Column -> ColumnInfo -> Dict Column -> Instruction` — assign counts and recolour directives to each cross column.
+  - `repaintColumn : Grid × ColumnInfo × Instruction -> Grid` — recolour columns flagged for colour 5 and extend columns based on the instruction counts.
+- **Solver summary**: "Detect existing plus columns, read the bottom instructions, map those instructions to the columns, and repaint/extend each column according to its assigned directive."

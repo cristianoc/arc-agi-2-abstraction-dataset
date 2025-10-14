@@ -120,19 +120,19 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [x] 88e364bc — Digit template relocation DSL noted.
 - [x] 89565ca0 — Stripe summary DSL described.
 - [x] 898e7135 — Dynamic upscale DSL captured.
-- [ ] 8b7bacbf
-- [ ] 8b9c3697
-- [ ] 8e5c0c38
-- [ ] 8f215267
-- [ ] 8f3a5a89
-- [ ] 9385bd28
-- [ ] 97d7923e
-- [ ] 981571dc
-- [ ] 9aaea919
-- [ ] 9bbf930d
-- [ ] a251c730
-- [ ] a25697e4
-- [ ] a32d8b75
-- [ ] a395ee82
-- [ ] a47bf94d
-- [ ] a6f40cea
+- [x] 8b7bacbf — Distance-filtered cavity fill DSL added.
+- [x] 8b9c3697 — Corridor matching DSL captured.
+- [x] 8e5c0c38 — Global symmetry DSL documented.
+- [x] 8f215267 — Stripe reconstruction DSL summarised.
+- [x] 8f3a5a89 — Accessible frontier DSL recorded.
+- [x] 9385bd28 — Legend bounding-box DSL noted.
+- [x] 97d7923e — Selective cap fill DSL added.
+- [x] 981571dc — Row/column completion DSL described.
+- [x] 9aaea919 — Instruction-driven column DSL captured.
+- [x] 9bbf930d — Separator marker DSL documented.
+- [x] a251c730 — Signature dispatch DSL noted.
+- [x] a25697e4 — Component compaction DSL recorded.
+- [x] a32d8b75 — Instruction sprite DSL added.
+- [x] a395ee82 — Template lattice DSL summarised.
+- [x] a47bf94d — Plus/X placement DSL noted.
+- [x] a6f40cea — Projection heuristics DSL captured.
