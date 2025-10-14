@@ -12,3 +12,13 @@ Final solver uses the `hint_path` abstraction directly.
   - `traceSegmentCells : Grid × Segment -> List Cell` — enumerate the cells along each straight segment using the source colour.
   - `paintHintPath : Grid × List Cell -> Grid` — draw the traced path onto a blank canvas, leaving non-hint cells as background.
 - **Solver summary**: "Parse the hint row, build the ordered path segments, trace each segment’s cells, and paint those cells to realise the hinted corridors."
+
+## Lambda Representation
+
+```python
+def solve_3e6067c3(grid: Grid) -> Grid:
+    hints = parseHintRow(grid)
+    segments = buildHintPath(hints)
+    cells = [cell for segment in segments for cell in traceSegmentCells(grid, segment)]
+    return paintHintPath(grid, cells)
+```
