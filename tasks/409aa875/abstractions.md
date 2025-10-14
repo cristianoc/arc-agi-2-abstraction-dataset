@@ -11,3 +11,13 @@
   - `normaliseBandColumns : List Band -> List Band` — reanchor lifted components so their columns start at the band’s minimum x-coordinate.
   - `markBandCentroids : Grid × List Band -> Grid` — paint the lifted bands back into the canvas and drop the centroid marker (colour 1) for odd-sized bands.
 - **Solver summary**: "Group components into bands, lift the bands upward, normalise their columns, then render the lifted bands and mark odd-band centroids."
+
+## Lambda Representation
+
+```python
+def solve_409aa875(grid: Grid) -> Grid:
+    bands = groupByBand(grid)
+    lifted = liftBands(bands)
+    normalised = normaliseBandColumns(lifted)
+    return markBandCentroids(grid, normalised)
+```
