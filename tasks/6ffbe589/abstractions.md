@@ -7,3 +7,11 @@
 - **`final_hybrid`** – detect the colour palette and dispatch to the suited pipeline (mask rotation, edge-preserving cw rotation, or pure ccw). Delivers 3/3 train and 1/1 test pixel-perfect matches.
 
 The winning strategy crops around the active block, recognises which stylistic variant we received via its colour triad, then applies the matching rotation recipe. Combining colour-aware mask rotation with edge-restoring rotations unifies the seemingly different façades and handles the held-out evaluation sample.
+
+## DSL Structure
+- **Typed operations**
+  - `extractMainSquare : Grid -> Grid` — crop the densest non-zero square by scanning row/column non-zero runs.
+  - `detectPaletteVariant : Grid -> Set Color` — derive the set of active colours to decide which rotation recipe to apply.
+  - `transformVariant : Grid × Set Color -> Grid` — dispatch to the colour-specific transformation (mask rotations, edge-preserving CW rotation, or pure CCW).
+  - `fallbackRotate : Grid -> Grid` — counter-clockwise rotation used when no palette recipe matches.
+- **Solver summary**: "Crop the main square, classify the colour variant, apply the corresponding rotation recipe, and fall back to a CCW rotation when no variant matches."
