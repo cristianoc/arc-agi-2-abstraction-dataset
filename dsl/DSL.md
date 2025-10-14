@@ -54,13 +54,17 @@ Lambda representations use **Python syntax** to express **pure functional compos
 ### Forbidden Constructs
 
 - **Loops**: No `for` or `while` statements (use comprehensions or `fold_repaint`)
-- **Mutation**: No reassignment (`x = ...` after initial binding), no `list[i] = ...`, no `dict[k] = ...`
+- **Mutation**: 
+  - No data structure mutation: `list[i] = ...`, `dict[k] = ...`
+  - No attribute mutation: `obj.attr = ...`
+  - ⚠️ **Currently not enforced**: No variable reassignment (`x = ...; x = ...`)
 - **Stateful constructs**: No `try`, `with`, `class`, `global`, `nonlocal`
-- **Attribute/subscript mutation**: No `obj.attr = ...`, no `seq[idx] = ...`
 - **Decorators**: No `@decorator` on helpers
-- **Side effects**: No I/O, no randomness, no mutation
+- **Side effects**: No I/O, no randomness, no external state
 
 **Rationale**: These restrictions ensure every lambda representation denotes pure composition, enabling equational reasoning and preventing hidden dependencies.
+
+**Known limitation**: The current validator does not detect variable reassignment within a function. While rebinding a variable name doesn't violate functional purity at the expression level, it can make code harder to reason about. Contributors should avoid reassignment even though it's not currently enforced.
 
 **To extend the allowed set**: Update `check_lambda_types.py` and document the change here first.
 

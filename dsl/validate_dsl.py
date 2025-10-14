@@ -39,7 +39,7 @@ def _parse_state(path: Path) -> Tuple[List[Dict[str, object]], List[Dict[str, ob
     checks is extracted.
     """
 
-    primitives: List[Dict[str, object]] = []
+    typed_operations: List[Dict[str, object]] = []
     types: List[Dict[str, object]] = []
     combinators: List[Dict[str, object]] = []
 
@@ -49,11 +49,11 @@ def _parse_state(path: Path) -> Tuple[List[Dict[str, object]], List[Dict[str, ob
 
     for raw_line in path.read_text().splitlines():
         line = raw_line.strip()
-        if line == "primitives:":
+        if line == "primitives:":  # YAML still uses 'primitives:' as key for backwards compat
             if current is not None and target is not None:
                 target.append(current)
-            section = "primitives"
-            target = primitives
+            section = "typed_operations"
+            target = typed_operations
             current = None
             continue
         if line == "types:":
@@ -88,20 +88,20 @@ def _parse_state(path: Path) -> Tuple[List[Dict[str, object]], List[Dict[str, ob
     if current and target is not None:
         target.append(current)
 
-    return primitives, types, combinators
+    return typed_operations, types, combinators
 
 
-def _validate_typed_operations(primitives: List[Dict[str, object]]) -> None:
+def _validate_typed_operations(typed_operations: List[Dict[str, object]]) -> None:
     errors: List[str] = []
     seen: Counter[Tuple[str, str]] = Counter()
 
-    for entry in primitives:
+    for entry in typed_operations:
         name = entry.get("name")
         signature = entry.get("signature")
         tasks = entry.get("tasks")
 
         if not isinstance(name, str) or not name:
-            errors.append("Primitive entry missing `name` field.")
+            errors.append("Typed operation entry missing `name` field.")
             continue
         if not isinstance(signature, str) or not signature:
             errors.append(f"{name}: missing `signature` field.")
@@ -158,8 +158,8 @@ def _validate_types(types: List[Dict[str, object]]) -> None:
 
 
 def validate() -> None:
-    primitives, types, _ = _parse_state(STATE_PATH)
-    _validate_typed_operations(primitives)
+    typed_operations, types, _ = _parse_state(STATE_PATH)
+    _validate_typed_operations(typed_operations)
     _validate_types(types)
 
 
