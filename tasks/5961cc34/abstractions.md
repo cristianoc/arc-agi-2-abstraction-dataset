@@ -2,3 +2,11 @@
 - Filtered_scaffold: Added the orange-guide count gate before ray casting; keeps only motifs with paired guides, yielding 100% on train and matching the test projection we expect.
 
 The filtered scaffold abstraction is the final solver: sentinel-led BFS after guide filtering keeps a single connected blue columned scaffold that passes every available case.
+
+## DSL Structure
+- **Typed operations**
+  - `extractMotifs : Grid -> List Motif` — collect candidate motifs with their guide-ray metadata.
+  - `filterByGuideCount : List Motif -> List Motif` — keep motifs whose orange guides appear in paired counts.
+  - `buildGuideGraph : Grid × List Motif -> Graph` — connect filtered motifs via their guide rays and sentinel anchors.
+  - `propagateScaffold : Graph -> Grid` — run the sentinel BFS along the guide graph to paint the final scaffold.
+- **Solver summary**: "Extract motifs, filter them by guide counts, build the guide/sentinel graph, then propagate the scaffold along that graph."

@@ -59,16 +59,16 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [x] 5545f144 — Consensus + alignment DSL captured.
 - [x] 581f7754 — Anchor alignment compression DSL described.
 - [x] 58490d8a — Scoreboard counting DSL documented.
-- [ ] 58f5dbd5
-- [ ] 5961cc34
-- [ ] 5dbc8537
-- [ ] 62593bfd
-- [ ] 64efde09
-- [ ] 65b59efc
-- [ ] cb2d8a2c
-- [ ] cbebaa4b
-- [ ] d35bdbdc
-- [ ] d59b0160
+- [x] 58f5dbd5 — Scoreboard glyph board DSL captured.
+- [x] 5961cc34 — Filtered scaffold motif DSL summarised.
+- [x] 5dbc8537 — Legend-driven orientation repaint DSL documented.
+- [x] 62593bfd — Aggregated overlap shift DSL recorded.
+- [x] 64efde09 — Shadow projection DSL added.
+- [x] 65b59efc — Template-mapped tile DSL described.
+- [x] cb2d8a2c — Corridor orientation routing DSL noted.
+- [x] cbebaa4b — Connector graph translation DSL captured.
+- [x] d35bdbdc — Sink pairing ring-prune DSL written up.
+- [x] d59b0160 — Room fill heuristic DSL detailed.
 - [ ] d8e07eb2
 - [ ] da515329
 - [ ] db0c5428
