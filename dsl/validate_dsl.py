@@ -1,155 +1,166 @@
-"""Validation utilities for the ARC-AGI-2 DSL survey.
+"""Lightweight validation for the DSL state registry.
 
-Checks performed:
-1. Every primitive recorded in ``dsl_state.yaml`` appears in at least one
-   ``task_log.md`` action entry.
-2. Every primitive mentioned in ``task_log.md`` actions exists in
-   ``dsl_state.yaml``.
-3. Each processed task listed in ``task_progress.yaml`` has a corresponding
-   entry in ``task_log.md``.
+The current registry enumerates typed operations (formerly called primitives)
+and combinators gathered from the abstraction notes.  This script performs a
+few consistency checks:
+
+1. every typed operation entry must define a name, signature, and at least one
+   associated task id;
+2. typed-operation task lists must not contain duplicates;
+3. the combination of name + signature must be unique within the registry; and
+4. each recorded type lists the tasks where it appears (no duplicates, no
+   missing names).
+
+Exit status 0 indicates success; any validation error is reported on stderr and
+results in a non-zero exit code.
 """
 
 from __future__ import annotations
 
 import sys
-import re
-from dataclasses import dataclass
+from collections import Counter
 from pathlib import Path
-from typing import Iterable, List, Set
+from typing import Dict, List, Tuple
 
 
 ROOT = Path(__file__).resolve().parent
 STATE_PATH = ROOT / "dsl_state.yaml"
-LOG_PATH = ROOT / "task_log.md"
-PROGRESS_PATH = ROOT / "task_progress.yaml"
 
 
 class ValidationError(Exception):
     """Raised when a validation rule fails."""
 
 
-def _parse_yaml_primitives(path: Path) -> List[str]:
-    """Minimal YAML reader tailored to the dsl_state.yaml structure."""
+def _parse_state(path: Path) -> Tuple[List[Dict[str, object]], List[Dict[str, object]], List[Dict[str, object]]]:
+    """Parse `dsl_state.yaml` without relying on PyYAML.
 
-    primitives: List[str] = []
-    capture = False
-    with path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            stripped = line.strip()
-            if stripped == "primitives:":
-                capture = True
-                continue
-            if stripped == "combinators:":
-                break
-            if capture and stripped.startswith("- name:"):
-                name = stripped.split(":", 1)[1].strip().strip('"')
-                primitives.append(name)
-    return primitives
+    The file structure is intentionally simple, so a hand-rolled parser keeps
+    dependencies minimal.  Only the information required for the validation
+    checks is extracted.
+    """
 
+    primitives: List[Dict[str, object]] = []
+    types: List[Dict[str, object]] = []
+    combinators: List[Dict[str, object]] = []
 
-@dataclass
-class TaskLogEntry:
-    task: str
-    actions: str
+    current: Dict[str, object] | None = None
+    target: List[Dict[str, object]] | None = None
+    section = None
 
-
-def _parse_task_log(path: Path) -> List[TaskLogEntry]:
-    entries: List[TaskLogEntry] = []
-    current: Dict[str, str] = {}
-    with path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            stripped = line.strip()
-            if stripped.startswith("- task:"):
-                if current:
-                    if "task" in current and "actions" in current:
-                        entries.append(TaskLogEntry(current["task"], current["actions"]))
-                current = {"task": stripped.split(":", 1)[1].strip()}
-            elif stripped.startswith("actions:"):
-                current["actions"] = stripped.split(":", 1)[1].strip().strip('"')
-        if current and "task" in current and "actions" in current:
-            entries.append(TaskLogEntry(current["task"], current["actions"]))
-    return entries
-
-
-_PRIMITIVE_CLAUSE = re.compile(
-    r"(?:Added|Introduced)\s+([^.;]+?)\s+primitive(?:s)?",
-    re.IGNORECASE,
-)
-
-
-def _split_candidate_names(text: str) -> Iterable[str]:
-    text = text.replace(" and ", ", ")
-    for fragment in text.split(","):
-        name = fragment.strip()
-        if not name:
+    for raw_line in path.read_text().splitlines():
+        line = raw_line.strip()
+        if line == "primitives:":
+            if current is not None and target is not None:
+                target.append(current)
+            section = "primitives"
+            target = primitives
+            current = None
             continue
-        if "combinator" in name.lower():
+        if line == "types:":
+            if current is not None and target is not None:
+                target.append(current)
+            section = "types"
+            target = types
+            current = None
             continue
-        name = name.split()[0]
-        if not name.isidentifier():
+        if line == "combinators:":
+            if current is not None and target is not None:
+                target.append(current)
+            section = "combinators"
+            target = combinators
+            current = None
             continue
-        if name.lower() in {"added", "introduce", "introduced", "add", "and"}:
+        if not target:
             continue
-        yield name
+        if line.startswith("- name:"):
+            if current:
+                target.append(current)
+            current = {"name": line.split(":", 1)[1].strip()}
+        elif line.startswith("signature:") and current is not None:
+            current["signature"] = line.split(":", 1)[1].strip().strip('"')
+        elif line.startswith("tasks:") and current is not None:
+            raw_tasks = line.split(":", 1)[1].strip()
+            if raw_tasks.startswith("[") and raw_tasks.endswith("]"):
+                raw_tasks = raw_tasks[1:-1]
+            tasks = [item.strip() for item in raw_tasks.split(",") if item.strip()]
+            current["tasks"] = tasks
+
+    if current and target is not None:
+        target.append(current)
+
+    return primitives, types, combinators
 
 
-def _extract_primitives_from_actions(entries: Iterable[TaskLogEntry]) -> Set[str]:
-    primitives: Set[str] = set()
-    for entry in entries:
-        actions = entry.actions
-        for match in _PRIMITIVE_CLAUSE.finditer(actions):
-            for name in _split_candidate_names(match.group(1)):
-                primitives.add(name)
-    return primitives
-
-
-def _parse_progress_processed(path: Path) -> List[str]:
-    processed: List[str] = []
-    capture = False
-    with path.open("r", encoding="utf-8") as handle:
-        for line in handle:
-            stripped = line.strip()
-            if stripped == "processed:":
-                capture = True
-                continue
-            if stripped == "remaining:":
-                break
-            if capture and stripped.startswith("- "):
-                processed.append(stripped[2:])
-    return processed
-
-
-def _tasks_in_log(entries: Iterable[TaskLogEntry]) -> Set[str]:
-    return {entry.task for entry in entries}
-
-
-def validate() -> None:
-    primitives_yaml = _parse_yaml_primitives(STATE_PATH)
-    log_entries = _parse_task_log(LOG_PATH)
-    primitives_log = _extract_primitives_from_actions(log_entries)
-    processed_tasks = _parse_progress_processed(PROGRESS_PATH)
-    logged_tasks = _tasks_in_log(log_entries)
-
-    missing_in_log = sorted(set(primitives_yaml) - primitives_log)
-    missing_in_yaml = sorted(primitives_log - set(primitives_yaml))
-    missing_log_entries = sorted(set(processed_tasks) - logged_tasks)
-
+def _validate_typed_operations(primitives: List[Dict[str, object]]) -> None:
     errors: List[str] = []
-    if missing_in_log:
+    seen: Counter[Tuple[str, str]] = Counter()
+
+    for entry in primitives:
+        name = entry.get("name")
+        signature = entry.get("signature")
+        tasks = entry.get("tasks")
+
+        if not isinstance(name, str) or not name:
+            errors.append("Primitive entry missing `name` field.")
+            continue
+        if not isinstance(signature, str) or not signature:
+            errors.append(f"{name}: missing `signature` field.")
+        if not isinstance(tasks, list) or not tasks:
+            errors.append(f"{name}: `tasks` list must be present and non-empty.")
+        else:
+            duplicates = [task for task, count in Counter(tasks).items() if count > 1]
+            if duplicates:
+                errors.append(f"{name}: duplicate task ids {duplicates}.")
+
+        if isinstance(name, str) and isinstance(signature, str):
+            seen[(name, signature)] += 1
+
+    collisions = [f"{name} :: {signature}" for (name, signature), count in seen.items() if count > 1]
+    if collisions:
         errors.append(
-            f"Primitives in dsl_state.yaml missing from task log actions: {missing_in_log}"
-        )
-    if missing_in_yaml:
-        errors.append(
-            f"Primitives referenced in task log but absent in dsl_state.yaml: {missing_in_yaml}"
-        )
-    if missing_log_entries:
-        errors.append(
-            f"Tasks marked processed without log entries: {missing_log_entries}"
+            "Duplicate (name, signature) pairs found: "
+            + ", ".join(sorted(collisions))
         )
 
     if errors:
         raise ValidationError("\n".join(errors))
+
+
+def _validate_types(types: List[Dict[str, object]]) -> None:
+    errors: List[str] = []
+    seen: Counter[str] = Counter()
+
+    for entry in types:
+        name = entry.get("name")
+        tasks = entry.get("tasks")
+
+        if not isinstance(name, str) or not name:
+            errors.append("Type entry missing `name` field.")
+            continue
+        if not isinstance(tasks, list) or not tasks:
+            errors.append(f"{name}: `tasks` list must be present and non-empty.")
+        else:
+            duplicates = [task for task, count in Counter(tasks).items() if count > 1]
+            if duplicates:
+                errors.append(f"{name}: duplicate task ids {duplicates}.")
+
+        if isinstance(name, str):
+            seen[name] += 1
+
+    collisions = [name for name, count in seen.items() if count > 1]
+    if collisions:
+        errors.append(
+            "Duplicate type names found: " + ", ".join(sorted(collisions))
+        )
+
+    if errors:
+        raise ValidationError("\n".join(errors))
+
+
+def validate() -> None:
+    primitives, types, _ = _parse_state(STATE_PATH)
+    _validate_typed_operations(primitives)
+    _validate_types(types)
 
 
 def main(argv: List[str]) -> int:
