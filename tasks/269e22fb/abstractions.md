@@ -6,3 +6,10 @@
 
 **Final pipeline:** `align_with_swap` — detect the unique placement inside the canonical template, overwrite the slot, then invert the discovered transform and color mapping to recover the 20×20 output.
 
+## DSL Structure
+- **Typed operations**
+  - `findAlignment : Grid -> Alignment` — search the canonical template for a dihedral transform and colour mapping that embeds the input (returns transform, mapping, position, pattern).
+  - `writeTemplate : Alignment -> TemplateGrid` — copy the base template and write the transformed pattern into the detected slot.
+  - `invertTransform : Alignment × TemplateGrid -> Grid` — apply the inverse dihedral transform to map the template back to input orientation.
+  - `remapColors : Grid × Mapping -> Grid` — restore original colours via the reverse mapping.
+- **Solver summary**: "Find the alignment of the input within the canonical template, write it into the base pattern, invert the transform, and remap colours to obtain the 20×20 output."
