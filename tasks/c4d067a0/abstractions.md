@@ -8,8 +8,18 @@ Final pipeline: adopt the column-aligned abstraction (matching spacing horizonta
 
 ## DSL Structure
 - **Typed operations**
-  - `extractComponents : Grid -> List Component` — collect instruction columns and template blocks via component analysis.
-  - `decodeInstructionSequences : Grid × List Int -> List Sequence` — read the non-background colours from the singleton instruction columns.
-  - `inferColumnGeometry : List Component -> (Mask, Int, Int)` — compute the base template mask, block dimensions, and horizontal spacing from multi-cell components.
-  - `stackColumns : Mask × List Sequence × (Int, Int) -> Grid` — align each column at the bottom and paint mask-coloured blocks following the instruction sequences with the learned spacing.
+  - `extractComponents : Grid -> ComponentSet` — collect instruction columns and template blocks via component analysis.
+  - `decodeInstructionSequences : Grid × ComponentSet -> (InstructionColumns, List Sequence)` — read the non-background colours from the singleton instruction columns.
+  - `inferColumnGeometry : ComponentSet -> ColumnGeometry` — compute the base template mask, block dimensions, and horizontal spacing from multi-cell components.
+  - `stackColumns : ColumnGeometry × List Sequence -> Grid` — align each column at the bottom and paint mask-coloured blocks following the instruction sequences with the learned spacing.
 - **Solver summary**: "Extract instruction columns and template components, decode the colour sequences, infer the column mask/spacing, and stack mask columns per sequence while bottom-aligning them."
+
+## Lambda Representation
+
+```python
+def solve_c4d067a0(grid: Grid) -> Grid:
+    components = extractComponents(grid)
+    instruction_columns, sequences = decodeInstructionSequences(grid, components)
+    geometry = inferColumnGeometry(components)
+    return stackColumns(geometry, sequences)
+```
