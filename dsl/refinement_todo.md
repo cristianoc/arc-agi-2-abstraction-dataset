@@ -20,6 +20,7 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [x] 135a2760 — Row slice repair via periodic pattern search (documented in abstractions.md).
 - [x] 136b0064 — Digit template placement with placement heuristic.
 - [x] 13e47133 — Template lookup/overlay per component.
+- [ ] 142ca369
 - [x] 16b78196 — Component stacking around dominant band.
 - [x] 16de56c4 — Row stride + column stride propagation.
 - [x] 1818057f — Plus detection/repaint.
@@ -27,15 +28,17 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [x] 1ae2feb7 — Repeat segments across barrier column.
 - [x] 20270e3b — Vertical/horizontal fold with fallback recolour.
 - [x] 20a9e565 — Column group classification into S/C/B layouts.
-- [ ] 221dfab4
-- [ ] 247ef758
-- [ ] 269e22fb
-- [ ] 28a6681f
-- [ ] 291dc1e1
-- [ ] 2b83f449
-- [ ] 2ba387bc
-- [ ] 2c181942
-- [ ] 2d0172a1
+- [ ] 21897d95
+- [x] 221dfab4 — Stripe projection + object-overlay abstraction captured (see DSL structure note).
+- [x] 247ef758 — Marker cartesian placement DSL summary documented.
+- [x] 269e22fb — Template alignment with dihedral + colour remap recorded.
+- [ ] 271d71e2
+- [x] 28a6681f — Supply relocation gaps solver summarised.
+- [x] 291dc1e1 — Segment weaving transpose pipeline noted.
+- [x] 2b83f449 — Cross repaint + boundary recolour DSL written up.
+- [x] 2ba387bc — Hollow/solid pairing blocks abstraction documented.
+- [x] 2c181942 — Axis-cross reconstruction DSL summary added.
+- [x] 2d0172a1 — Template reconstruction / alternating extension described.
 - [ ] 31f7f899
 - [ ] 332f06d7
 - [ ] 35ab12c3
@@ -62,10 +65,12 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [ ] 62593bfd
 - [ ] 64efde09
 - [ ] 65b59efc
+- [ ] cb2d8a2c
 - [ ] cbebaa4b
 - [ ] d35bdbdc
 - [ ] d59b0160
 - [ ] d8e07eb2
+- [ ] da515329
 - [ ] db0c5428
 - [ ] db695cfb
 - [ ] dbff022c
@@ -78,6 +83,7 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [ ] e8686506
 - [ ] e87109e9
 - [ ] edb79dae
+- [ ] eee78d87
 - [ ] f560132c
 - [ ] f931b4a8
 - [ ] faa9f03d
@@ -92,10 +98,13 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [ ] b9e38dc0
 - [ ] bf45cf4b
 - [ ] c4d067a0
+- [ ] c7f57c3e
 - [ ] 67e490f4
 - [ ] 6e453dd6
 - [ ] 6e4f6532
+- [ ] 6ffbe589
 - [ ] 71e489b6
+- [ ] 7491f3cf
 - [ ] 7666fa5d
 - [ ] 78332cb0
 - [ ] 7b0280bc
@@ -121,11 +130,9 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [ ] 981571dc
 - [ ] 9aaea919
 - [ ] 9bbf930d
+- [ ] a251c730
 - [ ] a25697e4
 - [ ] a32d8b75
 - [ ] a395ee82
 - [ ] a47bf94d
 - [ ] a6f40cea
-- [ ] 65b59efc
-
-
