@@ -9,7 +9,17 @@ The final strategy layers the selective upward copy with the mirroring step, pro
 ## DSL Structure
 - **Typed operations**
   - `locateLeftWedge : Grid -> Set Row` — identify rows containing the left wedge colour `5`.
-  - `extractRightBlocks : Grid -> Dict Row -> Block` — gather the right-hand blocks that correspond to each wedge row.
-  - `shiftBlocksUpwards : Dict Row -> Block -> Dict Row -> Block` — move each block upward while the originating row still contains wedge cells.
+  - `extractRightBlocks : Grid × Set Row -> Dict[Row, Block]` — gather the right-hand blocks that correspond to each wedge row.
+  - `shiftBlocksUpwards : Grid × Dict[Row, Block] -> Grid` — write the right-hand blocks one row above while the source rows still contain wedge cells.
   - `mirrorWedge : Grid × Set Row -> Grid` — mirror the left wedge onto the right side after the upward shifts.
 - **Solver summary**: "Find the wedge rows, extract and shift their right-side blocks upward when wedge cells persist, then mirror the wedge to finish the overlay."
+
+## Lambda Representation
+
+```python
+def solve_4c3d4a41(grid: Grid) -> Grid:
+    wedge_rows = locateLeftWedge(grid)
+    blocks = extractRightBlocks(grid, wedge_rows)
+    shifted = shiftBlocksUpwards(grid, blocks)
+    return mirrorWedge(shifted, wedge_rows)
+```

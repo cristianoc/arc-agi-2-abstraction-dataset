@@ -10,6 +10,16 @@ Final pipeline: `count8`.
 - **Typed operations**
   - `extractScoreboard : Grid -> Grid` — crop the zero-anchored scoreboard rectangle.
   - `enumerateArenaComponents : Grid -> List Component` — find 8-connected components outside the scoreboard region.
-  - `countComponentsByColor : List Component -> Dict Color -> Int` — tally components by their indicator colour.
-  - `writeCountsToBoard : Grid × Dict Color -> Int -> Grid` — overwrite the scoreboard digits with counts expanded as repeated rows/columns.
+  - `countComponentsByColor : List Component -> Dict[Color, int]` — tally components by their indicator colour.
+  - `writeCountsToBoard : Grid × Dict[Color, int] -> Grid` — overwrite the scoreboard digits with counts expanded as repeated rows/columns.
 - **Solver summary**: "Extract the scoreboard, count 8-connected components per indicator colour, and write those counts back into the board."
+
+## Lambda Representation
+
+```python
+def solve_58490d8a(grid: Grid) -> Grid:
+    board = extractScoreboard(grid)
+    components = enumerateArenaComponents(grid)
+    counts = countComponentsByColor(components)
+    return writeCountsToBoard(board, counts)
+```

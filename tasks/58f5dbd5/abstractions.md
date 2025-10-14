@@ -8,7 +8,17 @@ The final refinement is the **scoreboard** abstraction, which reliably reproduce
 ## DSL Structure
 - **Typed operations**
   - `findSignificantColors : Grid -> (Color, List Color)` — identify the background and the non-background colours with enough support.
-  - `computeCentroids : Grid × List Color -> Dict Color -> Point` — measure each colour’s centroid to guide board placement.
+  - `computeCentroids : Grid × List Color -> Dict[Color, Point]` — measure each colour’s centroid to guide board placement.
   - `inferBoardLayout : Dict Color -> Layout` — choose the row×column arrangement by comparing centroid spreads and factor pairs.
-  - `assignSlotsAndRender : Grid × Color × Dict Color -> Layout -> Grid` — assign colours to board slots using centroid order and render the scoreboard with the stored digit templates.
+  - `assignSlotsAndRender : Grid × Color × Dict[Color, Point] -> Layout -> Grid` — assign colours to board slots using centroid order and render the scoreboard with the stored digit templates.
 - **Solver summary**: "Find significant colours, compute their centroids, infer a board layout from the spreads, then assign slots and render the scoreboard templates."
+
+## Lambda Representation
+
+```python
+def solve_58f5dbd5(grid: Grid) -> Grid:
+    background, colours = findSignificantColors(grid)
+    centroids = computeCentroids(grid, colours)
+    layout = inferBoardLayout(centroids)
+    return assignSlotsAndRender(grid, background, centroids, layout)
+```

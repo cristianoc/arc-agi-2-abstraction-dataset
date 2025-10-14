@@ -12,3 +12,13 @@ Final solver uses the `type_priority` ordering, as it alone preserves the asymme
   - `prioritiseComponents : List (Component, ComponentType) -> List Component` — sort components using the type priority and tie-breakers on position.
   - `concatenateComponents : List Component -> Grid` — place components left-to-right according to the prioritised order, avoiding duplicates.
 - **Solver summary**: "Extract components, classify them, prioritise by type and position, then concatenate in that order to rebuild the column layout."
+
+## Lambda Representation
+
+```python
+def solve_4e34c42c(grid: Grid) -> Grid:
+    components = extractComponents(grid)
+    typed = [(component, classifyComponentType(component)) for component in components]
+    ordered = prioritiseComponents(typed)
+    return concatenateComponents(ordered)
+```

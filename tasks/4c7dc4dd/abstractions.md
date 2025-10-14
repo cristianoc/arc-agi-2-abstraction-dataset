@@ -13,3 +13,13 @@ The evaluation harness in `analysis/task4c7dc4dd_abstractions.py` compares these
   - `augmentScaffold : Scaffold -> Scaffold` — extend auxiliary strokes and add anchor tags when the scaffold is right-heavy.
   - `renderGlyph : Scaffold -> Grid` — paint the symbolic glyph defined by the scaffold onto the output canvas.
 - **Solver summary**: "Detect zero rectangles, turn them into a scaffold, augment it with auxiliary strokes and anchor tags, then render the resulting glyph."
+
+## Lambda Representation
+
+```python
+def solve_4c7dc4dd(grid: Grid) -> Grid:
+    rectangles = detectZeroRectangles(grid)
+    scaffold = buildScaffold(rectangles)
+    augmented = augmentScaffold(scaffold)
+    return renderGlyph(augmented)
+```

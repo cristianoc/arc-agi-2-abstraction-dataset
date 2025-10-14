@@ -12,3 +12,13 @@ Final solution: `corner_hooks` (implemented in `analysis/arc2_samples/4c416de3.p
   - `generateHookTemplate : HookFamily × Marker -> Grid` — build the hook footprint for each corner, scaling arms by the measured distances.
   - `overlayHooks : Grid × List Grid -> Grid` — overlay the generated hooks onto the canvas without disturbing untouched cells.
 - **Solver summary**: "Read the corner markers, choose the hook family, generate the appropriately scaled hook templates, and overlay them onto the grid."
+
+## Lambda Representation
+
+```python
+def solve_4c416de3(grid: Grid) -> Grid:
+    markers = readCornerMarkers(grid)
+    family = classifyHookFamily(markers)
+    hook_templates = [generateHookTemplate(family, marker) for marker in markers]
+    return overlayHooks(grid, hook_templates)
+```
