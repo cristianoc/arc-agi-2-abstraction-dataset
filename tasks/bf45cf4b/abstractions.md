@@ -6,3 +6,10 @@
 
 Final solver: reuse of `mask_tiling` from `analysis/arc2_samples/bf45cf4b.py`.
 
+## DSL Structure
+- **Typed operations**
+  - `extractComponents : Grid -> List Component` — separate mask and pattern components via connected component analysis.
+  - `computeMaskLayout : Component -> GridBool` — convert the single-colour component into a boolean mask over its bounding box.
+  - `extractPatternTile : Grid × Component -> Grid` — slice the multi-colour component to obtain the tile that will be replicated.
+  - `tilePatternByMask : GridBool × Grid -> Grid` — replicate the pattern tile wherever the mask is true and background elsewhere.
+- **Solver summary**: "Split the grid into mask and pattern components, turn the mask into a boolean layout, extract the pattern tile, and tile the pattern across every mask position."

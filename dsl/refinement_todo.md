@@ -80,26 +80,26 @@ See `tasks/0934a4d8/abstractions.md` for a sample typed-operation + summary entr
 - [x] e12f9a14 — Digit seed variant DSL captured.
 - [x] e3721c99 — Hole-classified recolour DSL added.
 - [x] e376de54 — Median line alignment DSL noted.
-- [ ] e8686506
-- [ ] e87109e9
-- [ ] edb79dae
-- [ ] eee78d87
-- [ ] f560132c
-- [ ] f931b4a8
-- [ ] faa9f03d
-- [ ] fc7cae8d
-- [ ] aa4ec2a5
-- [ ] abc82100
-- [ ] b0039139
-- [ ] b10624e5
-- [ ] b5ca7ac4
-- [ ] b6f77b65
-- [ ] b99e7126
-- [ ] b9e38dc0
-- [ ] bf45cf4b
-- [ ] c4d067a0
-- [ ] c7f57c3e
-- [ ] 67e490f4
+- [x] e8686506 — Row-signature lookup DSL documented.
+- [x] e87109e9 — Header diff-mask scoreboard DSL captured.
+- [x] edb79dae — Legend template decode DSL summarised.
+- [x] eee78d87 — Template selection DSL recorded.
+- [x] f560132c — Component rotation/placement DSL detailed.
+- [x] f931b4a8 — Tile row/column ID DSL noted.
+- [x] faa9f03d — Noise-bridge tail pipeline DSL described.
+- [x] fc7cae8d — Component rotate/mirror DSL added.
+- [x] aa4ec2a5 — Hole-aware framing DSL recorded.
+- [x] abc82100 — kNN feature encoding DSL documented.
+- [x] b0039139 — Segment tiling reconstruction DSL summarised.
+- [x] b10624e5 — Ornament template reconstruction DSL captured.
+- [x] b5ca7ac4 — Ring lane packing DSL added.
+- [x] b6f77b65 — Digit segment template DSL recorded.
+- [x] b99e7126 — Minority tile mask DSL noted.
+- [x] b9e38dc0 — Barrier wedge propagation DSL described.
+- [x] bf45cf4b — Mask tiling DSL documented.
+- [x] c4d067a0 — Column-aligned stacking DSL captured.
+- [x] c7f57c3e — Variant switch recolour DSL written up.
+- [x] 67e490f4 — Motif shape recolour DSL summarised.
 - [ ] 6e453dd6
 - [ ] 6e4f6532
 - [ ] 6ffbe589
