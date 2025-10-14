@@ -6,3 +6,10 @@
 - **row_col_match** (matches=4/4): same completion but also considering column candidates during the row phase; settled on this variant for the solver, then enforced diagonal mirroring to tidy any leftovers.
 
 The final row_col_match pipeline generates a symmetric 30×30 grid on the test input, repeating the colour palette seen in training and extending every partial row/column into a consistent counterpart.
+
+## DSL Structure
+- **Typed operations**
+  - `fillIncompleteLines : Grid -> (Grid, Bool)` — fill each row’s zeros using matching rows or columns that agree on visible entries.
+  - `iterateCompletion : Grid -> Grid` — alternate between row and column completion until no further changes occur.
+  - `mirrorDiagonalZeros : Grid -> Grid` — copy non-zero values across the main diagonal to eliminate remaining zeros.
+- **Solver summary**: "Iteratively complete rows and columns by borrowing matching lines, repeat until stable, and mirror any leftover zeros across the diagonal."

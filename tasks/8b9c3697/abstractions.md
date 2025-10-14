@@ -5,3 +5,12 @@
 - `matched_corridors`: matched `2` clusters to structures with size/shift/distance scoring and capped corridor length; achieves 3/3 train matches and produces a plausible 23×27 test output with paired doors and cleaned corridors.
 
 The final solver uses the `matched_corridors` abstraction.
+
+## DSL Structure
+- **Typed operations**
+  - `extractObjects : Grid -> List Object` — gather non-background, non-`2` structures with centroids and bounding boxes.
+  - `extractTwoComponents : Grid -> List Component` — collect connected components of colour `2` with size and boundary metadata.
+  - `enumerateCorridorCandidates : List Component × List Object -> Dict ObjectId -> List Candidate` — for each component, test straight corridors toward nearby objects and record feasible shifts.
+  - `assignCorridors : Dict ObjectId -> List Candidate -> Dict ComponentId -> Candidate` — choose at most one corridor per object, preferring larger components, shorter shifts, and closer centroids.
+  - `applyCorridorMoves : Grid × Dict ComponentId -> Candidate -> Grid` — move assigned components along their corridors and erase the originals; clear unassigned components.
+- **Solver summary**: "Extract structures and `2`-components, enumerate valid corridors, assign each object the best corridor, move the matching components along those corridors, and delete leftover `2`s."
