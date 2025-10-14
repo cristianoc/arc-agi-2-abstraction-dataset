@@ -9,7 +9,17 @@ d35bdbdc abstraction summary
 ## DSL Structure
 - **Typed operations**
   - `extractRingGadgets : Grid -> List Ring` — gather ring centres with their border colours.
-  - `countBorderOccurrences : List Ring -> Dict Color -> Int` — tally how many times each border colour appears as a centre.
-  - `selectSinkPairs : List Ring × Dict Color -> List Pair` — pick rings whose border colours no longer appear as centres and pair them with donors.
+  - `countBorderOccurrences : List Ring -> BorderCounts` — tally how many times each border colour appears as a centre.
+  - `selectSinkPairs : List Ring × BorderCounts -> List Pair` — pick rings whose border colours no longer appear as centres and pair them with donors.
   - `pruneRings : Grid × List Ring × List Pair -> Grid` — zero out unpaired rings and preserve the selected sink pairs.
 - **Solver summary**: "Extract ring gadgets, count border occurrences, select sink pairs where border colours have no remaining centres, and prune the rest."
+
+## Lambda Representation
+
+```python
+def solve_d35bdbdc(grid: Grid) -> Grid:
+    rings = extractRingGadgets(grid)
+    border_counts = countBorderOccurrences(rings)
+    pairs = selectSinkPairs(rings, border_counts)
+    return pruneRings(grid, rings, pairs)
+```

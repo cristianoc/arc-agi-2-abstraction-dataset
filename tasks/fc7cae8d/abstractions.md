@@ -12,3 +12,13 @@
   - `rotateCounterClockwise : Grid -> Grid` — rotate the cropped patch 90° counter-clockwise.
   - `conditionalMirror : Grid × Color -> Grid` — compare dominant-colour counts on the left/right edges and mirror when the right edge is heavier.
 - **Solver summary**: "Pick the main interior component, crop it, rotate the crop, then mirror horizontally when the dominant colour is concentrated on the right edge."
+
+## Lambda Representation
+
+```python
+def solve_fc7cae8d(grid: Grid) -> Grid:
+    component = selectInteriorComponent(grid)
+    cropped = cropComponent(grid, component)
+    rotated = rotateCounterClockwise(cropped)
+    return conditionalMirror(rotated, component.color)
+```

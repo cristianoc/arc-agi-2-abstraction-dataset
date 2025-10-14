@@ -15,3 +15,32 @@ Harness: `python analysis/taske87109e9_abstractions.py` prints per-abstraction t
   - `selectDiffMask : Digit × Mask -> Optional Mask` — pick the pre-recorded diff mask whose template best matches the target mask.
   - `applyDiffMask : Grid × Int × Color × Mask -> Grid` — zero out target-colour cells wherever the diff mask is active.
 - **Solver summary**: "Split the scoreboard into header and body, detect the target colour, read each digit, compute its body mask, choose the closest diff template, and apply that mask to carve the digit."
+
+## Lambda Representation
+
+```python
+def solve_e87109e9(grid: Grid) -> Grid:
+    header, body = splitHeaderBody(grid)
+    if not body:
+        return body
+    header_colours = set(
+        colour
+        for row in header
+        for colour in row
+        if colour != 0
+    )
+    target_colour = detectTargetColor(body, header_colours)
+    block_count = int(len(body[0]) / 6)
+
+    def carve(canvas: Grid, block: int) -> Grid:
+        digit = readHeaderDigit(header, block)
+        if digit is None:
+            return canvas
+        target_mask = buildTargetMask(canvas, block, target_colour)
+        diff_mask = selectDiffMask(digit, target_mask)
+        if diff_mask is None:
+            return canvas
+        return applyDiffMask(canvas, block, target_colour, diff_mask)
+
+    return fold_repaint(body, list(range(block_count)), carve)
+```

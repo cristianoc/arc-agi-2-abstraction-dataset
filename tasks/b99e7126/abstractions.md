@@ -8,8 +8,18 @@ The final solver reuses the `mask_completion` abstraction: detect the minority t
 
 ## DSL Structure
 - **Typed operations**
-  - `splitMacroTiles : Grid -> (List List Tile, Counter Tile)` — partition the board into 3×3 tiles aligned on 4-cell strides and gather their frequencies.
-  - `chooseMinorityTile : Counter Tile -> Tile` — select the least frequent non-background tile to use as the motif.
-  - `alignMask : List List Tile × Tile -> (Set Cell, Position)` — detect where the minority tile already appears and infer the macro mask positions from its majority-colour layout.
-  - `paintMotifTiles : Grid × Tile × Set Cell -> Grid` — copy the minority tile into every mask position within the macro grid.
+  - `splitMacroTiles : Grid -> MacroGrid` — partition the board into 3×3 tiles aligned on 4-cell strides and gather their frequencies.
+  - `chooseMinorityTile : MacroGrid -> Tile` — select the least frequent non-background tile to use as the motif.
+  - `alignMask : MacroGrid × Tile -> MotifAlignment` — detect where the minority tile already appears and infer the macro mask positions from its majority-colour layout.
+  - `paintMotifTiles : Grid × Tile × MotifAlignment -> Grid` — copy the minority tile into every mask position within the macro grid.
 - **Solver summary**: "Split the grid into macro tiles, choose the minority motif tile, align its majority-colour mask to the observed placements, and paint the motif tile at each masked position."
+
+## Lambda Representation
+
+```python
+def solve_b99e7126(grid: Grid) -> Grid:
+    macro_grid = splitMacroTiles(grid)
+    motif = chooseMinorityTile(macro_grid)
+    alignment = alignMask(macro_grid, motif)
+    return paintMotifTiles(grid, motif, alignment)
+```

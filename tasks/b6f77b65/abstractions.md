@@ -14,3 +14,20 @@ The final approach is the corrected segment template lookup (segment_lookup_v1 /
   - `lookupDigitTemplate : Int × SegmentKey × Optional SegmentId -> Grid` — fetch the precomputed 12×3 template for the digit, falling back to the observed slice when missing.
   - `assembleDigits : List Grid -> Grid` — concatenate the four digit templates horizontally to produce the final output.
 - **Solver summary**: "Read the key letter, derive segment signatures for each digit slice, look up the corrected templates (with fallback), and stitch the templates into the output grid."
+
+## Lambda Representation
+
+```python
+def solve_b6f77b65(grid: Grid) -> Grid:
+    key_letter = readKeyLetter(grid)
+    digit_count = int(len(grid[0]) / 3)
+    templates = [
+        lookupDigitTemplate(
+            index,
+            segmentKeyForDigit(grid, index),
+            key_letter,
+        )
+        for index in range(digit_count)
+    ]
+    return assembleDigits(templates)
+```

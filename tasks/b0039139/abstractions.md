@@ -6,8 +6,22 @@ Final solver uses the segment_tiling abstraction directly; no hybrid was require
 
 ## DSL Structure
 - **Typed operations**
-  - `findFullLines : Grid -> (List RowIndex, List ColIndex)` — detect all-ones rows or columns that act as separators.
-  - `extractSegments : Grid × (List RowIndex, List ColIndex) -> (List Segment, List Segment)` — slice the grid into ordered row/column segments delimited by the full lines.
+  - `findFullLines : Grid -> SeparatorBreaks` — detect all-ones rows or columns that act as separators.
+  - `extractSegments : Grid × SeparatorBreaks -> SegmentGroups` — slice the grid into ordered row/column segments delimited by the full lines.
   - `summarisePattern : Segment × Color -> Pattern` — compute the bounding 4-stencil and component counts needed to reproduce the motif.
-  - `rebuildByOrientation : Pattern × Segment × Segment -> Grid` — tile the pattern horizontally or vertically using the segment metadata and dominant colours.
+  - `rebuildByOrientation : Pattern × SegmentGroups -> Grid` — tile the pattern horizontally or vertically using the segment metadata and dominant colours.
 - **Solver summary**: "Detect the separator lines, extract the four guiding segments, summarise the colour-4 stencil and component counts, then rebuild the grid in the resolved orientation using those summaries."
+
+## Lambda Representation
+
+```python
+def solve_b0039139(grid: Grid) -> Grid:
+    separators = findFullLines(grid)
+    segment_groups = extractSegments(grid, separators)
+    row_segments, col_segments = segment_groups
+    primary_segments = row_segments or col_segments
+    if not primary_segments:
+        return grid
+    pattern = summarisePattern(primary_segments[0], 4)
+    return rebuildByOrientation(pattern, segment_groups)
+```

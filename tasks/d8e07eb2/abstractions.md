@@ -9,8 +9,19 @@ The final solver is `analysis.arc2_samples.d8e07eb2.solve_d8e07eb2` and correspo
 
 ## DSL Structure
 - **Typed operations**
-  - `collectHeaderDigits : Grid -> Dict Color -> Int` — tally the colours detected across the top digit blocks.
-  - `matchColumnFingerprint : Dict Color -> Optional List (RowIdx, ColIdx)` — compare the colour multiset against stored column fingerprints to pick highlight blocks.
-  - `fallbackBlockSelection : Dict Color -> List (RowIdx, ColIdx)` — use the priority ordering when no fingerprint matches the observed counts.
-  - `renderHighlights : Grid × List (RowIdx, ColIdx) × Bool -> Grid` — paint the chosen 5×5 blocks, optionally highlight the top band, and set the bottom background depending on the header colours.
+  - `collectHeaderDigits : Grid -> HeaderCounts` — tally the colours detected across the top digit blocks.
+  - `matchColumnFingerprint : HeaderCounts -> Optional HighlightBlocks` — compare the colour multiset against stored column fingerprints to pick highlight blocks.
+  - `fallbackBlockSelection : HeaderCounts -> HighlightBlocks` — use the priority ordering when no fingerprint matches the observed counts.
+  - `renderHighlights : Grid × HighlightBlocks × Bool -> Grid` — paint the chosen 5×5 blocks, optionally highlight the top band, and set the bottom background depending on the header colours.
 - **Solver summary**: "Count header digits, match fingerprints to select highlight blocks (falling back to the priority list), then render those blocks while adjusting the top and bottom bands."
+
+## Lambda Representation
+
+```python
+def solve_d8e07eb2(grid: Grid) -> Grid:
+    header_counts = collectHeaderDigits(grid)
+    fingerprint_blocks = matchColumnFingerprint(header_counts)
+    selected_blocks = fingerprint_blocks if fingerprint_blocks is not None else fallbackBlockSelection(header_counts)
+    highlight_top = 0 in header_counts and 1 in header_counts
+    return renderHighlights(grid, selected_blocks, highlight_top)
+```
