@@ -10,3 +10,14 @@
   - `lookupMiniature : Signature -> Optional Grid` — fetch the precomputed 5-column pattern associated with the signature.
   - `compressFallback : Grid × Signature -> Grid` — slice the bounding box into five bands and majority-compress each band when the signature is unknown.
 - **Solver summary**: "Compute the foreground row signature, return the stored miniature if present, otherwise compress the bounding box into five bands as a fallback."
+
+## Lambda Representation
+
+```python
+def solve_e8686506(grid: Grid) -> Grid:
+    signature = deriveRowSignature(grid)
+    miniature = lookupMiniature(signature)
+    if miniature is not None:
+        return miniature
+    return compressFallback(grid, signature)
+```

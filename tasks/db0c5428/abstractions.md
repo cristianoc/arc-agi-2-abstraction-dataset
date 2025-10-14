@@ -9,7 +9,19 @@ Final solver: apply the macro_dual_ring abstraction.
 ## DSL Structure
 - **Typed operations**
   - `locateNineBlock : Grid -> Optional Box` — find the 9×9 mosaic bounding box relative to the background colour.
-  - `extractMicroBlocks : Grid × Box -> Dict (Int, Int) -> Block3x3` — slice the 9×9 region into its nine 3×3 micro blocks.
-  - `inferRingPalette : Grid × Box -> (Color, Color, Block3x3)` — derive the corner/edge ring colours and synthesise the centre block.
-  - `renderMacroTiling : Grid × Dict (Int, Int) -> Block3x3 × Block3x3 -> Grid` — map each 5×5 macro position to a source block (or the synthesised centre) and tile the 15×15 output.
+  - `extractMicroBlocks : Grid × Box -> MicroBlocks` — slice the 9×9 region into its nine 3×3 micro blocks.
+  - `inferRingPalette : Grid × Box -> RingBlocks` — derive the corner block, edge block, and synthesised centre block.
+  - `renderMacroTiling : Grid × Box × MicroBlocks × RingBlocks -> Grid` — map each 5×5 macro position to a source block (or the synthesised centre) and tile the 15×15 output.
 - **Solver summary**: "Locate the 9×9 mosaic, extract its 3×3 blocks, infer corner/edge palette and the centre block, then tile the 5×5 macro layout that reuses those blocks (with the synthesised centre)."
+
+## Lambda Representation
+
+```python
+def solve_db0c5428(grid: Grid) -> Grid:
+    box = locateNineBlock(grid)
+    if box is None:
+        return grid
+    micro_blocks = extractMicroBlocks(grid, box)
+    ring_blocks = inferRingPalette(grid, box)
+    return renderMacroTiling(grid, box, micro_blocks, ring_blocks)
+```

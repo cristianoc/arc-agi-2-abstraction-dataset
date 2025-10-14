@@ -12,3 +12,25 @@ The final solver uses the patch dictionary abstraction, overlaying motifs only w
   - `lookupPatchTemplate : Color × Patch -> Optional Patch` — query the colour-specific dictionary for a replacement motif.
   - `stampTemplate : Grid × Patch × Cell -> Grid` — overlay the template onto the output grid, ignoring zero entries.
 - **Solver summary**: "Extract 4×4 patches per coloured cell, look up the matching template in the colour-conditioned dictionary, and stamp the template into the output."
+
+## Lambda Representation
+
+```python
+def solve_dfadab01(grid: Grid) -> Grid:
+    seeds = [
+        (r, c)
+        for r, row in enumerate(grid)
+        for c, colour in enumerate(row)
+        if colour != 0
+    ]
+
+    def repaint(canvas: Grid, cell: Cell) -> Grid:
+        colour = grid[cell[0]][cell[1]]
+        patch = extractPatch4x4(grid, cell)
+        template = lookupPatchTemplate(colour, patch)
+        if template is None:
+            return canvas
+        return stampTemplate(canvas, template, cell)
+
+    return fold_repaint(grid, seeds, repaint)
+```

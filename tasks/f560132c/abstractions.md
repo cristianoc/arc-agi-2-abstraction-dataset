@@ -9,7 +9,20 @@ Final refinement: adopt the **offset_oriented** abstraction, which yields 100% a
 ## DSL Structure
 - **Typed operations**
   - `extractComponents : Grid -> List Component` — gather non-zero components with cell lists, size, and centroid metadata.
-  - `classifyQuadrants : List Component -> Dict Label -> Component` — identify the palette component and assign the remaining components to roles (a/b/c/d) via relative offsets.
-  - `rotateComponentMask : Component × Orientation -> Mask` — trim each component to its minimal mask and rotate it according to the role-specific orientation.
-  - `composeCanvas : Dict Label -> Mask × Dict Label -> Color -> Grid` — place rotated masks onto the output canvas corners using the palette colours.
+  - `classifyQuadrants : List Component -> QuadrantPlan` — identify the palette component, assign roles, and record orientation plus colour per quadrant (accessible via `plan.components`, `plan.orientations`, and `plan.colours`).
+  - `rotateComponentMask : QuadrantPlan × Label -> Mask` — trim each component to its minimal mask and rotate it according to the role-specific orientation.
+  - `composeCanvas : MaskMap × ColourMap -> Grid` — place rotated masks onto the output canvas corners using the palette colours.
 - **Solver summary**: "Extract components, assign them to quadrant roles using centroid offsets, rotate their trimmed masks per role, and compose the canvas with those masks coloured from the palette."
+
+## Lambda Representation
+
+```python
+def solve_f560132c(grid: Grid) -> Grid:
+    components = extractComponents(grid)
+    plan = classifyQuadrants(components)
+    rotated_masks = dict(
+        (label, rotateComponentMask(plan, label))
+        for label in plan.components
+    )
+    return composeCanvas(rotated_masks, plan.colours)
+```

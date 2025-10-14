@@ -10,3 +10,22 @@
   - `encodeCellFeatures : Grid × RowInfo × ColInfo × Bounds -> FeatureVector` — turn a cell into the mixed numeric/categorical feature tuple (normalised position, categories, parity, neighbouring colours).
   - `nearestColour : FeatureVector × List (FeatureVector, Color) -> Color` — evaluate the mixed-distance 1-NN classifier to pick the output colour.
 - **Solver summary**: "Load training feature vectors, precompute row/column stats, encode each output cell into feature space, and classify it with the 1-NN distance."
+
+## Lambda Representation
+
+```python
+def solve_abc82100(grid: Grid) -> Grid:
+    samples = loadTrainingFeatures(None)
+    row_stats, col_stats, bounds = precomputeAxisStats(grid)
+
+    def classify_cell(y: int, x: int) -> Color:
+        features = encodeCellFeatures(grid, row_stats[y], col_stats[x], bounds)
+        return nearestColour(features, samples)
+
+    height = len(grid)
+    width = len(grid[0])
+    return [
+        [classify_cell(y, x) for x in range(width)]
+        for y in range(height)
+    ]
+```

@@ -9,7 +9,23 @@ Harness: `python analysis/taske12f9a14_abstractions.py`.
 ## DSL Structure
 - **Typed operations**
   - `extractComponents : Grid -> List Component` — enumerate 4-connected components with colour metadata.
-  - `filterSeedBlocks : List Component × Color -> List Seed` — keep only 2×2 seed components against the background colour.
+  - `filterSeedBlocks : List Component -> List Seed` — keep only 2×2 seed components against the background colour.
   - `selectDigitVariant : Seed -> Optional List Offset` — choose the best collision-free template offsets from the colour’s variant library.
   - `paintDigitTemplate : Grid × Seed × List Offset -> Grid` — fill the seed footprint plus selected offsets while preserving existing structure.
 - **Solver summary**: "Extract components, keep the 2×2 seeds, choose the best digit variant for each seed, and paint the variant offsets onto the grid."
+
+## Lambda Representation
+
+```python
+def solve_e12f9a14(grid: Grid) -> Grid:
+    components = extractComponents(grid)
+    seeds = filterSeedBlocks(components)
+
+    def repaint(canvas: Grid, seed: Seed) -> Grid:
+        offsets = selectDigitVariant(seed)
+        if offsets is None:
+            return canvas
+        return paintDigitTemplate(canvas, seed, offsets)
+
+    return fold_repaint(grid, seeds, repaint)
+```

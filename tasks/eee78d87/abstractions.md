@@ -11,3 +11,13 @@
   - `selectTemplateKey : (Int, Int) -> TemplateId` — choose among {plus, H, X} based on neighbour counts.
   - `renderTemplate : TemplateId -> Grid` — instantiate the 16×16 pattern using pre-indexed row/column type maps.
 - **Solver summary**: "Locate the motif centre, count orthogonal vs. diagonal neighbours to pick the template type, and render the corresponding 16×16 template."
+
+## Lambda Representation
+
+```python
+def solve_eee78d87(grid: Grid) -> Grid:
+    centre = locateForegroundCenter(grid)
+    neighbour_counts = countNeighbourDirections(grid, centre)
+    template_id = selectTemplateKey(neighbour_counts)
+    return renderTemplate(template_id)
+```

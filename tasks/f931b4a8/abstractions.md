@@ -8,8 +8,18 @@ Key refinement was recognising that the empty zero-signature rows must alternate
 
 ## DSL Structure
 - **Typed operations**
-  - `extractTileQuadrants : Grid -> (Grid, Grid, Grid)` — split the grid into half-height/half-width quadrants and compute the base tile with fallback cells.
-  - `deriveRowOrder : Grid -> (List RowId, List Pattern)` — analyse zero signatures, variant orders, and borrow rules to choose the sequence of tile rows.
-  - `deriveColumnOrder : Grid × List Pattern -> List ColId` — read the top-right quadrant to compute the repeating column indices.
-  - `renderByIds : List Pattern × List RowId × List ColId -> Grid` — materialise the output by indexing into stored row patterns and column ids.
+  - `extractTileQuadrants : Grid -> TileQuadrants` — split the grid into half-height/half-width quadrants and compute the base tile with fallback cells.
+  - `deriveRowOrder : TileQuadrants -> RowPlan` — analyse zero signatures, variant orders, and borrow rules to choose the sequence of tile rows.
+  - `deriveColumnOrder : TileQuadrants × RowPlan -> List ColId` — read the top-right quadrant to compute the repeating column indices.
+  - `renderByIds : RowPlan × List ColId -> Grid` — materialise the output by indexing into stored row patterns and column ids.
 - **Solver summary**: "Compute the base tile from the quadrants, derive the row ids with zero-signature borrowing, derive sequential column ids, and render the grid by indexing tile rows and columns."
+
+## Lambda Representation
+
+```python
+def solve_f931b4a8(grid: Grid) -> Grid:
+    quadrants = extractTileQuadrants(grid)
+    row_plan = deriveRowOrder(quadrants)
+    col_ids = deriveColumnOrder(quadrants, row_plan)
+    return renderByIds(row_plan, col_ids)
+```

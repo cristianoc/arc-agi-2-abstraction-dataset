@@ -7,8 +7,18 @@
 
 ## DSL Structure
 - **Typed operations**
-  - `denoiseAndProfile : Grid -> (Grid, Color, Dict Color -> Stats)` — remove sparse noise, return the dominant colour, and compute max row/column support per colour.
-  - `bridgeSelectiveGaps : Grid × Color × Dict Color -> Stats -> Grid` — close short gaps along rows/columns and apply flanked fills while respecting dominant-colour guards.
+  - `denoiseAndProfile : Grid -> (Grid, Color, ColourStats)` — remove sparse noise, return the dominant colour, and compute max row/column support per colour.
+  - `bridgeSelectiveGaps : Grid × Color × ColourStats -> Grid` — close short gaps along rows/columns and apply flanked fills while respecting dominant-colour guards.
   - `extendBackbones : Grid × Color -> Grid` — prune sparse tops, extend qualifying rows, and propagate colour-1 columns through empty spans.
   - `tailPropagation : Grid -> Grid` — fill tail sections with colour 6, extend vertical tails, and suppress stray sixes at the top.
 - **Solver summary**: "Denoise and profile the colours, bridge selective gaps with flanked fills, extend the main spines and propagate ones, then finish by growing the six-tail structures."
+
+## Lambda Representation
+
+```python
+def solve_faa9f03d(grid: Grid) -> Grid:
+    denoised, dominant_colour, stats = denoiseAndProfile(grid)
+    bridged = bridgeSelectiveGaps(denoised, dominant_colour, stats)
+    extended = extendBackbones(bridged, dominant_colour)
+    return tailPropagation(extended)
+```

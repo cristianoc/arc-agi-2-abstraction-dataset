@@ -8,7 +8,17 @@
 ## DSL Structure
 - **Typed operations**
   - `identifyRooms : Grid -> List Room` — detect enclosed background regions with boundary metadata.
-  - `classifyRoomFill : List Room -> Dict Room -> FillRule` — decide which heuristic applies (right-edge touch, shallow interior, left-edge guard, height-5 bias).
-  - `applyFillRules : Grid × Dict Room -> FillRule -> Grid` — fill rooms according to their assigned rule while preserving protected regions.
+  - `classifyRoomFill : List Room -> RoomFillMap` — decide which heuristic applies (right-edge touch, shallow interior, left-edge guard, height-5 bias).
+  - `applyFillRules : Grid × RoomFillMap -> Grid` — fill rooms according to their assigned rule while preserving protected regions.
   - `mergeFilledRooms : Grid × Grid -> Grid` — combine the filled rooms with the original grid to produce the final output.
 - **Solver summary**: "Identify the rooms, classify each room’s fill rule, apply the fills per rule, and merge the result back into the grid."
+
+## Lambda Representation
+
+```python
+def solve_d59b0160(grid: Grid) -> Grid:
+    rooms = identifyRooms(grid)
+    fill_rules = classifyRoomFill(rooms)
+    filled = applyFillRules(grid, fill_rules)
+    return mergeFilledRooms(grid, filled)
+```

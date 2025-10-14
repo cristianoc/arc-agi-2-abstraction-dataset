@@ -15,3 +15,13 @@
   - `realignSecondaryPixels : Grid × Grid -> Grid` — flip secondary-colour pixels that are supported by ≥3 primary neighbours.
   - `pruneStragglers : Grid × Grid -> Grid` — remove pixels that retain ≥3 zero neighbours, restoring the cleaned background.
 - **Solver summary**: "Detect strong zero pockets, paint haloes around them, realign secondary pixels near primary clusters, and prune residual stragglers."
+
+## Lambda Representation
+
+```python
+def solve_de809cff(grid: Grid) -> Grid:
+    seeds = detectZeroSeeds(grid)
+    halo_grid = paintHalos(grid, seeds)
+    realigned = realignSecondaryPixels(grid, halo_grid)
+    return pruneStragglers(grid, realigned)
+```

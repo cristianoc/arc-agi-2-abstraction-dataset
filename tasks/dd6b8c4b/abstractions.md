@@ -13,3 +13,13 @@ Final pipeline: use `balanced_relocation`, which first determines how many ring 
   - `scoreExistingNines : Grid -> List (Score, Cell)` — rank scattered 9s using the relocation score that prefers far/right/border positions.
   - `rebalanceNines : Grid × List Cell × List (Score, Cell) -> Grid` — paint the selected ring cells with 9 and clear the lowest-scoring originals to background.
 - **Solver summary**: "Measure the east–west imbalance of 9s, pick that many ring targets, rank existing 9s by relocation score, then promote ring cells and retire the lowest-ranked originals."
+
+## Lambda Representation
+
+```python
+def solve_dd6b8c4b(grid: Grid) -> Grid:
+    imbalance = measureQuadrantImbalance(grid)
+    ring_targets = selectRingTargets(grid, imbalance)
+    ranked = scoreExistingNines(grid)
+    return rebalanceNines(grid, ring_targets, ranked)
+```
