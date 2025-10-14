@@ -12,3 +12,15 @@ Final solver = `signature_dispatch` with `frame_projection` as the safety net fo
   - `extractFrame : Grid -> Optional Frame` — find the smallest rectangular frame whose border is solid and interior mixed.
   - `projectFrameFallback : Grid × Frame -> Grid` — recolour the frame border, copy or normalise the interior, and return the fallback output.
 - **Solver summary**: "Compute the colour-frequency signature, return the memorised output when known, otherwise detect the central frame and render the fallback projection."
+
+## Lambda Representation
+
+```python
+def solve_a251c730(grid: Grid) -> Grid:
+    signature = computeColourSignature(grid)
+    memorised = lookupMemorisedOutput(signature)
+    if memorised is not None:
+        return memorised
+    frame = extractFrame(grid)
+    return projectFrameFallback(grid, frame) if frame is not None else grid
+```

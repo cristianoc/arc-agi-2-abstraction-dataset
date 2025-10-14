@@ -15,3 +15,18 @@ All evaluations were produced with `analysis/task8f215267_abstractions.py::evalu
   - `clearAndPaintStripes : Grid × Frame × Int -> Grid` — erase the frame interior, then paint the specified number of vertical stripes in the frame colour.
   - `clearNoise : Grid × List Frame -> Grid` — remove residual pixels outside the frames after reconstruction.
 - **Solver summary**: "Extract each frame, read the instruction patch, look up the stripe count, repaint the frame interior accordingly, and clear the surrounding noise."
+
+## Lambda Representation
+
+```python
+def solve_8f215267(grid: Grid) -> Grid:
+    frames = extractFrames(grid)
+
+    def repaint(canvas: Grid, frame: Frame) -> Grid:
+        patch = sliceInstructionPatch(grid, frame)
+        stripe_count = lookupStripeCount(patch)
+        return clearAndPaintStripes(canvas, frame, stripe_count)
+
+    striped = fold_repaint(grid, frames, repaint)
+    return clearNoise(striped, frames)
+```

@@ -6,8 +6,17 @@
 
 ## DSL Structure
 - **Typed operations**
-  - `collectColorStats : Grid -> (Color, Dict Color -> List Cell)` — identify the anchor colour and gather cell lists for each palette colour.
-  - `analyseHoles : List Cell -> (Set Cell, Float)` — compute the hole set inside the anchor bounding box and measure its row offset from the anchor centre.
-  - `chooseBridgeColour : Dict Color -> List Cell × Float -> Color` — select the bridge colour whose centroid best matches the hole offset, with fallbacks.
-  - `placeThirdComponent : Grid × Dict -> PlacementParams -> Grid` — position the remaining colour’s component by testing directional templates while avoiding conflicts with anchors and holes.
+  - `collectColorStats : Grid -> ColourStats` — identify the anchor colour and gather cell lists for each palette colour.
+  - `analyseHoles : List Cell -> HoleStats` — compute the hole set inside the anchor bounding box and measure its row offset from the anchor centre.
+  - `chooseBridgeColour : ColourStats × HoleStats -> Color` — select the bridge colour whose centroid best matches the hole offset, with fallbacks.
+  - `placeThirdComponent : Grid × ColourStats × HoleStats -> Grid` — position the remaining colour’s component by testing directional templates while avoiding conflicts with anchors and holes.
 - **Solver summary**: "Collect colour statistics, measure the anchor holes, choose the bridge colour by row alignment, and place the third component using the directional placement routine."
+
+## Lambda Representation
+
+```python
+def solve_a25697e4(grid: Grid) -> Grid:
+    colour_stats = collectColorStats(grid)
+    hole_stats = analyseHoles(colour_stats.anchor_cells)
+    return placeThirdComponent(grid, colour_stats, hole_stats)
+```

@@ -8,8 +8,23 @@ Final refinement uses `global_color_symmetry`, which trims the unmatched color p
 
 ## DSL Structure
 - **Typed operations**
-  - `groupCellsByColor : Grid -> Dict Color -> List Cell` — collect coordinates for each non-background colour.
-  - `evaluateAxisCost : List Cell -> List Axis -> Axis` — for each colour, scan candidate horizontal axes and choose the one minimising deletions.
+  - `groupCellsByColor : Grid -> ColourGroups` — collect coordinates for each non-background colour.
+  - `evaluateAxisCost : List Cell -> Axis` — for each colour, scan candidate horizontal axes and choose the one minimising deletions.
   - `trimAsymmetricCells : Grid × List Cell × Axis -> Grid` — remove cells that lack a mirrored partner with respect to the chosen axis.
   - `mirrorZeros : Grid -> Grid` — copy remaining non-zero values across the main diagonal to enforce symmetry.
 - **Solver summary**: "Group cells by colour, pick the best horizontal axis per colour by minimal deletions, remove asymmetric cells, and mirror leftover zeros across the diagonal."
+
+## Lambda Representation
+
+```python
+def solve_8e5c0c38(grid: Grid) -> Grid:
+    colour_groups = groupCellsByColor(grid)
+
+    def trim(canvas: Grid, entry):
+        colour, cells = entry
+        axis = evaluateAxisCost(cells)
+        return trimAsymmetricCells(canvas, cells, axis)
+
+    trimmed = fold_repaint(grid, list(colour_groups.items()), trim)
+    return mirrorZeros(trimmed)
+```

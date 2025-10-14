@@ -10,7 +10,17 @@
 ## DSL Structure
 - **Typed operations**
   - `extractTemplate : Grid -> (Template, Color)` — identify the multi-cell pattern and capture its trimmed mask and colour.
-  - `collectMarkers : Grid -> Dict Color -> List Cell` — gather singleton markers by colour to infer the lattice spacing.
-  - `computeLattice : Dict Color -> List Cell -> (Int, Int, List Cell)` — determine row/column steps and anchor positions from the marker lattice.
-  - `tileTemplate : Template × (Int, Int) × List Cell -> Grid` — replicate the template across the lattice, swapping colours when marker colours disagree.
+  - `collectMarkers : Grid -> MarkerMap` — gather singleton markers by colour to infer the lattice spacing.
+  - `computeLattice : MarkerMap -> Lattice` — determine row/column steps and anchor positions from the marker lattice.
+  - `tileTemplate : Template × Lattice -> Grid` — replicate the template across the lattice, swapping colours when marker colours disagree.
 - **Solver summary**: "Extract the template pattern, read the lattice markers, compute the tiling lattice, and tile the template across the lattice with colour swaps driven by the markers."
+
+## Lambda Representation
+
+```python
+def solve_a395ee82(grid: Grid) -> Grid:
+    template, template_colour = extractTemplate(grid)
+    markers = collectMarkers(grid)
+    lattice = computeLattice(markers)
+    return tileTemplate(template, lattice)
+```

@@ -11,3 +11,19 @@
   - `clearBlockFours : Grid × Block -> Grid` — zero out all colour-4 cells in the current block.
   - `placeFourAtOffset : Grid × Block × Position -> Grid` — if a rule returns an offset, place a single colour-4 cell at that location.
 - **Solver summary**: "Scan each 5×5 block, look up the rule for its template, clear any 4s inside, and place a single 4 at the rule’s offset when defined."
+
+## Lambda Representation
+
+```python
+def solve_88e364bc(grid: Grid) -> Grid:
+    blocks = list(enumerateBlocks5x5(grid))
+
+    def repaint(canvas: Grid, block: Block) -> Grid:
+        position = lookupBlockRule(block)
+        cleared = clearBlockFours(canvas, block)
+        if position is None:
+            return cleared
+        return placeFourAtOffset(cleared, block, position)
+
+    return fold_repaint(grid, blocks, repaint)
+```

@@ -7,8 +7,24 @@ Final choice: `instruction_driven` abstraction.
 
 ## DSL Structure
 - **Typed operations**
-  - `extractCrossColumns : Grid -> Dict Column -> ColumnInfo` — detect plus-shaped columns (colour 9) and record their positions and row stacks.
-  - `readInstructionSegments : Grid -> List (Color, Range)` — parse the bottom-row segments to determine colour-coded instructions.
-  - `mapInstructionsToColumns : List (Color, Range) × Dict Column -> ColumnInfo -> Dict Column -> Instruction` — assign counts and recolour directives to each cross column.
+  - `extractCrossColumns : Grid -> ColumnInfoMap` — detect plus-shaped columns (colour 9) and record their positions and row stacks.
+  - `readInstructionSegments : Grid -> InstructionSegments` — parse the bottom-row segments to determine colour-coded instructions.
+  - `mapInstructionsToColumns : InstructionSegments × ColumnInfoMap -> ColumnInstructionMap` — assign counts and recolour directives to each cross column.
   - `repaintColumn : Grid × ColumnInfo × Instruction -> Grid` — recolour columns flagged for colour 5 and extend columns based on the instruction counts.
 - **Solver summary**: "Detect existing plus columns, read the bottom instructions, map those instructions to the columns, and repaint/extend each column according to its assigned directive."
+
+## Lambda Representation
+
+```python
+def solve_9aaea919(grid: Grid) -> Grid:
+    columns = extractCrossColumns(grid)
+    segments = readInstructionSegments(grid)
+    assignments = mapInstructionsToColumns(segments, columns)
+
+    def repaint(canvas: Grid, column_index: ColumnIndex) -> Grid:
+        instruction = assignments[column_index]
+        column_info = columns[column_index]
+        return repaintColumn(canvas, column_info, instruction)
+
+    return fold_repaint(grid, list(assignments.keys()), repaint)
+```

@@ -6,8 +6,18 @@
 
 ## DSL Structure
 - **Typed operations**
-  - `analyseRows : Grid -> Tuple[List Int, List Optional Color]` — compute per-row non-(6,7) counts and dominant colours.
-  - `adjustSeparatorRows : Grid × List Int × List Optional Color -> Grid` — recolour separator rows when neighbouring dominant colours match.
-  - `selectSparseColumns : Grid -> List Int` — find columns with few non-(6,7) cells to inspect for 6 placement.
-  - `markColumnJunctions : Grid × List Int × List Int × List Optional Color -> Grid` — place colour 6 markers in sparse columns using learnt heuristics (caps, thin towers).
+  - `analyseRows : Grid -> RowMetrics` — compute per-row non-(6,7) counts and dominant colours.
+  - `adjustSeparatorRows : Grid × RowMetrics -> Grid` — recolour separator rows when neighbouring dominant colours match.
+  - `selectSparseColumns : Grid -> SparseColumns` — find columns with few non-(6,7) cells to inspect for 6 placement.
+  - `markColumnJunctions : Grid × RowMetrics × SparseColumns -> Grid` — place colour 6 markers in sparse columns using learnt heuristics (caps, thin towers).
 - **Solver summary**: "Analyse row structures, adjust separator rows via dominant colours, select sparse columns, and mark their junctions with colour 6 according to the heuristic rules."
+
+## Lambda Representation
+
+```python
+def solve_9bbf930d(grid: Grid) -> Grid:
+    metrics = analyseRows(grid)
+    adjusted = adjustSeparatorRows(grid, metrics)
+    sparse_columns = selectSparseColumns(adjusted)
+    return markColumnJunctions(adjusted, metrics, sparse_columns)
+```

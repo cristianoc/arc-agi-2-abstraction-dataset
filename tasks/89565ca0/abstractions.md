@@ -7,8 +7,18 @@ Final pipeline uses `refined_stripe`, which matches the production solver and yi
 
 ## DSL Structure
 - **Typed operations**
-  - `tallyColours : Grid -> Dict Color -> Stats` — compute per-colour areas and component counts to identify the filler colour.
-  - `computeStripeDominators : Grid × Dict Stats -> List Optional Color` — for each row stripe, select a dominant colour using filler-aware tie-breaking.
-  - `derivePrefixLengths : Dict Stats × List Optional Color -> Dict Color -> Int` — map colours to histogram prefix lengths based on stripe dominance and fallback ordering.
-  - `renderSummaryRows : Dict Color -> Int × Color -> Grid` — build the 4-column summary rows using the computed prefix lengths and filler colour.
+  - `tallyColours : Grid -> ColourStats` — compute per-colour areas and component counts to identify the filler colour.
+  - `computeStripeDominators : Grid × ColourStats -> StripeDominators` — for each row stripe, select a dominant colour using filler-aware tie-breaking.
+  - `derivePrefixLengths : ColourStats × StripeDominators -> PrefixLengths` — map colours to histogram prefix lengths based on stripe dominance and fallback ordering.
+  - `renderSummaryRows : PrefixLengths × Color -> Grid` — build the 4-column summary rows using the computed prefix lengths and filler colour.
 - **Solver summary**: "Tally colour statistics, determine stripe dominators with filler-aware rules, convert those dominators into prefix lengths, and render the summary rows."
+
+## Lambda Representation
+
+```python
+def solve_89565ca0(grid: Grid) -> Grid:
+    stats = tallyColours(grid)
+    stripe_dominators = computeStripeDominators(grid, stats)
+    prefix_lengths = derivePrefixLengths(stats, stripe_dominators)
+    return renderSummaryRows(prefix_lengths, stats.filler_colour)
+```
