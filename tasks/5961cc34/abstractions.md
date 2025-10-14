@@ -10,3 +10,13 @@ The filtered scaffold abstraction is the final solver: sentinel-led BFS after gu
   - `buildGuideGraph : Grid × List Motif -> Graph` — connect filtered motifs via their guide rays and sentinel anchors.
   - `propagateScaffold : Graph -> Grid` — run the sentinel BFS along the guide graph to paint the final scaffold.
 - **Solver summary**: "Extract motifs, filter them by guide counts, build the guide/sentinel graph, then propagate the scaffold along that graph."
+
+## Lambda Representation
+
+```python
+def solve_5961cc34(grid: Grid) -> Grid:
+    motifs = extractMotifs(grid)
+    filtered = filterByGuideCount(motifs)
+    guide_graph = buildGuideGraph(grid, filtered)
+    return propagateScaffold(guide_graph)
+```

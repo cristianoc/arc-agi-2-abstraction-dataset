@@ -13,3 +13,13 @@ The final solver mirrors the `combined` abstraction, using the consensus check f
   - `alignFirstSegment : SegmentRow -> SegmentRow` — normalise the leftmost segment by trimming separator gaps.
   - `propagateConsensus : Grid × Set Column × List SegmentRow -> Grid` — paint consensus columns and extend aligned segments with the special two-segment handling.
 - **Solver summary**: "Extract row segments, find consensus columns, align the first segment in each row, then propagate the consensus while handling two-segment grids specially."
+
+## Lambda Representation
+
+```python
+def solve_5545f144(grid: Grid) -> Grid:
+    segments = extractSegmentsPerRow(grid)
+    consensus = findConsensusColumns(segments)
+    aligned = [alignFirstSegment(row) for row in segments]
+    return propagateConsensus(grid, consensus, aligned)
+```

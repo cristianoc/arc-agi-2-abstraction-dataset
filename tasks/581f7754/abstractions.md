@@ -6,8 +6,18 @@
 
 ## DSL Structure
 - **Typed operations**
-  - `groupByAnchorColor : Grid -> Dict Color -> List Component` — collect components keyed by their anchor colour.
-  - `alignColumnsToAnchor : Dict Color -> List Component -> Dict Color -> List Component` — translate each group so anchors share a common column.
-  - `compressRowsTowardAnchor : Dict Color -> List Component -> Dict Color -> List Component` — collapse rows within each group toward the designated anchor row.
-  - `renderAlignedComponents : Grid × Dict Color -> List Component -> Grid` — draw the aligned and compressed components back onto the canvas.
+  - `groupByAnchorColor : Grid -> Dict[Color, List Component]` — collect components keyed by their anchor colour.
+  - `alignColumnsToAnchor : Dict[Color, List Component] -> Dict[Color, List Component]` — translate each group so anchors share a common column.
+  - `compressRowsTowardAnchor : Dict[Color, List Component] -> Dict[Color, List Component]` — collapse rows within each group toward the designated anchor row.
+  - `renderAlignedComponents : Grid × Dict[Color, List Component] -> Grid` — draw the aligned and compressed components back onto the canvas.
 - **Solver summary**: "Group components by anchor colour, align their columns, compress rows toward the anchors, and render the aligned components."
+
+## Lambda Representation
+
+```python
+def solve_581f7754(grid: Grid) -> Grid:
+    grouped = groupByAnchorColor(grid)
+    column_aligned = alignColumnsToAnchor(grouped)
+    row_compressed = compressRowsTowardAnchor(column_aligned)
+    return renderAlignedComponents(grid, row_compressed)
+```
