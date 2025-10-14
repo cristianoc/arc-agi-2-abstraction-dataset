@@ -8,6 +8,16 @@
 - **Typed operations**
   - `findCornerSentinels : Grid -> List Sentinel` — detect border cells of colour `2` that mark projection targets.
   - `extractSourceGlyph : Grid -> Component` — capture the coloured component anchored near the centre.
-  - `selectCornerOffsets : List Sentinel × Component -> Dict Sentinel -> Offset` — compute direction-specific offsets that align the glyph with each sentinel corner.
-  - `projectGlyphToCorners : Grid × Component × Dict Sentinel -> Offset -> Grid` — stamp the glyph into every sentinel corner using the computed offsets while preserving the original.
+  - `selectCornerOffsets : List Sentinel × Component -> Dict[Sentinel, Offset]` — compute direction-specific offsets that align the glyph with each sentinel corner.
+  - `projectGlyphToCorners : Grid × Component × Dict[Sentinel, Offset] -> Grid` — stamp the glyph into every sentinel corner using the computed offsets while preserving the original.
 - **Solver summary**: "Read the corner sentinels, extract the source glyph, determine corner-specific offsets, then project the glyph into each sentinel corner."
+
+## Lambda Representation
+
+```python
+def solve_4a21e3da(grid: Grid) -> Grid:
+    sentinels = findCornerSentinels(grid)
+    glyph = extractSourceGlyph(grid)
+    offsets = selectCornerOffsets(sentinels, glyph)
+    return projectGlyphToCorners(grid, glyph, offsets)
+```

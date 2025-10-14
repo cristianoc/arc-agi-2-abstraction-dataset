@@ -12,3 +12,13 @@ Final solver: `rings_drop_last_axis_color`, which reads the dominant axis (rows 
   - `dropTrailingStripe : List Color -> List Color` — remove the final colour in the sequence before ring synthesis.
   - `renderConcentricRings : Grid × List Color -> Grid` — paint concentric square rings using the remaining colours in order.
 - **Solver summary**: "Pick the dominant axis, collect its stripe colours, drop the trailing stripe, and render concentric rings with the remaining colours."
+
+## Lambda Representation
+
+```python
+def solve_45a5af55(grid: Grid) -> Grid:
+    axis = detectDominantAxis(grid)
+    stripes = collectAxisStripes(grid, axis)
+    ring_colors = dropTrailingStripe(stripes)
+    return renderConcentricRings(grid, ring_colors)
+```
