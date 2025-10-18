@@ -31,7 +31,12 @@ Guidelines:
 
 ## Lambda Representation
 
-Lambda representations use **Python syntax** to express **pure functional composition**. While the code looks like Python, it must stay within a restricted subset that has the semantics of simply-typed lambda calculus: no side effects, no mutation, no loops.
+Lambda representations use **Python syntax** to express **pure functional composition**. While the code looks like Python, it must stay within a restricted subset that has the semantics of **simply-typed lambda calculus**.
+
+Important scope note:
+- This DSL is a restricted, simply-typed subset. It is **not** the full untyped lambda calculus and is therefore **not Turing-complete**.
+- There is **no general recursion** (no self- or mutual recursion, no fixpoint/Y combinators), and thus all well-typed programs terminate.
+- Iterative “state threading” is expressed only via the domain combinator `fold_repaint`.
 
 ### Allowed Constructs
 
@@ -58,6 +63,7 @@ Lambda representations use **Python syntax** to express **pure functional compos
   - No data structure mutation: `list[i] = ...`, `dict[k] = ...`
   - No attribute mutation: `obj.attr = ...`
   - ⚠️ **Currently not enforced**: No variable reassignment (`x = ...; x = ...`)
+- **Recursion**: No self- or mutual recursion in helpers or the top-level function; no fixpoint/Y combinators.
 - **Stateful constructs**: No `try`, `with`, `class`, `global`, `nonlocal`
 - **Decorators**: No `@decorator` on helpers
 - **Side effects**: No I/O, no randomness, no external state
@@ -67,6 +73,11 @@ Lambda representations use **Python syntax** to express **pure functional compos
 **Known limitation**: The current validator does not detect variable reassignment within a function. While rebinding a variable name doesn't violate functional purity at the expression level, it can make code harder to reason about. Contributors should avoid reassignment even though it's not currently enforced.
 
 **To extend the allowed set**: Update `check_lambda_types.py` and document the change here first.
+
+### FAQ
+
+- Isn’t lambda calculus universal?  
+  The untyped lambda calculus is Turing-complete. This DSL intentionally uses a simply-typed, terminating subset with no general recursion. Domain effects (e.g., repainting a grid) are provided as typed operations and the single combinator `fold_repaint`, rather than encoded via general recursion.
 
 ## Validation Workflow
 

@@ -20,6 +20,9 @@ Lambda calculus is *the* canonical formalism for describing composition and func
 
 By grounding our DSL in lambda calculus, we inherit a mature theory of composition, equational reasoning, and a natural fit for both human reasoning and automated analysis.
 
+FAQ: Isn’t lambda calculus universal?  
+The untyped lambda calculus is Turing-complete. This DSL deliberately adopts a **simply-typed**, terminating subset: no general recursion or fixpoint combinators, no mutation, and no side effects. As a result, it is **not Turing-complete**. Iterative “state threading” that appears in ARC solvers is captured explicitly via the domain combinator `fold_repaint`, and domain operations (e.g., `extractComponents`, `paintComponent`) are treated as typed primitives rather than encoded in pure lambda terms.
+
 **Python syntax for lambda calculus.**  
 Rather than inventing new notation, we use **Python syntax** for familiarity and readability—researchers already know Python, and the solver implementations are written in Python. However, the *intent* is to capture **pure composition**, not arbitrary imperative Python. We achieve this by restricting to a small subset: only pure expressions, function calls, comprehensions, and guard-style conditionals. No loops, no mutation, no side effects. The result is Python that *looks* familiar but has the semantics of typed lambda calculus: every program is a composition of pure functions, and every expression denotes a value, not a sequence of state changes.
 

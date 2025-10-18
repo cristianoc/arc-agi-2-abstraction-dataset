@@ -27,9 +27,35 @@ arc-agi-2-abstraction-dataset/
 │   │   ├── abstractions.py
 │   │   └── abstractions.md
 │   └── ...
+├── dsl/                 # Typed DSL: docs, registry, validators
 ├── check_consistency.py # Dataset integrity checker
 ├── CHANGELOG.md
 └── README.md            # This file
+```
+
+## DSL (Typed Abstractions)
+
+The `dsl/` folder contains a typed DSL used to write and validate the per-task abstraction notes. It captures solver control flow as a restricted, pure subset of simply-typed lambda calculus:
+
+- Not the full untyped lambda calculus (therefore not Turing-complete)
+- No general recursion (no fixpoint/Y); all well-typed programs terminate
+- Iteration over state is expressed with the domain combinator `fold_repaint`
+- Domain operations (e.g., component extraction, repaint) are recorded as typed primitives in `dsl/dsl_state.yaml`
+
+Documents:
+
+- `dsl/README.md` – directory index and quick commands
+- `dsl/DSL.md` – syntax/specification and contributor guide
+- `dsl/DSL_Research_Note.md` – design rationale and theory background
+
+Validation commands:
+
+```bash
+# Type-check all lambda representations against declared operations
+python3 dsl/check_lambda_types.py tasks/**/abstractions.md
+
+# Validate the global DSL registry structure
+python3 dsl/validate_dsl.py
 ```
 
 ## Task Solutions
@@ -46,6 +72,8 @@ Each bundle ships its own abstraction artefacts:
 
 - `abstractions.py` — reusable abstraction routines (component analysis, symmetry detection, morphological operations, etc.).
 - `abstractions.md` — a human-readable report summarising experiments, performance, and failure analysis.
+
+All `abstractions.md` files that include a DSL section follow the typed DSL specification described in `dsl/DSL.md` and are validated using the commands shown above.
 
 Identity baselines omit these files; you can treat the bundle as an invitation to contribute a stronger abstraction in the future.
 

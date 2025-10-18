@@ -21,6 +21,11 @@ This directory contains the typed DSL for ARC-AGI-2 task abstractions.
 
 ## Quick Reference
 
+### Key Clarification
+- The DSL uses a restricted, simply-typed lambda subset. It is not the full untyped lambda calculus and is therefore not Turing-complete.
+- No general recursion (no fixpoint/Y); iteration over state is expressed only via the `fold_repaint` combinator.
+- Domain effects (grid ops) are provided as typed operations recorded in `dsl_state.yaml` rather than encoded from first principles.
+
 ### Typed Operations
 Each task declares operations like:
 - `extractComponents : Grid -> List Component`
