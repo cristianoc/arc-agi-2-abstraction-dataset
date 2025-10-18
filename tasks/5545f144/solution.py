@@ -149,9 +149,11 @@ def alignFirstSegment(row: SegmentRow) -> SegmentRow:
 
 def propagateConsensus(grid: Grid, consensus: Set[Column], aligned: List[SegmentRow]) -> Grid:
     height = len(grid)
-    if not aligned:
+    # Recompute base rows from the original grid to mirror original behavior
+    base_rows = extractSegmentsPerRow(grid)
+    if not base_rows:
         return grid
-    sr0 = aligned[0]
+    sr0 = base_rows[0]
     segment_width = sr0.segment_width
     n_segments = sr0.n_segments
     background = sr0.background
@@ -163,7 +165,9 @@ def propagateConsensus(grid: Grid, consensus: Set[Column], aligned: List[Segment
     if highlight == background:
         return [[background] * segment_width for _ in range(height)]
 
-    counts, segments_with_highlight, positive_cols, full_cols, has_partial = _counts_and_sets(aligned)
+    # All downstream counts and support are computed from the original rows,
+    # not the aligned ones, matching the original implementation.
+    counts, segments_with_highlight, positive_cols, full_cols, has_partial = _counts_and_sets(base_rows)
 
     result: Grid = [[background] * segment_width for _ in range(height)]
     highlight_cells: Set[Tuple[int, int]] = set()
