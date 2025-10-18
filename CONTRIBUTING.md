@@ -16,6 +16,7 @@ arc-agi-2-abstraction-dataset/
 │   │   └── task.json            # ARC task specification (optional helper file)
 │   └── ...
 ├── check_consistency.py # Repository consistency checker
+├── dsl/                # Typed DSL: docs, registry, validators
 └── README.md           # Main documentation
 ```
 
@@ -61,6 +62,20 @@ The consistency checker verifies:
 - ✅ Task counts align with documentation
 - ✅ No placeholder dates in CHANGELOG.md (e.g., "2025-01-XX")
 - ✅ No placeholder text in documentation files
+
+### DSL Validation (when editing abstractions.md)
+
+If your PR adds or modifies any `tasks/**/abstractions.md` files, you must run the DSL validators and ensure they pass. The DSL captures solver control flow in a restricted, simply‑typed lambda subset (not Turing‑complete; no recursion). See `dsl/DSL.md` for the full spec.
+
+```bash
+# Type-check all lambda representations against declared operations
+python3 dsl/check_lambda_types.py tasks/**/abstractions.md
+
+# Validate the global DSL registry structure
+python3 dsl/validate_dsl.py
+```
+
+PRs that touch DSL notes should include a brief note in the description stating that these checks passed.
 
 ## Documentation Updates
 
