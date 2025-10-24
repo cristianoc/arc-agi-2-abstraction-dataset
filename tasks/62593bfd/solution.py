@@ -1,161 +1,140 @@
 """Solver for ARC-AGI-2 task 62593bfd."""
 
-from collections import defaultdict
-from typing import Dict, Iterable, List, Tuple
-
-import numpy as np
+from typing import Dict, List, Tuple, Optional, TypedDict
 
 
-Coord = Tuple[int, int]
+Grid = List[List[int]]
+Color = int
 
 
-def _extract_color_info(arr: np.ndarray) -> Tuple[Dict[int, Dict[str, object]], int]:
-    """Collect per-color geometry summaries and return them with the background color."""
+class ColorRecord(TypedDict):
+    cells: List[Tuple[int, int]]
+    min_row: int
+    max_row: int
+    column_counts: Dict[int, int]
 
-    h, w = arr.shape
-    # Dominant color acts as background; array entries are small non-negative ints.
-    bg = int(np.bincount(arr.flatten()).argmax())
 
-    visited = np.zeros((h, w), dtype=bool)
-    info: Dict[int, Dict[str, object]] = {}
+ColumnStats = Dict[int, ColorRecord]
+ShiftPlan = Dict[int, str]
 
+
+def _mode_background(grid: Grid) -> int:
+    counts: Dict[int, int] = {}
+    for row in grid:
+        for v in row:
+            counts[v] = counts.get(v, 0) + 1
+    # choose the value with max frequency; ties broken by larger color id for determinism
+    return max(counts.items(), key=lambda kv: (kv[1], kv[0]))[0] if counts else 0
+
+
+def aggregateColumnCounts(grid: Grid) -> ColumnStats:
+    """Aggregate per-colour cells, min/max rows, and counts per column (background excluded)."""
+    if not grid or not grid[0]:
+        return {}
+    h = len(grid)
+    w = len(grid[0])
+    bg = _mode_background(grid)
+    info: ColumnStats = {}
+    # single pass over the grid; connectivity not required for aggregate stats
     for r in range(h):
+        row = grid[r]
         for c in range(w):
-            if visited[r, c] or int(arr[r, c]) == bg:
+            v = row[c]
+            if v == bg:
                 continue
-
-            color = int(arr[r, c])
-            stack = [(r, c)]
-            visited[r, c] = True
-            cells: List[Coord] = []
-
-            while stack:
-                rr, cc = stack.pop()
-                cells.append((rr, cc))
-                for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                    nr, nc = rr + dr, cc + dc
-                    if 0 <= nr < h and 0 <= nc < w:
-                        if not visited[nr, nc] and int(arr[nr, nc]) == color:
-                            visited[nr, nc] = True
-                            stack.append((nr, nc))
-
-            record = info.setdefault(
-                color,
-                {
-                    "cells": [],
-                    "min_row": h,
-                    "max_row": -1,
-                    "column_counts": defaultdict(int),
-                },
-            )
-
-            for rr, cc in cells:
-                record["cells"].append((rr, cc))
-                record["min_row"] = min(record["min_row"], rr)
-                record["max_row"] = max(record["max_row"], rr)
-                record["column_counts"][cc] += 1
-
-    return info, bg
+            rec = info.setdefault(v, {"cells": [], "min_row": h, "max_row": -1, "column_counts": {}})
+            rec["cells"].append((r, c))
+            rec["min_row"] = min(rec["min_row"], r)
+            rec["max_row"] = max(rec["max_row"], r)
+            cc = rec["column_counts"]
+            cc[c] = cc.get(c, 0) + 1
+    return info
 
 
-def _choose_orientations(
-    info: Dict[int, Dict[str, object]],
-    height: int,
-) -> Dict[int, str]:
-    """Decide whether each color should be moved to the top or bottom edge."""
+def rankColorsByDominance(column_counts: ColumnStats) -> List[Color]:
+    """Order colours by total occupancy (sum across columns), descending, tiebreak by id."""
+    totals = {color: sum(column_counts[color]["column_counts"].values()) for color in column_counts}
+    return sorted(totals, key=lambda color: (-totals[color], color))
 
+
+def computeShiftTargets(grid: Grid, ordered_colors: List[Color]) -> ShiftPlan:
+    """Decide per-colour orientation ('top' or 'bottom') using aggregated overlap logic."""
+    info = aggregateColumnCounts(grid)
+    height = len(grid)
     colors = sorted(info)
     forced: Dict[int, Tuple[str, int]] = {}
 
-    for idx, color_a in enumerate(colors):
-        counts_a = info[color_a]["column_counts"]
-        for color_b in colors[idx + 1 :]:
-            counts_b = info[color_b]["column_counts"]
-            common_cols = set(counts_a) & set(counts_b)
-            if not common_cols:
+    for i, ca in enumerate(colors):
+        counts_a = info[ca]["column_counts"]
+        for cb in colors[i + 1 :]:
+            counts_b = info[cb]["column_counts"]
+            common = set(counts_a) & set(counts_b)
+            if not common:
                 continue
-
-            area_a = sum(counts_a[col] for col in common_cols)
-            area_b = sum(counts_b[col] for col in common_cols)
-
+            area_a = sum(counts_a[col] for col in common)
+            area_b = sum(counts_b[col] for col in common)
             if area_a == area_b:
-                if info[color_a]["min_row"] == info[color_b]["min_row"]:
-                    top_color = max(color_a, color_b)
+                if info[ca]["min_row"] == info[cb]["min_row"]:
+                    top_color = max(ca, cb)
                 else:
-                    top_color = (
-                        color_a
-                        if info[color_a]["min_row"] > info[color_b]["min_row"]
-                        else color_b
-                    )
+                    top_color = ca if info[ca]["min_row"] > info[cb]["min_row"] else cb
                 weight = 1
             else:
-                top_color = color_a if area_a > area_b else color_b
+                top_color = ca if area_a > area_b else cb
                 weight = 1 + abs(area_a - area_b)
-
-            bottom_color = color_b if top_color == color_a else color_a
-
+            bottom_color = cb if top_color == ca else ca
             for color, orient in ((top_color, "top"), (bottom_color, "bottom")):
-                current = forced.get(color)
-                if current is None or weight > current[1]:
+                cur = forced.get(color)
+                if cur is None or weight > cur[1]:
                     forced[color] = (orient, weight)
 
-    orientations: Dict[int, str] = {
-        color: forced[color][0] if color in forced else None for color in colors
-    }
+    orientations: Dict[int, Optional[str]] = {color: (forced[color][0] if color in forced else None) for color in colors}
 
-    free_colors = [color for color, orient in orientations.items() if orient is None]
-    if free_colors:
-        min_rows = [info[color]["min_row"] for color in free_colors]
+    free = [color for color, orient in orientations.items() if orient is None]
+    if free:
+        min_rows = [info[color]["min_row"] for color in free]
         if len(min_rows) > 1:
-            threshold = float(np.median(min_rows))
+            # median without numpy
+            sorted_vals = sorted(float(x) for x in min_rows)
+            mid = len(sorted_vals) // 2
+            threshold = (sorted_vals[mid] if len(sorted_vals) % 2 == 1 else (sorted_vals[mid - 1] + sorted_vals[mid]) / 2.0)
         else:
             threshold = (height - 1) / 2.0
-
-        for color, min_row in zip(free_colors, min_rows):
+        for color, min_row in zip(free, min_rows):
             orientations[color] = "top" if min_row >= threshold else "bottom"
 
-    return orientations
+    return {k: orientations[k] or "bottom" for k in colors}
 
 
-def _apply_orientation(
-    arr: np.ndarray,
-    info: Dict[int, Dict[str, object]],
-    orientations: Dict[int, str],
-    bg: int,
-) -> np.ndarray:
-    """Paint the rearranged grid according to the decided orientations."""
-
-    h, w = arr.shape
-    out = np.full((h, w), bg, dtype=int)
+def applyColorShifts(grid: Grid, targets: ShiftPlan) -> Grid:
+    """Translate each colour's cells to the top/bottom edge as decided by the targets."""
+    if not grid or not grid[0]:
+        return []
+    h = len(grid)
+    w = len(grid[0])
+    bg = _mode_background(grid)
+    info = aggregateColumnCounts(grid)
+    out = [[bg for _ in range(w)] for _ in range(h)]
 
     for color in sorted(info):
-        orient = orientations[color]
+        orient = targets.get(color)
         if orient not in {"top", "bottom"}:
-            raise ValueError(f"Orientation for color {color} unresolved: {orient}")
-
+            continue
         min_row = info[color]["min_row"]
         max_row = info[color]["max_row"]
-        delta = -min_row if orient == "top" else (h - 1) - max_row
-
+        delta = (-min_row) if orient == "top" else ((h - 1) - max_row)
         for r, c in info[color]["cells"]:
             nr = r + delta
-            if not (0 <= nr < h):
-                raise ValueError("Invalid translation outside grid bounds")
-            if out[nr, c] != bg:
-                raise ValueError("Collision detected while placing components")
-            out[nr, c] = color
-
+            if 0 <= nr < h:
+                out[nr][c] = color
     return out
 
 
-def solve_62593bfd(grid):
-    """Swap color groups vertically so each occupies either the top or bottom edge."""
-
-    arr = np.array(grid, dtype=int)
-    info, bg = _extract_color_info(arr)
-    orientations = _choose_orientations(info, arr.shape[0])
-    rearranged = _apply_orientation(arr, info, orientations, bg)
-    return rearranged.tolist()
+def solve_62593bfd(grid: Grid) -> Grid:
+    column_counts = aggregateColumnCounts(grid)
+    ordered_colors = rankColorsByDominance(column_counts)
+    targets = computeShiftTargets(grid, ordered_colors)
+    return applyColorShifts(grid, targets)
 
 
 p = solve_62593bfd

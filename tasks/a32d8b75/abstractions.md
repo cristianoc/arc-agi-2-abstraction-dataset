@@ -12,7 +12,7 @@ Final refinement adopts `block_map_full`, which exactly matches the training out
   - `sliceInstructionBlock : Grid × Int -> InstructionBlock` — read each 3×6 instruction strip on the left side.
   - `lookupSpriteRows : InstructionBlock -> Optional SpriteRows` — fetch the precomputed 3×24 sprite rows for the instruction block.
   - `writeSpriteRows : Grid × Int × SpriteRows -> Grid` — overwrite the corresponding rows on the right portion with the looked-up sprite.
-  - `handleTailBlock : Grid × Int -> Grid` — apply the specialised two-row templates for leftover rows at the bottom.
+  - `handleTailBlock : Grid × Int × Grid -> Grid` — apply the specialised two-row templates for leftover rows at the bottom using the original grid's instruction tail.
 - **Solver summary**: "Slice each instruction strip, map it to the stored sprite rows, write those rows onto the right-hand canvas, and handle any trailing rows with the tail templates."
 
 ## Lambda Representation
@@ -29,5 +29,5 @@ def solve_a32d8b75(grid: Grid) -> Grid:
         return writeSpriteRows(canvas, idx, sprite_rows)
 
     rendered = fold_repaint(grid, indices, paint_block)
-    return handleTailBlock(rendered, len(indices))
+    return handleTailBlock(rendered, len(indices), grid)
 ```

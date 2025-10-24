@@ -23,5 +23,5 @@ def solve_6ffbe589(grid: Grid) -> Grid:
     main = extractMainSquare(grid)
     palette = detectPaletteVariant(main)
     transformed = transformVariant(main, palette)
-    return fallbackRotate(transformed) if transformed is None else transformed
+    return fallbackRotate(main) if transformed is None else transformed
 ```

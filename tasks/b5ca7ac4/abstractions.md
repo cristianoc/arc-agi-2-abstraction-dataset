@@ -11,7 +11,7 @@ The successful refinement preserves each object's original vertical placement, r
   - `detectRingObjects : Grid -> List Ring` — find 5×5 ring motifs, capturing inner/outer colours, bounding boxes, and patterns.
   - `constructLanes : Grid × List Ring -> LanePlan` — compute background colour and produce left/right lane positions based on ring size and canvas width.
   - `assignRingLanes : List Ring × LanePlan -> LanePlacements` — order rings by outer colour, choose preferred lanes, and resolve conflicts by falling back to alternate lanes.
-  - `renderRingPlacements : LanePlacements × Color -> Grid` — paint each ring pattern into its assigned lane on a background canvas.
+  - `renderRingPlacements : Grid × LanePlacements × Color -> Grid` — paint each ring pattern into its assigned lane on a background canvas, preserving canvas size.
 - **Solver summary**: "Detect the ring objects, build left/right lane positions, assign each ring to a non-overlapping lane with conflict resolution, and render the repositioned rings onto the canvas."
 
 ## Lambda Representation
@@ -21,5 +21,5 @@ def solve_b5ca7ac4(grid: Grid) -> Grid:
     rings = detectRingObjects(grid)
     lane_plan = constructLanes(grid, rings)
     placements = assignRingLanes(rings, lane_plan)
-    return renderRingPlacements(placements, lane_plan.background)
+    return renderRingPlacements(grid, placements, lane_plan.background)
 ```

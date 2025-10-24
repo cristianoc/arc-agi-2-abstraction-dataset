@@ -1,21 +1,47 @@
-"""Solver for ARC-AGI-2 task dbff022c."""
+"""Solver for ARC-AGI-2 task dbff022c (DSL-aligned)."""
+
+from __future__ import annotations
 
 from collections import deque
+from typing import Callable, List, Optional, Set, Tuple, TypedDict
 
 
-def _neighbors(r, c):
-    for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-        yield r + dr, c + dc
+# --- Types ---
+Grid = List[List[int]]
 
 
-def _in_bounds(r, c, rows, cols):
+class Component(TypedDict):
+    cells: List[Tuple[int, int]]
+    color: int
+    size: int
+    adjacency: Set[int]
+    touches_border: bool
+
+
+# --- Low-level grid utilities (pure) ---
+def _neighbors(r: int, c: int):
+    yield r + 1, c
+    yield r - 1, c
+    yield r, c + 1
+    yield r, c - 1
+
+
+def _in_bounds(r: int, c: int, rows: int, cols: int) -> bool:
     return 0 <= r < rows and 0 <= c < cols
 
 
-def _collect_zero_components(grid):
+# --- DSL helper primitives ---
+def fold_repaint(canvas: Grid, items: List[Component], update: Callable[[Grid, Component], Grid]) -> Grid:
+    acc = [row[:] for row in canvas]
+    for it in items:
+        acc = update(acc, it)
+    return acc
+
+
+def enumerateZeroCavities(grid: Grid) -> List[Component]:
     rows, cols = len(grid), len(grid[0])
     visited = [[False] * cols for _ in range(rows)]
-    components = []
+    components: List[Component] = []
 
     for r in range(rows):
         for c in range(cols):
@@ -24,8 +50,8 @@ def _collect_zero_components(grid):
 
             queue = deque([(r, c)])
             visited[r][c] = True
-            zero_cells = []
-            neighbor_color = None
+            zero_cells: List[Tuple[int, int]] = []
+            neighbor_color: Optional[int] = None
             neighbors_mixed = False
             boundary_cells = set()
             touches_border = False
@@ -67,7 +93,7 @@ def _collect_zero_components(grid):
                         seen.add((nr, nc))
                         region_queue.append((nr, nc))
 
-            adjacency = set()
+            adjacency: Set[int] = set()
             for cr, cc in region:
                 for nr, nc in _neighbors(cr, cc):
                     if not _in_bounds(nr, nc, rows, cols):
@@ -77,19 +103,19 @@ def _collect_zero_components(grid):
                         adjacency.add(val)
 
             components.append(
-                {
-                    "cells": zero_cells,
-                    "color": neighbor_color,
-                    "size": len(zero_cells),
-                    "adjacency": adjacency,
-                    "touches_border": touches_border,
-                }
+                Component(
+                    cells=zero_cells,
+                    color=neighbor_color,
+                    size=len(zero_cells),
+                    adjacency=adjacency,
+                    touches_border=touches_border,
+                )
             )
 
     return components
 
 
-def _decide_fill(component):
+def choosePartnerColour(component: Component) -> Optional[int]:
     color = component["color"]
     size = component["size"]
     adjacency = component["adjacency"]
@@ -117,17 +143,24 @@ def _decide_fill(component):
     return None
 
 
-def solve_dbff022c(grid):
-    result = [row[:] for row in grid]
+def fillComponent(canvas: Grid, component: Component, colour: int) -> Grid:
+    out = [row[:] for row in canvas]
+    for r, c in component["cells"]:
+        out[r][c] = colour
+    return out
 
-    for component in _collect_zero_components(grid):
-        fill_color = _decide_fill(component)
-        if fill_color is None:
-            continue
-        for r, c in component["cells"]:
-            result[r][c] = fill_color
 
-    return result
+# --- Main solver must match Lambda Representation exactly ---
+def solve_dbff022c(grid: Grid) -> Grid:
+    cavities = enumerateZeroCavities(grid)
+
+    def fill(canvas: Grid, component: Component) -> Grid:
+        colour = choosePartnerColour(component)
+        if colour is None:
+            return canvas
+        return fillComponent(canvas, component, colour)
+
+    return fold_repaint(grid, cavities, fill)
 
 
 p = solve_dbff022c

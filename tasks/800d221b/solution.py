@@ -24,6 +24,8 @@ from typing import Dict, Iterable, List, Sequence, Tuple
 
 Grid = List[List[int]]
 Coord = Tuple[int, int]
+Component = List[Coord]
+Label = str
 Feature = Tuple[float, float, float, float, float, float]
 
 
@@ -175,24 +177,34 @@ def _guess_target_colour(grid: Grid) -> int:
 
 def _knn_predict(feature: Feature, k: int = 3) -> str:
     dataset = _training_samples()
-    distances = []
+    distances: List[Tuple[float, str]] = []
     for sample_feat, label in dataset:
         dist = sum((feature[i] - sample_feat[i]) ** 2 for i in range(len(feature)))
         distances.append((dist, label))
     distances.sort(key=lambda x: x[0])
-    votes = Counter()
+    votes: Dict[str, float] = {}
     for dist, label in distances[:k]:
-        votes[label] += 1 / (dist + 1e-9)
-    return votes.most_common(1)[0][0]
+        votes[label] = votes.get(label, 0.0) + 1.0 / (dist + 1e-9)
+    return max(votes.items(), key=lambda kv: kv[1])[0]
 
 
-def solve_800d221b(grid: Grid) -> Grid:
-    rows, cols = len(grid), len(grid[0])
+_GRID_FOR_FEATURES: Grid | None = None
+
+
+def extractTargetComponents(grid: Grid) -> Tuple[int, int, List[Component]]:
+    global _GRID_FOR_FEATURES
+    _GRID_FOR_FEATURES = grid
+    transition = _guess_target_colour(grid)
+    background = _dominant_colour(grid)
+    components = _components(grid, transition)
+    return transition, background, components
+
+
+def identifyFringeColours(grid: Grid, components: List[Component]) -> Tuple[int, int]:
     target = _guess_target_colour(grid)
     bg_colour = _dominant_colour(grid)
-    # Identify candidate fringe colours touching the target.
-    adjacency = Counter()
-    components = _components(grid, target)
+    rows, cols = len(grid), len(grid[0])
+    adjacency: Counter[int] = Counter()
     for comp in components:
         for r, c in comp:
             for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)):
@@ -202,53 +214,85 @@ def solve_800d221b(grid: Grid) -> Grid:
                     if val not in (target, bg_colour):
                         adjacency[val] += 1
     if not adjacency:
-        return [row[:] for row in grid]
-    fringe_colours = sorted(adjacency, key=lambda col: _average_column_adjacency(grid, components, target, col))
-    left_colour = fringe_colours[0]
-    right_colour = fringe_colours[-1]
+        return target, target
+    fringe = sorted(adjacency, key=lambda col: _average_column_adjacency(grid, components, target, col))
+    return fringe[0], fringe[-1]
 
-    result = [row[:] for row in grid]
-    for comp in components:
-        comp_set = set(comp)
-        r_vals = [r for r, _ in comp]
-        c_vals = [c for _, c in comp]
-        r_min, r_max = min(r_vals), max(r_vals)
-        c_min, c_max = min(c_vals), max(c_vals)
-        width = max(1, c_max - c_min)
-        height = max(1, r_max - r_min)
 
-        left_seeds = {cell for cell in comp if _touches_colour(grid, cell, left_colour)}
-        right_seeds = {cell for cell in comp if _touches_colour(grid, cell, right_colour)}
-        if not left_seeds or not right_seeds:
-            continue
-        dist_left = _distance_map(comp_set, left_seeds)
-        dist_right = _distance_map(comp_set, right_seeds)
+def _component_bounds(component: Component) -> Tuple[int, int, int, int]:
+    r_vals = [r for r, _ in component]
+    c_vals = [c for _, c in component]
+    return min(r_vals), max(r_vals), min(c_vals), max(c_vals)
 
-        for r, c in comp:
-            col_norm = (c - c_min) / width
-            row_norm = (r - r_min) / height
-            d_left = dist_left.get((r, c), float("inf")) / width
-            d_right = dist_right.get((r, c), float("inf")) / width
-            min_dist = min(d_left, d_right)
-            diff = d_left - d_right
-            feature = (col_norm, row_norm, d_left, d_right, min_dist, diff)
 
-            if col_norm <= 0.12:
-                label = "left"
-            elif col_norm >= 0.88:
-                label = "right"
-            elif 0.32 <= col_norm <= 0.62 and min_dist >= 3.5:
-                label = "mid"
-            else:
-                label = _knn_predict(feature, k=3)
+def computeFeatures(component: Component, anchors: Tuple[int, int]) -> List[Feature]:
+    grid = _GRID_FOR_FEATURES
+    assert grid is not None
+    left_colour, right_colour = anchors
+    r_min, r_max, c_min, c_max = _component_bounds(component)
+    width = max(1, c_max - c_min)
+    height = max(1, r_max - r_min)
+    comp_set = set(component)
+    left_seeds = {cell for cell in component if _touches_colour(grid, cell, left_colour)}
+    right_seeds = {cell for cell in component if _touches_colour(grid, cell, right_colour)}
+    dist_left = _distance_map(comp_set, left_seeds) if left_seeds else {}
+    dist_right = _distance_map(comp_set, right_seeds) if right_seeds else {}
+    feats: List[Feature] = []
+    for r, c in component:
+        col_norm = (c - c_min) / width
+        row_norm = (r - r_min) / height
+        d_left = dist_left.get((r, c), float("inf")) / width
+        d_right = dist_right.get((r, c), float("inf")) / width
+        min_dist = min(d_left, d_right)
+        diff = d_left - d_right
+        feats.append((col_norm, row_norm, d_left, d_right, min_dist, diff))
+    return feats
 
-            if label == "left":
-                result[r][c] = left_colour
-            elif label == "right":
-                result[r][c] = right_colour
-            else:
-                result[r][c] = target
-    return result
+
+def classifyCells(features: List[Feature]) -> List[Label]:
+    labels: List[Label] = []
+    for col_norm, row_norm, d_left, d_right, min_dist, diff in features:
+        if col_norm <= 0.12:
+            labels.append("left")
+        elif col_norm >= 0.88:
+            labels.append("right")
+        elif 0.32 <= col_norm <= 0.62 and min_dist >= 3.5:
+            labels.append("mid")
+        else:
+            labels.append(_knn_predict((col_norm, row_norm, d_left, d_right, min_dist, diff), k=3))
+    return labels
+
+
+def repaintByLabels(canvas: Grid, component: Component, labels: List[Label], colours: Tuple[int, int, int]) -> Grid:
+    left_colour, right_colour, transition = colours
+    out = [row[:] for row in canvas]
+    for (r, c), label in zip(component, labels):
+        if label == "left":
+            out[r][c] = left_colour
+        elif label == "right":
+            out[r][c] = right_colour
+        else:
+            out[r][c] = transition
+    return out
+
+
+def fold_repaint(canvas: Grid, items: List[Component], update) -> Grid:
+    out = [row[:] for row in canvas]
+    for item in items:
+        out = update(out, item)
+    return out
+
+
+def solve_800d221b(grid: Grid) -> Grid:
+    transition, background, components = extractTargetComponents(grid)
+    left_colour, right_colour = identifyFringeColours(grid, components)
+
+    def repaint(canvas: Grid, component: Component) -> Grid:
+        features = computeFeatures(component, (left_colour, right_colour))
+        labels = classifyCells(features)
+        return repaintByLabels(canvas, component, labels, (left_colour, right_colour, transition))
+
+    return fold_repaint(grid, components, repaint)
 
 
 def _average_column_adjacency(grid: Grid, components: Sequence[Sequence[Coord]], target: int, colour: int) -> float:

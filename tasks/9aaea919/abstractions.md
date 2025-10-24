@@ -11,6 +11,8 @@ Final choice: `instruction_driven` abstraction.
   - `readInstructionSegments : Grid -> InstructionSegments` — parse the bottom-row segments to determine colour-coded instructions.
   - `mapInstructionsToColumns : InstructionSegments × ColumnInfoMap -> ColumnInstructionMap` — assign counts and recolour directives to each cross column.
   - `repaintColumn : Grid × ColumnInfo × Instruction -> Grid` — recolour columns flagged for colour 5 and extend columns based on the instruction counts.
+  - `clearInstructionSegments : Grid × InstructionSegments × Color -> Grid` — clear the bottom-row instruction markers back to background.
+  - `getBackground : Grid -> Color` — infer the background colour as the modal value.
 - **Solver summary**: "Detect existing plus columns, read the bottom instructions, map those instructions to the columns, and repaint/extend each column according to its assigned directive."
 
 ## Lambda Representation
@@ -26,5 +28,7 @@ def solve_9aaea919(grid: Grid) -> Grid:
         column_info = columns[column_index]
         return repaintColumn(canvas, column_info, instruction)
 
-    return fold_repaint(grid, list(assignments.keys()), repaint)
+    repainted = fold_repaint(grid, list(assignments.keys()), repaint)
+    background = getBackground(grid)
+    return clearInstructionSegments(repainted, segments, background)
 ```

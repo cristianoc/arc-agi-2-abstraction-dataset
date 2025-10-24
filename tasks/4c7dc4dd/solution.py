@@ -1,7 +1,7 @@
 """Solver for ARC-AGI-2 task 4c7dc4dd (split: evaluation)."""
 
 from collections import Counter, deque
-from typing import List, Tuple
+from typing import List, Tuple, Optional, Dict, Any
 
 Grid = List[List[int]]
 
@@ -70,7 +70,7 @@ def _component_centers(
     return centres
 
 
-def _rare_non_background_color(grid: Grid) -> Tuple[int, int] | None:
+def _rare_non_background_color(grid: Grid) -> Optional[Tuple[int, int]]:
     """Return the rarest non-zero color (count, value) for corner highlighting."""
 
     counts = Counter(value for row in grid for value in row if value != 0)
@@ -80,64 +80,112 @@ def _rare_non_background_color(grid: Grid) -> Tuple[int, int] | None:
     return color, freq
 
 
-def solve_4c7dc4dd(grid: Grid) -> Grid:
-    """Project salient zero rectangles to a coarse glyph with a highlighted corner."""
-
-    input_height = len(grid)
-    input_width = len(grid[0])
-
+def detectZeroRectangles(grid: Grid) -> Dict[str, Any]:
+    """Detect sizeable zero components; return metadata bundle for downstream steps."""
     components = _find_zero_components(grid)
+    return {
+        "components": components,
+        "in_height": len(grid),
+        "in_width": len(grid[0]) if grid else 0,
+        "rare": _rare_non_background_color(grid),
+    }
+
+
+def buildScaffold(rectangles: Dict[str, Any]) -> Dict[str, Any]:
+    """Build coarse scaffold: output size, centers, and anchor decisions."""
+    components = rectangles["components"]
     if not components:
-        return [[0]]
+        return {"empty": True}
 
+    in_h = rectangles["in_height"]
+    in_w = rectangles["in_width"]
     out_size = _select_output_size(components)
-    output = [[0] * out_size for _ in range(out_size)]
+    centres = _component_centers(components, in_h, in_w, out_size)
 
-    centres = _component_centers(components, input_height, input_width, out_size)
     row_centres = sorted(r for r, _ in centres)
-    anchor_row = int(round((row_centres[0] + row_centres[1]) / 2)) if len(row_centres) >= 2 else int(round(row_centres[0]))
-    anchor_row = max(0, min(out_size - 1, anchor_row))
-    for col in range(out_size):
-        output[anchor_row][col] = 2
+    anchor_row_f = (row_centres[0] + row_centres[1]) / 2 if len(row_centres) >= 2 else row_centres[0]
+    anchor_row = max(0, min(out_size - 1, int(round(anchor_row_f))))
 
     col_centres = [c for _, c in centres]
     midpoint = out_size / 2
-    left_centres = [c for c in col_centres if c < midpoint]
-    right_centres = [c for c in col_centres if c >= midpoint]
-    if len(right_centres) > len(left_centres):
-        vertical_side = "right"
+    left = [c for c in col_centres if c < midpoint]
+    right = [c for c in col_centres if c >= midpoint]
+    if len(right) > len(left):
+        side = "right"
         anchor_col = int(round(max(col_centres)))
     else:
-        vertical_side = "left"
+        side = "left"
         anchor_col = int(min(col_centres))
     anchor_col = max(0, min(out_size - 1, anchor_col))
 
-    if vertical_side == "right":
-        start_row = 0
-        end_row = out_size - 1
+    if side == "right":
+        start_row, end_row = 0, out_size - 1
     else:
-        max_centre_row = int(round(max(r for r, _ in centres)))
+        max_row = int(round(max(r for r, _ in centres)))
         start_row = anchor_row
-        end_row = max(start_row, min(out_size - 1, max_centre_row))
-    for row in range(start_row, end_row + 1):
-        output[row][anchor_col] = 2
+        end_row = max(start_row, min(out_size - 1, max_row))
 
-    if vertical_side == "right" and left_centres:
+    extra = None
+    if side == "right" and left:
         left_span = int(min(col_centres))
         left_span = max(0, min(out_size - 1, left_span))
-        for col in range(0, left_span + 1):
-            output[0][col] = 2
         bottom_row = int(round(max(r for r, _ in centres)))
         bottom_row = max(0, min(out_size - 1, bottom_row))
-        for col in range(0, max(0, left_span)):
-            output[bottom_row][col] = 2
+        extra = {"left_span": left_span, "bottom_row": bottom_row}
 
-    rare = _rare_non_background_color(grid)
+    return {
+        "empty": False,
+        "out_size": out_size,
+        "anchor_row": anchor_row,
+        "anchor_col": anchor_col,
+        "start_row": start_row,
+        "end_row": end_row,
+        "side": side,
+        "extra": extra,
+        "rare": rectangles["rare"],
+    }
+
+
+def augmentScaffold(scaffold: Dict[str, Any]) -> Dict[str, Any]:
+    """No-op augmenter; scaffold already encodes all needed strokes."""
+    return scaffold
+
+
+def renderGlyph(scaffold: Dict[str, Any]) -> Grid:
+    if scaffold.get("empty"):
+        return [[0]]
+
+    n = scaffold["out_size"]
+    out = [[0] * n for _ in range(n)]
+
+    anchor_row = scaffold["anchor_row"]
+    for c in range(n):
+        out[anchor_row][c] = 2
+
+    anchor_col = scaffold["anchor_col"]
+    for r in range(scaffold["start_row"], scaffold["end_row"] + 1):
+        out[r][anchor_col] = 2
+
+    if scaffold["side"] == "right" and scaffold["extra"] is not None:
+        left_span = scaffold["extra"]["left_span"]
+        bottom_row = scaffold["extra"]["bottom_row"]
+        for c in range(0, left_span + 1):
+            out[0][c] = 2
+        for c in range(0, max(0, left_span)):
+            out[bottom_row][c] = 2
+
+    rare = scaffold.get("rare")
     if rare and rare[0] not in {0, 2} and rare[1] <= 10:
-        output[anchor_row][anchor_col] = rare[0]
+        out[anchor_row][anchor_col] = rare[0]
 
-    return output
+    return out
+
+
+def solve_4c7dc4dd(grid: Grid) -> Grid:
+    rectangles = detectZeroRectangles(grid)
+    scaffold = buildScaffold(rectangles)
+    augmented = augmentScaffold(scaffold)
+    return renderGlyph(augmented)
 
 
 p = solve_4c7dc4dd
-

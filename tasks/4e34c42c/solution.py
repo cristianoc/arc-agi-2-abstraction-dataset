@@ -1,18 +1,24 @@
 """Solver for ARC-AGI-2 task 4e34c42c."""
 
+from __future__ import annotations
+
 from collections import Counter, deque
+from typing import Dict, List, Sequence, Tuple
+
+Grid = List[List[int]]
+Block = List[List[int]]
 
 
-def most_frequent_color(grid):
+def most_frequent_color(grid: Grid) -> int:
     """Return the color that appears most often in the grid."""
-    cnt = Counter()
+    cnt: Counter[int] = Counter()
     for row in grid:
         cnt.update(row)
     color, _ = max(cnt.items(), key=lambda item: (item[1], item[0]))
     return color
 
 
-def pad_vertical(block, background, height=5):
+def pad_vertical(block: Block, background: int, height: int = 5) -> Block:
     """Pad or sample rows so the block has exactly `height` rows."""
     current = len(block)
     if current == height:
@@ -27,14 +33,14 @@ def pad_vertical(block, background, height=5):
     bottom_pad = height - current - top_pad
     width = len(block[0]) if block else 0
     pad_row = [background] * width
-    result = []
+    result: Block = []
     result.extend(pad_row[:] for _ in range(top_pad))
     result.extend(row[:] for row in block)
     result.extend(pad_row[:] for _ in range(bottom_pad))
     return result
 
 
-def extract_components(grid, background):
+def extract_components(grid: Grid, background: int):
     """Return connected components (4-neighbour) of non-background cells."""
     h = len(grid)
     w = len(grid[0])
@@ -77,7 +83,7 @@ def extract_components(grid, background):
     return components
 
 
-def classify(block):
+def classify(block: Block) -> str:
     height = len(block)
     width = len(block[0]) if block else 0
     if height < 5:
@@ -85,8 +91,8 @@ def classify(block):
     return "tall"
 
 
-def dominant_color(block, background):
-    cnt = Counter()
+def dominant_color(block: Block, background: int) -> int:
+    cnt: Counter[int] = Counter()
     for row in block:
         for value in row:
             if value != background:
@@ -96,12 +102,12 @@ def dominant_color(block, background):
     return max(cnt.items(), key=lambda item: (item[1], item[0]))[0]
 
 
-def normalize_block(block, block_type, background):
+def normalize_block(block: Block, block_type: str, background: int) -> Block:
     height = len(block)
     width = len(block[0]) if block else 0
     if block_type == "wide_short":
         dom = dominant_color(block, background)
-        valid_cols = []
+        valid_cols: List[int] = []
         for col in range(width):
             column_values = [block[row][col] for row in range(height)]
             if dom not in column_values:
@@ -111,8 +117,7 @@ def normalize_block(block, block_type, background):
             valid_cols.append(col)
         if valid_cols:
             block = [row[valid_cols[0] : valid_cols[-1] + 1] for row in block]
-            width = len(block[0]) if block else 0
-        filtered = []
+        filtered: Block = []
         for row in block:
             filtered.append([val if val == dom else background for val in row])
         return pad_vertical(filtered, background)
@@ -121,11 +126,11 @@ def normalize_block(block, block_type, background):
     return pad_vertical(block, background)
 
 
-def column_signatures(block):
+def column_signatures(block: Block):
     return {tuple(block[row][col] for row in range(len(block))) for col in range(len(block[0]))}
 
 
-def merge_blocks(left, right):
+def merge_blocks(left: Block, right: Block) -> Block:
     if not right or not right[0]:
         return [row[:] for row in left]
     if not left or not left[0]:
@@ -141,13 +146,13 @@ def merge_blocks(left, right):
                 break
         if matches:
             best = k
-    merged = []
+    merged: Block = []
     for row in range(height):
         merged.append(left[row][:] + right[row][best:])
     return merged
 
 
-def assemble_components(components, background):
+def assemble_components(components, background: int) -> Block:
     if not components:
         return []
     tall = []
@@ -156,7 +161,7 @@ def assemble_components(components, background):
     small_redundant = []
 
     # Pre-compute column signatures of every block for redundancy tests.
-    all_columns = []
+    all_columns: List[set] = []
     for comp in components:
         all_columns.append(column_signatures(comp["normalized"]))
 
@@ -175,7 +180,7 @@ def assemble_components(components, background):
             else:
                 small_unique.append(comp)
 
-    ordered = []
+    ordered: List[Dict] = []
     ordered.extend(sorted(small_unique, key=lambda comp: comp["min_col"]))
     ordered.extend(sorted(wide_short, key=lambda comp: comp["y0"]))
     ordered.extend(sorted(tall, key=lambda comp: -comp["y0"]))
@@ -184,16 +189,20 @@ def assemble_components(components, background):
     if not ordered:
         return []
 
-    result = ordered[0]["normalized"]
+    result: Block = ordered[0]["normalized"]
     for comp in ordered[1:]:
         result = merge_blocks(result, comp["normalized"])
     return result
 
 
-def solve_4e34c42c(grid):
+# ---------------------------------------------------------------------------
+# DSL wrappers to match abstractions.md lambda exactly
+# ---------------------------------------------------------------------------
+
+def extractComponents(grid: Grid) -> List[Dict]:
     background = most_frequent_color(grid)
     components = extract_components(grid, background)
-    enriched = []
+    enriched: List[Dict] = []
     for comp in components:
         y0, y1, x0, x1 = comp["bbox"]
         block = comp["block"]
@@ -206,13 +215,62 @@ def solve_4e34c42c(grid):
                 "normalized": normalized,
                 "y0": y0,
                 "min_col": x0,
+                "columns": column_signatures(normalized),
             }
         )
+    return enriched
 
-    assembled = assemble_components(enriched, background)
-    if not assembled:
-        return [row[:] for row in grid]
-    return [row[:] for row in assembled]
+
+def classifyComponentType(component: Dict) -> str:
+    return component["type"]
+
+
+def prioritiseComponents(typed: Sequence[Tuple[Dict, str]]) -> List[Dict]:
+    components = [comp for comp, _ in typed]
+    if not components:
+        return []
+
+    small_unique: List[Dict] = []
+    small_redundant: List[Dict] = []
+    wide: List[Dict] = []
+    tall: List[Dict] = []
+
+    all_columns = [c["columns"] for c in components]
+    for idx, comp in enumerate(components):
+        c_type = comp["type"]
+        if c_type == "wide_short":
+            wide.append(comp)
+        elif c_type == "tall":
+            tall.append(comp)
+        else:
+            other_cols = set().union(*(all_columns[j] for j in range(len(components)) if j != idx))
+            if comp["columns"].issubset(other_cols):
+                small_redundant.append(comp)
+            else:
+                small_unique.append(comp)
+
+    ordered: List[Dict] = []
+    ordered.extend(sorted(small_unique, key=lambda comp: comp["min_col"]))
+    ordered.extend(sorted(wide, key=lambda comp: comp["y0"]))
+    ordered.extend(sorted(tall, key=lambda comp: -comp["y0"]))
+    ordered.extend(sorted(small_redundant, key=lambda comp: comp["min_col"]))
+    return ordered
+
+
+def concatenateComponents(ordered: Sequence[Dict]) -> Grid:
+    if not ordered:
+        return []
+    stack: Block = ordered[0]["normalized"]
+    for comp in ordered[1:]:
+        stack = merge_blocks(stack, comp["normalized"])
+    return [row[:] for row in stack]
+
+
+def solve_4e34c42c(grid: Grid) -> Grid:
+    components = extractComponents(grid)
+    typed = [(component, classifyComponentType(component)) for component in components]
+    ordered = prioritiseComponents(typed)
+    return concatenateComponents(ordered)
 
 
 p = solve_4e34c42c

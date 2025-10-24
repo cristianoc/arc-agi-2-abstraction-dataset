@@ -1,8 +1,18 @@
-"""Auto-generated identity stub for ARC-AGI-2 task e12f9a14 (split: evaluation)."""
+"""Solver for ARC-AGI-2 task e12f9a14 (split: evaluation).
+
+Refactored to match the typed-DSL lambda while preserving behaviour.
+"""
+
+from __future__ import annotations
 
 from collections import Counter
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple
 
-# TODO: refine transformation logic iteratively; start by characterising failures.
+# Type aliases for readability and mypy.
+Grid = List[List[int]]
+Cell = Tuple[int, int]
+Offset = Tuple[int, int]
+Seed = Any  # Structured dict carrying seed + context; opaque to the lambda.
 
 
 DIGIT_TEMPLATE_VARIANTS = {
@@ -240,21 +250,20 @@ DIGIT_TEMPLATE_VARIANTS = {
 }
 
 
-def _clone(grid):
+def _clone(grid: Grid) -> Grid:
     return [row[:] for row in grid]
 
 
 # Helper routines ---------------------------------------------------------
 
-
-def _dominant_color(grid):
-    counter = Counter()
+def _dominant_color(grid: Grid) -> int:
+    counter: Counter[int] = Counter()
     for row in grid:
         counter.update(row)
     return counter.most_common(1)[0][0]
 
 
-def _components(grid):
+def _components(grid: Grid) -> Iterable[Tuple[int, List[Cell]]]:
     height = len(grid)
     width = len(grid[0])
     seen = [[False] * width for _ in range(height)]
@@ -265,7 +274,7 @@ def _components(grid):
             color = grid[r][c]
             stack = [(r, c)]
             seen[r][c] = True
-            cells = []
+            cells: List[Cell] = []
             while stack:
                 rr, cc = stack.pop()
                 cells.append((rr, cc))
@@ -277,58 +286,124 @@ def _components(grid):
             yield color, cells
 
 
-def solve_e12f9a14(grid):
-    """Expand 2x2 seeds into stylised digits while preserving other structure."""
+# DSL helper shims --------------------------------------------------------
 
-    height = len(grid)
-    width = len(grid[0])
-    result = _clone(grid)
-    background = _dominant_color(grid)
+def extractComponents(grid: Grid) -> List[Seed]:
+    """Enumerate components, attaching grid-context so later steps are pure."""
+    bg = _dominant_color(grid)
+    h, w = len(grid), len(grid[0])
+    return [
+        {
+            "color": color,
+            "cells": cells,
+            "grid": grid,
+            "background": bg,
+            "height": h,
+            "width": w,
+        }
+        for color, cells in _components(grid)
+    ]
 
-    for color, cells in _components(grid):
-        if color == background or len(cells) != 4:
+
+def filterSeedBlocks(components: List[Seed]) -> List[Seed]:
+    """Keep only non-background 2x2 seeds; compute anchor per seed."""
+    seeds: List[Seed] = []
+    for comp in components:
+        color: int = comp["color"]
+        cells: List[Cell] = comp["cells"]
+        bg: int = comp["background"]
+        if color == bg or len(cells) != 4:
             continue
-
         rows = [r for r, _ in cells]
         cols = [c for _, c in cells]
         if max(rows) - min(rows) != 1 or max(cols) - min(cols) != 1:
-            continue  # Not a 2x2 block.
-
-        variants = DIGIT_TEMPLATE_VARIANTS.get(color)
-        if not variants:
-            continue  # Unknown seed colour; leave untouched.
-
-        anchor_r, anchor_c = min(rows), min(cols)
-        seed_cells = set(cells)
-        best_cells = None
-
-        for offsets in variants:
-            placements = set()
-            collision = False
-            for dr, dc in offsets:
-                target_r = anchor_r + dr
-                target_c = anchor_c + dc
-                if not (0 <= target_r < height and 0 <= target_c < width):
-                    continue
-                if (target_r, target_c) not in seed_cells and grid[target_r][target_c] != background:
-                    collision = True
-                    break
-                placements.add((target_r, target_c))
-
-            if collision:
-                continue
-
-            if best_cells is None or len(placements) > len(best_cells):
-                best_cells = placements
-
-        if not best_cells:
             continue
+        seed = dict(comp)
+        seed["anchor"] = (min(rows), min(cols))
+        seeds.append(seed)
+    return seeds
 
-        for cell in best_cells.union(seed_cells):
-            r, c = cell
-            result[r][c] = color
 
-    return result
+def selectDigitVariant(seed: Seed) -> Optional[List[Offset]]:
+    """Choose the best collision-free template offsets for the seed color.
+
+    Mirrors original logic: maximize in-bounds placements; forbid drawing over
+    non-background cells except the seed's own footprint.
+    """
+    color: int = seed["color"]
+    variants = DIGIT_TEMPLATE_VARIANTS.get(color)
+    if not variants:
+        return None
+
+    anchor_r, anchor_c = seed["anchor"]
+    seed_cells = set(seed["cells"])  # absolute positions
+    grid: Grid = seed["grid"]
+    bg: int = seed["background"]
+    height: int = seed["height"]
+    width: int = seed["width"]
+
+    best: Optional[Tuple[int, List[Offset]]] = None  # (count, offsets)
+    for offsets in variants:
+        count = 0
+        collision = False
+        for dr, dc in offsets:
+            r = anchor_r + dr
+            c = anchor_c + dc
+            if not (0 <= r < height and 0 <= c < width):
+                # Out of bounds: ignore; counts as not placed.
+                continue
+            if (r, c) not in seed_cells and grid[r][c] != bg:
+                collision = True
+                break
+            count += 1
+        if collision:
+            continue
+        if best is None or count > best[0]:
+            best = (count, list(offsets))
+
+    return None if best is None else best[1]
+
+
+def paintDigitTemplate(canvas: Grid, seed: Seed, offsets: Sequence[Offset]) -> Grid:
+    """Paint the union of seed cells and variant placements with seed color."""
+    out = _clone(canvas)
+    anchor_r, anchor_c = seed["anchor"]
+    color: int = seed["color"]
+    height: int = seed["height"]
+    width: int = seed["width"]
+    cells = set(seed["cells"])  # absolute seed cells
+
+    # Convert offsets to absolute placements, clip to bounds.
+    placements = {
+        (anchor_r + dr, anchor_c + dc)
+        for dr, dc in offsets
+        if 0 <= anchor_r + dr < height and 0 <= anchor_c + dc < width
+    }
+
+    for r, c in placements.union(cells):
+        out[r][c] = color
+    return out
+
+
+def fold_repaint(canvas: Grid, items: Iterable[Seed], update: Callable[[Grid, Seed], Grid]) -> Grid:
+    """Functional fold: repeatedly repaint the canvas for each item."""
+    acc = canvas
+    for it in items:
+        acc = update(acc, it)
+    return acc
+
+
+def solve_e12f9a14(grid: Grid) -> Grid:
+    components = extractComponents(grid)
+    seeds = filterSeedBlocks(components)
+
+    def repaint(canvas: Grid, seed: Seed) -> Grid:
+        offsets = selectDigitVariant(seed)
+        if offsets is None:
+            return canvas
+        return paintDigitTemplate(canvas, seed, offsets)
+
+    return fold_repaint(grid, seeds, repaint)
 
 
 p = solve_e12f9a14

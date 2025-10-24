@@ -1,25 +1,29 @@
 """Solver for ARC-AGI-2 task c7f57c3e (evaluation split)."""
 
 from collections import Counter, deque
+from typing import List, Tuple
+
+Grid = List[List[int]]
+Color = int
 
 
-def _copy_grid(grid):
+def _copy_grid(grid: Grid) -> Grid:
     return [row[:] for row in grid]
 
 
-def _most_common_color(grid):
-    counts = Counter()
+def _most_common_color(grid: Grid) -> Color:
+    counts: Counter[int] = Counter()
     for row in grid:
         counts.update(row)
     return counts.most_common(1)[0][0]
 
 
-def _palette_without(grid, background):
+def _palette_without(grid: Grid, background: Color) -> list[int]:
     colors = {val for row in grid for val in row if val != background}
     return sorted(colors)
 
 
-def _has_adjacent_colors(grid, color_a, color_b):
+def _has_adjacent_colors(grid: Grid, color_a: Color, color_b: Color) -> bool:
     rows = len(grid)
     cols = len(grid[0]) if rows else 0
     for r in range(rows):
@@ -33,7 +37,7 @@ def _has_adjacent_colors(grid, color_a, color_b):
     return False
 
 
-def _components(grid, target_color):
+def _components(grid: Grid, target_color: Color):
     rows = len(grid)
     cols = len(grid[0]) if rows else 0
     visited = [[False] * cols for _ in range(rows)]
@@ -57,7 +61,7 @@ def _components(grid, target_color):
     return comps
 
 
-def _apply_variant_a(grid, background, c1, c2, mid, high):
+def _apply_variant_a(grid: Grid, background: Color, c1: Color, c2: Color, mid: Color, high: Color) -> Grid:
     rows = len(grid)
     cols = len(grid[0]) if rows else 0
     out = _copy_grid(grid)
@@ -81,7 +85,7 @@ def _apply_variant_a(grid, background, c1, c2, mid, high):
     return out
 
 
-def _apply_variant_b(grid, background, c2, mid, high):
+def _apply_variant_b(grid: Grid, background: Color, c2: Color, mid: Color, high: Color) -> Grid:
     rows = len(grid)
     cols = len(grid[0]) if rows else 0
     out = _copy_grid(grid)
@@ -141,31 +145,47 @@ def _apply_variant_b(grid, background, c2, mid, high):
     return out
 
 
-def solve_c7f57c3e(grid):
+# --- DSL-style wrappers ----------------------------------------------------
+
+def analysePalette(grid: Grid) -> Tuple[Color, Color, Color, Color]:
     background = _most_common_color(grid)
-    palette = _palette_without(grid, background)
-    if not palette:
+    pal = _palette_without(grid, background)
+    if not pal:
+        return background, background, background, background
+    high = pal[-1]
+    candidates = [c for c in pal if c < high]
+    mid = max(candidates) if candidates else high
+    pivot = pal[1] if len(pal) > 1 else pal[0]
+    return background, pivot, mid, high
+
+
+def checkAdjacency(grid: Grid, mid: Color, pivot: Color) -> bool:
+    return _has_adjacent_colors(grid, mid, pivot)
+
+
+def applyVariantA(grid: Grid, palette: Tuple[Color, Color, Color, Color]) -> Grid:
+    background, pivot, mid, high = palette
+    pal = _palette_without(grid, background)
+    if len(pal) < 3 or mid == pivot:
         return _copy_grid(grid)
+    c1 = pal[0]
+    return _apply_variant_a(grid, background, c1, pivot, mid, high)
 
-    if len(palette) == 1:
+
+def applyVariantB(grid: Grid, palette: Tuple[Color, Color, Color, Color]) -> Grid:
+    background, pivot, mid, high = palette
+    pal = _palette_without(grid, background)
+    if len(pal) < 3 or mid == pivot:
         return _copy_grid(grid)
-
-    high = palette[-1]
-    candidates = [c for c in palette if c < high]
-    if not candidates:
-        return _copy_grid(grid)
-    mid = max(candidates)
-
-    pivot = palette[1] if len(palette) > 1 else palette[0]
-    c1 = palette[0]
-
-    if mid == pivot:
-        return _copy_grid(grid)
-
-    if _has_adjacent_colors(grid, mid, pivot):
-        return _apply_variant_a(grid, background, c1, pivot, mid, high)
-
     return _apply_variant_b(grid, background, pivot, mid, high)
+
+
+def solve_c7f57c3e(grid: Grid) -> Grid:
+    background, pivot, mid, highlight = analysePalette(grid)
+    palette = (background, pivot, mid, highlight)
+    if checkAdjacency(grid, mid, pivot):
+        return applyVariantA(grid, palette)
+    return applyVariantB(grid, palette)
 
 
 p = solve_c7f57c3e

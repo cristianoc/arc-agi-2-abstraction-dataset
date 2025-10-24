@@ -1,6 +1,11 @@
 """Solver for ARC-AGI-2 evaluation task faa9f03d."""
 
 from collections import Counter
+from typing import Dict, List, Tuple, Optional
+
+Grid = List[List[int]]
+Color = int
+ColourStats = Dict[int, Tuple[int, int]]
 
 
 def _copy(grid):
@@ -236,9 +241,46 @@ def _transform(grid):
     g = _suppress_lonely_sixes(g)
     return g
 
+def denoiseAndProfile(grid: Grid) -> Tuple[Grid, Optional[Color], ColourStats]:
+    stats = _analyze_color_stats(grid)
+    denoised, top = _remove_noise(grid)
+    dominant_colour = top[0] if top else None
+    return denoised, dominant_colour, stats
 
-def solve_faa9f03d(grid):
-    return _transform(grid)
+
+def bridgeSelectiveGaps(denoised: Grid, dominant_colour: Optional[Color], stats: ColourStats) -> Grid:
+    allowed = {3}
+    for color, (max_col, _max_row) in stats.items():
+        if color != 3 and max_col <= 4:
+            allowed.add(color)
+    g = _close_cols_selective(denoised, dominant_colour)
+    g = _close_rows_selective(g, allowed)
+    g = _flanked_selective(g, dominant_colour)
+    return g
+
+
+def extendBackbones(bridged: Grid, dominant_colour: Optional[Color]) -> Grid:
+    h = len(bridged)
+    mid = h // 2
+    rows_to_extend = [r for r in range(mid + 1) if Counter(v for v in bridged[r] if v)[3] >= 6]
+    g = _prune_sparse_top(bridged)
+    g = _extend_rows(g, rows_to_extend)
+    g = _propagate_ones(g)
+    return g
+
+
+def tailPropagation(extended: Grid) -> Grid:
+    g = _fill_tail_with_six(extended)
+    g = _extend_tail_six(g)
+    g = _suppress_lonely_sixes(g)
+    return g
+
+
+def solve_faa9f03d(grid: Grid) -> Grid:
+    denoised, dominant_colour, stats = denoiseAndProfile(grid)
+    bridged = bridgeSelectiveGaps(denoised, dominant_colour, stats)
+    extended = extendBackbones(bridged, dominant_colour)
+    return tailPropagation(extended)
 
 
 p = solve_faa9f03d

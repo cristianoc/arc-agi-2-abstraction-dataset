@@ -1,37 +1,43 @@
 """Solver for ARC-AGI-2 task 7b5033c1."""
 
+from typing import Dict, List, Tuple
 from collections import Counter
 
+Grid = List[List[int]]
 
-def solve_7b5033c1(grid):
-    """Collapse non-background colours into a vertical histogram column."""
 
-    if not grid:
-        return []
+def tallyColours(grid: Grid) -> Dict[int, int]:
+    return dict(Counter(color for row in grid for color in row))
 
-    counts = Counter()
-    first_pos = {}
-    for y, row in enumerate(grid):
-        for x, colour in enumerate(row):
-            counts[colour] += 1
-            if colour not in first_pos or (y, x) < first_pos[colour]:
-                first_pos[colour] = (y, x)
 
+def findFirstPosition(grid: Grid) -> Dict[int, Tuple[int, int]]:
+    positions = [(color, (r, c)) for r, row in enumerate(grid) for c, color in enumerate(row)]
+    ordered = sorted(positions, key=lambda t: (t[1][0], t[1][1]))
+    return {color: pos for color, pos in reversed(ordered)}
+
+
+def orderColoursByFirstSeen(counts: Dict[int, int], first_seen: Dict[int, Tuple[int, int]]) -> List[Tuple[int, int]]:
     if not counts:
         return []
-
-    # Background is the most common colour; ties fall back to the smallest code.
     background = max(counts.items(), key=lambda item: (item[1], -item[0]))[0]
-
-    histogram = []
-    for top, left, colour, amount in sorted(
-        (first_pos[c][0], first_pos[c][1], c, counts[c])
+    items = [
+        (first_seen[c][0], first_seen[c][1], c, counts[c])
         for c in counts
-        if c != background
-    ):
-        histogram.extend([[colour]] * amount)
+        if c != background and c in first_seen
+    ]
+    items_sorted = sorted(items, key=lambda t: (t[0], t[1], t[2]))
+    return [(c, cnt) for _, _, c, cnt in items_sorted]
 
-    return histogram
+
+def buildHistogramColumn(ordered: List[Tuple[int, int]]) -> Grid:
+    return [[color] for color, count in ordered for _ in range(count)]
+
+
+def solve_7b5033c1(grid: Grid) -> Grid:
+    counts = tallyColours(grid)
+    first_seen = findFirstPosition(grid)
+    ordered = orderColoursByFirstSeen(counts, first_seen)
+    return buildHistogramColumn(ordered)
 
 
 p = solve_7b5033c1

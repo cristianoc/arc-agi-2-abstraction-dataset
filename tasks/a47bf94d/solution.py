@@ -1,7 +1,20 @@
+from __future__ import annotations
+
 from collections import defaultdict, deque
+from typing import Dict, Iterable, List, Tuple
+
+Grid = List[List[int]]
+Cell = Tuple[int, int]
+ColourCentres = Dict[int, List[Cell]]
+PlacementMap = Dict[int, Tuple[Cell, Cell]]
+
+# Context for helpers that require grid dimensions without threading through signatures
+_CTX_H: int | None = None
+_CTX_W: int | None = None
+_CTX_GRID: Grid | None = None
 
 
-def _detect_squares(grid):
+def _detect_squares(grid: Grid) -> Dict[int, List[Tuple[int, int]]]:
     """Return mapping color->list of 3x3 square centers (row, col)."""
     h, w = len(grid), len(grid[0])
     visited = [[False] * w for _ in range(h)]
@@ -50,11 +63,11 @@ def _detect_squares(grid):
     return squares
 
 
-def _detect_patterns(grid):
+def _detect_patterns(grid: Grid) -> Tuple[Dict[int, Tuple[int, int]], Dict[int, Tuple[int, int]]]:
     """Detect existing plus-hollow (cardinal arms) and x-center (diagonal arms) patterns."""
     h, w = len(grid), len(grid[0])
-    plus = {}
-    diag = {}
+    plus: Dict[int, Tuple[int, int]] = {}
+    diag: Dict[int, Tuple[int, int]] = {}
 
     for r in range(1, h - 1):
         for c in range(1, w - 1):
@@ -77,7 +90,10 @@ def _detect_patterns(grid):
     return plus, diag
 
 
-def _orientation(squares, plus):
+def _orientation(
+    squares: Dict[int, List[Tuple[int, int]]],
+    plus: Dict[int, Tuple[int, int]],
+) -> Tuple[str, int]:
     if squares:
         rows = {pos[0] for centers in squares.values() for pos in centers}
         cols = {pos[1] for centers in squares.values() for pos in centers}
@@ -97,8 +113,14 @@ def _orientation(squares, plus):
     return "row", 1
 
 
-def _gather_refs(colors, squares, plus, diag, orient):
-    refs = {}
+def _gather_refs(
+    colors: Iterable[int],
+    squares: Dict[int, List[Tuple[int, int]]],
+    plus: Dict[int, Tuple[int, int]],
+    diag: Dict[int, Tuple[int, int]],
+    orient: str,
+) -> Dict[int, int]:
+    refs: Dict[int, int] = {}
     for color in colors:
         if color in squares:
             pos = squares[color][0]
@@ -112,7 +134,7 @@ def _gather_refs(colors, squares, plus, diag, orient):
     return refs
 
 
-def _derive_axis_positions(refs, count, bounds):
+def _derive_axis_positions(refs: List[int], count: int, bounds: Tuple[int, int]) -> List[int]:
     low, high = bounds
     positions = sorted(set(refs))
     if not positions:
@@ -148,7 +170,7 @@ def _derive_axis_positions(refs, count, bounds):
     return positions
 
 
-def _apply_plus(grid, r, c, color):
+def _apply_plus(grid: Grid, r: int, c: int, color: int) -> None:
     for dr in (-1, 0, 1):
         for dc in (-1, 0, 1):
             grid[r + dr][c + dc] = 0
@@ -156,7 +178,7 @@ def _apply_plus(grid, r, c, color):
     grid[r][c - 1] = grid[r][c + 1] = color
 
 
-def _apply_x(grid, r, c, color):
+def _apply_x(grid: Grid, r: int, c: int, color: int) -> None:
     for dr in (-1, 0, 1):
         for dc in (-1, 0, 1):
             grid[r + dr][c + dc] = 0
@@ -165,41 +187,58 @@ def _apply_x(grid, r, c, color):
     grid[r + 1][c - 1] = grid[r + 1][c + 1] = color
 
 
-def _last_nonzero_row(grid):
+def _last_nonzero_row(grid: Grid) -> int:
     for r in range(len(grid) - 1, -1, -1):
         if any(cell != 0 for cell in grid[r]):
             return r
     return -1
 
 
-def solve_a47bf94d(grid):
-    h, w = len(grid), len(grid[0])
-    squares = _detect_squares(grid)
-    plus_in, diag_in = _detect_patterns(grid)
-    colors = set(squares) | set(plus_in) | set(diag_in)
+def detect3x3Squares(grid: Grid) -> ColourCentres:
+    # Initialize context for downstream placement derivation
+    global _CTX_H, _CTX_W, _CTX_GRID
+    _CTX_H, _CTX_W, _CTX_GRID = len(grid), len(grid[0]), grid
+    return _detect_squares(grid)
 
-    orient, axis_val = _orientation(squares, plus_in)
-    refs = _gather_refs(colors, squares, plus_in, diag_in, orient)
+
+def detectExistingPatterns(grid: Grid) -> Tuple[Dict[int, Tuple[int, int]], Dict[int, Tuple[int, int]]]:
+    return _detect_patterns(grid)
+
+
+def determinePlacementCentres(
+    plus_axes: Dict[int, Tuple[int, int]],
+    x_axes: Dict[int, Tuple[int, int]],
+    squares: Dict[int, List[Tuple[int, int]]],
+) -> PlacementMap:
+    # Recreate original target computation deterministically
+    global _CTX_H, _CTX_W, _CTX_GRID
+    if _CTX_H is None or _CTX_W is None or _CTX_GRID is None:
+        raise RuntimeError("Grid context not initialized for determinePlacementCentres")
+    h, w, grid = _CTX_H, _CTX_W, _CTX_GRID
+
+    # Build colours set
+    colors = set(squares) | set(plus_axes) | set(x_axes)
+
+    orient, axis_val = _orientation(squares, plus_axes)
+    refs = _gather_refs(colors, squares, plus_axes, x_axes, orient)
+
     axis_bounds = (1, (w if orient == "row" else h) - 2)
     axis_positions = _derive_axis_positions(list(refs.values()), len(colors), axis_bounds)
 
     colors_sorted = sorted(colors, key=lambda c: (refs[c], c))
-    plus_targets = {}
+    plus_targets: Dict[int, Tuple[int, int]] = {}
     for slot, color in enumerate(colors_sorted):
         coord = axis_positions[slot]
-        if orient == "row":
-            plus_targets[color] = (axis_val, coord)
-        else:
-            plus_targets[color] = (coord, axis_val)
+        plus_targets[color] = (axis_val, coord) if orient == "row" else (coord, axis_val)
 
     preferred_row = [4, 2, 1, 3, 6, 5, 7, 8, 9]
     preferred_col = [2, 4, 1, 3, 6, 5, 7, 8, 9]
     preferred = preferred_row if orient == "row" else preferred_col
 
     available_slots = set(range(len(axis_positions)))
-    x_targets = {}
-    if diag_in:
-        for color, pos in diag_in.items():
+    x_targets: Dict[int, Tuple[int, int]] = {}
+    if x_axes:
+        for color, pos in x_axes.items():
             coord = pos[1] if orient == "row" else pos[0]
             idx = min(range(len(axis_positions)), key=lambda i: abs(axis_positions[i] - coord))
             available_slots.discard(idx)
@@ -212,28 +251,66 @@ def solve_a47bf94d(grid):
     remaining_coords = [axis_positions[idx] for idx in remaining_slots]
 
     if orient == "row":
-        if diag_in:
-            default_row = sorted({pos[0] for pos in diag_in.values()})[0]
+        if x_axes:
+            default_row = sorted({pos[0] for pos in x_axes.values()})[0]
         else:
             candidate = max(axis_val + 2, _last_nonzero_row(grid) + 2)
             default_row = min(candidate, h - 2)
         for color, col in zip(ordered, remaining_coords):
             x_targets[color] = (default_row, col)
     else:
-        if diag_in:
-            default_col = sorted({pos[1] for pos in diag_in.values()})[0]
+        if x_axes:
+            default_col = sorted({pos[1] for pos in x_axes.values()})[0]
         else:
             default_col = min(axis_val + 2, w - 2)
         for color, row in zip(ordered, remaining_coords):
             x_targets[color] = (row, default_col)
 
-    out = [row[:] for row in grid]
-    for color, (r, c) in plus_targets.items():
-        _apply_plus(out, r, c, color)
-    for color, (r, c) in x_targets.items():
-        _apply_x(out, r, c, color)
+    # Compose final placement map with insertion order matching colours_sorted for stability
+    placements: PlacementMap = {}
+    for color in colors_sorted:
+        p = plus_targets[color]
+        x = x_targets[color]
+        placements[color] = (p, x)
+    # Add any remaining colours not in colors_sorted (shouldn't occur) to preserve total coverage
+    for color in colors:
+        if color not in placements:
+            placements[color] = (plus_targets[color], x_targets[color])
+    return placements
 
+
+def placePlus(canvas: Grid, centre: Tuple[int, int], colour: int) -> Grid:
+    r, c = centre
+    out = [row[:] for row in canvas]
+    _apply_plus(out, r, c, colour)
     return out
+
+
+def placeDiagonalX(canvas: Grid, centre: Tuple[int, int], colour: int) -> Grid:
+    r, c = centre
+    out = [row[:] for row in canvas]
+    _apply_x(out, r, c, colour)
+    return out
+
+
+def fold_repaint(canvas: Grid, items: Iterable, update):
+    out = [row[:] for row in canvas]
+    for entry in items:
+        out = update(out, entry)
+    return out
+
+
+def solve_a47bf94d(grid: Grid) -> Grid:
+    squares = detect3x3Squares(grid)
+    plus_axes, x_axes = detectExistingPatterns(grid)
+    centres = determinePlacementCentres(plus_axes, x_axes, squares)
+
+    def overlay(canvas: Grid, entry):
+        colour, (plus_centre, x_centre) = entry
+        with_plus = placePlus(canvas, plus_centre, colour)
+        return placeDiagonalX(with_plus, x_centre, colour)
+
+    return fold_repaint(grid, list(centres.items()), overlay)
 
 
 p = solve_a47bf94d

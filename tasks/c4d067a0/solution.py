@@ -1,98 +1,165 @@
 """Solver for ARC-AGI-2 task c4d067a0 (split: evaluation)."""
 
+from __future__ import annotations
+
 from collections import Counter, defaultdict, deque
+from typing import DefaultDict, Dict, Iterable, List, Sequence, Tuple, cast
+
+Grid = List[List[int]]
+Component = Tuple[int, List[Tuple[int, int]]]
+ComponentSet = List[Component]
 
 
-def solve_c4d067a0(grid):
-    """Populate block columns according to instruction columns."""
-
-    height = len(grid)
-    width = len(grid[0]) if grid else 0
-
-    # Determine the background colour so we can ignore it when extracting signals.
-    flat = [cell for row in grid for cell in row]
-    background = Counter(flat).most_common(1)[0][0]
-
-    # Collect all connected components grouped by colour.
-    visited = [[False] * width for _ in range(height)]
-    components = []
-    for r in range(height):
-        for c in range(width):
-            if visited[r][c]:
+def _connected_components(grid: Grid) -> ComponentSet:
+    h = len(grid)
+    w = len(grid[0]) if grid else 0
+    seen = [[False] * w for _ in range(h)]
+    comps: ComponentSet = []
+    for r in range(h):
+        for c in range(w):
+            if seen[r][c]:
                 continue
             colour = grid[r][c]
-            visited[r][c] = True
-            queue = deque([(r, c)])
+            seen[r][c] = True
+            q = deque([(r, c)])
             cells = [(r, c)]
-            while queue:
-                cr, cc = queue.popleft()
+            while q:
+                cr, cc = q.popleft()
                 for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
                     nr, nc = cr + dr, cc + dc
-                    if 0 <= nr < height and 0 <= nc < width and not visited[nr][nc] and grid[nr][nc] == colour:
-                        visited[nr][nc] = True
-                        queue.append((nr, nc))
+                    if 0 <= nr < h and 0 <= nc < w and not seen[nr][nc] and grid[nr][nc] == colour:
+                        seen[nr][nc] = True
+                        q.append((nr, nc))
                         cells.append((nr, nc))
-            components.append((colour, cells))
+            comps.append((colour, cells))
+    return comps
 
-    # Instruction columns are encoded as singleton components.
+
+def extractComponents(grid: Grid) -> ComponentSet:
+    return _connected_components(grid)
+
+
+def _grid_size_from_components(components: ComponentSet) -> Tuple[int, int]:
+    max_r = 0
+    max_c = 0
+    for _, cells in components:
+        for r, c in cells:
+            if r > max_r:
+                max_r = r
+            if c > max_c:
+                max_c = c
+    return max_r + 1, max_c + 1
+
+
+def _background_from_components(components: ComponentSet) -> int:
+    colour_counts: Dict[int, int] = {}
+    for colour, cells in components:
+        colour_counts[colour] = colour_counts.get(colour, 0) + len(cells)
+    return max(colour_counts.items(), key=lambda kv: kv[1])[0]
+
+
+def decodeInstructionSequences(grid: Grid, components: ComponentSet) -> Tuple[List[int], List[List[int]]]:
+    h = len(grid)
+    background = Counter(cell for row in grid for cell in row).most_common(1)[0][0]
     instruction_cols = sorted(
         {cells[0][1] for colour, cells in components if colour != background and len(cells) == 1}
     )
-    if not instruction_cols:
-        return [row[:] for row in grid]
-
-    sequences = [
-        [grid[r][col] for r in range(height) if grid[r][col] != background]
+    sequences: List[List[int]] = [
+        [grid[r][col] for r in range(h) if grid[r][col] != background]
         for col in instruction_cols
     ]
+    return instruction_cols, sequences
 
-    # Template blocks are the components larger than one cell.
-    template_components = [
+
+def inferColumnGeometry(components: ComponentSet) -> Dict[str, object]:
+    # Derive canvas size and background purely from components.
+    height, width = _grid_size_from_components(components)
+    background = _background_from_components(components)
+
+    # Template components are non-background and larger than one cell.
+    template_components: ComponentSet = [
         (colour, cells)
         for colour, cells in components
         if colour != background and len(cells) > 1
     ]
     if not template_components:
-        return [row[:] for row in grid]
+        # Fallback minimal geometry
+        return {
+            "height": height,
+            "width": width,
+            "mask": [],
+            "block_height": 0,
+            "spacing": 0,
+            "base_col": 0,
+            "grouped": defaultdict(list),
+            "base_grid": _reconstruct_grid(components, height, width),
+        }
 
-    def component_key(item):
-        colour, cells = item
-        min_col = min(c for _, c in cells)
-        min_row = min(r for r, _ in cells)
-        return (min_col, min_row)
+    def comp_key(comp: Component) -> Tuple[int, int]:
+        _, cells = comp
+        return (min(c for _, c in cells), min(r for r, _ in cells))
 
-    template_components.sort(key=component_key)
-    base_colour, base_cells = template_components[0]
+    template_components.sort(key=comp_key)
+
+    # Establish the block mask from the first template component.
+    _, base_cells = template_components[0]
     base_row = min(r for r, _ in base_cells)
     base_col = min(c for _, c in base_cells)
     mask = [(r - base_row, c - base_col) for r, c in base_cells]
     block_height = 1 + max(dr for dr, _ in mask)
     block_width = 1 + max(dc for _, dc in mask)
 
+    # Horizontal spacing learned from existing template columns; fallback to block_width.
     existing_cols = sorted({min(c for _, c in cells) for _, cells in template_components})
     if len(existing_cols) >= 2:
         deltas = [existing_cols[i + 1] - existing_cols[i] for i in range(len(existing_cols) - 1)]
         spacing = Counter(deltas).most_common(1)[0][0]
     else:
-        spacing = (
-            abs(instruction_cols[1] - instruction_cols[0])
-            if len(instruction_cols) >= 2
-            else block_width
-        )
+        # If only one template column exists, we cannot infer spacing robustly here;
+        # default to block_width (the main solver previously also allowed an alt fallback).
+        spacing = block_width
 
-    step = spacing
-    column_count = len(sequences)
-    column_positions = [base_col + i * spacing for i in range(column_count)]
-
-    grouped_components = defaultdict(list)
+    grouped: DefaultDict[int, ComponentSet] = defaultdict(list)
     for colour, cells in template_components:
         col_start = min(c for _, c in cells)
         index = (col_start - base_col) // spacing if spacing else 0
-        grouped_components[index].append((colour, cells))
+        grouped[index].append((colour, cells))
+
+    return {
+        "height": height,
+        "width": width,
+        "mask": mask,
+        "block_height": block_height,
+        "spacing": spacing,
+        "base_col": base_col,
+        "grouped": grouped,
+        "base_grid": _reconstruct_grid(components, height, width),
+    }
+
+
+def _reconstruct_grid(components: ComponentSet, height: int, width: int) -> Grid:
+    out = [[0] * width for _ in range(height)]
+    for colour, cells in components:
+        for r, c in cells:
+            out[r][c] = colour
+    return out
+
+
+def stackColumns(geometry: Dict[str, object], sequences: List[List[int]]) -> Grid:
+    height: int = cast(int, geometry["height"])  # type: ignore[index]
+    width: int = cast(int, geometry["width"])  # type: ignore[index]
+    mask: List[Tuple[int, int]] = cast(List[Tuple[int, int]], geometry["mask"])  # type: ignore[index]
+    block_height: int = cast(int, geometry["block_height"])  # type: ignore[index]
+    spacing: int = cast(int, geometry["spacing"])  # type: ignore[index]
+    base_col: int = cast(int, geometry["base_col"])  # type: ignore[index]
+    grouped: DefaultDict[int, ComponentSet] = cast(DefaultDict[int, ComponentSet], geometry["grouped"])  # type: ignore[index]
+    base_grid: Grid = cast(Grid, geometry["base_grid"])  # type: ignore[index]
+
+    column_count = len(sequences)
 
     # Determine the common bottom row so that all columns align at their final block.
-    candidate_last_rows = []
-    for index, comps in grouped_components.items():
+    candidate_last_rows: List[int] = []
+    for index, comps in grouped.items():
         if not (0 <= index < column_count):
             continue
         sequence = sequences[index]
@@ -100,14 +167,14 @@ def solve_c4d067a0(grid):
             top_row = min(r for r, _ in cells)
             for seq_index, value in enumerate(sequence):
                 if value == colour:
-                    last_row = top_row + (len(sequence) - 1 - seq_index) * step
+                    last_row = top_row + (len(sequence) - 1 - seq_index) * spacing
                     candidate_last_rows.append(last_row)
 
     def fits(last_row: int) -> bool:
         if not (0 <= last_row <= height - block_height):
             return False
         for sequence in sequences:
-            top_row = last_row - (len(sequence) - 1) * step
+            top_row = last_row - (len(sequence) - 1) * spacing
             if top_row < 0:
                 return False
         return True
@@ -122,19 +189,26 @@ def solve_c4d067a0(grid):
                 last_row = row
                 break
 
-    output = [row[:] for row in grid]
+    # Paint onto a reconstruction of the original grid to preserve other content.
+    output = [row[:] for row in base_grid]
     for idx, sequence in enumerate(sequences):
-        col_start = column_positions[idx]
-        top_row = last_row - (len(sequence) - 1) * step
+        col_start = base_col + idx * spacing
+        top_row = last_row - (len(sequence) - 1) * spacing
         for offset, colour in enumerate(sequence):
-            anchor_row = top_row + offset * step
+            anchor_row = top_row + offset * spacing
             for dr, dc in mask:
                 rr = anchor_row + dr
                 cc = col_start + dc
                 if 0 <= rr < height and 0 <= cc < width:
                     output[rr][cc] = colour
-
     return output
+
+
+def solve_c4d067a0(grid: Grid) -> Grid:
+    components = extractComponents(grid)
+    instruction_columns, sequences = decodeInstructionSequences(grid, components)
+    geometry = inferColumnGeometry(components)
+    return stackColumns(geometry, sequences)
 
 
 p = solve_c4d067a0

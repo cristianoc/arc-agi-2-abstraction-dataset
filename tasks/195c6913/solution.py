@@ -1,9 +1,10 @@
 """Solver for ARC-AGI-2 task 195c6913 (split: evaluation)."""
 
 from collections import deque
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Any, Callable, Dict, Iterable, List, Sequence, Tuple
 
 Grid = List[List[int]]
+Anchor = Any  # anchor payload assembled by locateAnchors
 
 
 def _iter_components(grid: Sequence[Sequence[int]]) -> Iterable[Tuple[int, List[Tuple[int, int]]]]:
@@ -34,21 +35,13 @@ def _iter_components(grid: Sequence[Sequence[int]]) -> Iterable[Tuple[int, List[
             yield color, cells
 
 
-def solve_195c6913(grid: Grid) -> Grid:
-    """Reconstruct the legend-driven pattern and propagate it across the canvas."""
+# === DSL-style helpers ===
 
-    if not grid or not grid[0]:
-        return [row[:] for row in grid]
+def iterComponents(grid: Grid) -> List[Tuple[int, List[Tuple[int, int]]]]:
+    return list(_iter_components(grid))
 
-    height = len(grid)
-    width = len(grid[0])
-    background = grid[0][0]
 
-    components = list(_iter_components(grid))
-    total_by_color: Dict[int, int] = {}
-    for color, cells in components:
-        total_by_color[color] = total_by_color.get(color, 0) + len(cells)
-
+def extractPalette(components: List[Tuple[int, List[Tuple[int, int]]]]) -> List[int]:
     palette_infos: List[Tuple[int, int, List[Tuple[int, int]]]] = []
     for color, cells in components:
         if len(cells) != 4:
@@ -60,26 +53,55 @@ def solve_195c6913(grid: Grid) -> Grid:
         if min(rows) > 2:
             continue
         palette_infos.append((min(cols), color, cells))
-
-    if not palette_infos:
-        return [row[:] for row in grid]
-
     palette_infos.sort(key=lambda item: item[0])
-    pattern: List[int] = [color for _, color, _ in palette_infos]
-    pattern_cells = [cells for _, _, cells in palette_infos]
-    pattern_len = len(pattern)
+    return [color for _, color, _ in palette_infos]
 
-    candidate_colors = [
-        (total_by_color[c], c)
-        for c in total_by_color
-        if c != background and c not in pattern
-    ]
-    if not candidate_colors:
+
+def _color_totals(grid: Grid) -> Dict[int, int]:
+    totals: Dict[int, int] = {}
+    for row in grid:
+        for v in row:
+            totals[v] = totals.get(v, 0) + 1
+    return totals
+
+
+def stripPalette(grid: Grid, pattern: List[int]) -> Grid:
+    if not grid or not grid[0]:
         return [row[:] for row in grid]
 
-    fill_color = max(candidate_colors)[1]
-    remaining_candidates = [item for item in candidate_colors if item[1] != fill_color]
-    cap_color = min(remaining_candidates)[1] if remaining_candidates else None
+    height = len(grid)
+    width = len(grid[0])
+    background = grid[0][0]
+
+    components = list(_iter_components(grid))
+    totals = _color_totals(grid)
+
+    # identify palette cells (2x2 legend at the top rows)
+    palette_infos: List[Tuple[int, int, List[Tuple[int, int]]]] = []
+    for color, cells in components:
+        if len(cells) != 4:
+            continue
+        rows = [r for r, _ in cells]
+        cols = [c for _, c in cells]
+        if max(rows) - min(rows) != 1 or max(cols) - min(cols) != 1:
+            continue
+        if min(rows) > 2:
+            continue
+        palette_infos.append((min(cols), color, cells))
+    palette_infos.sort(key=lambda item: item[0])
+    pattern_cells = [cells for _, _, cells in palette_infos]
+
+    # choose fill and cap colours from remaining palette
+    candidates = [
+        (totals[c], c)
+        for c in totals
+        if c != background and c not in set(pattern)
+    ]
+    if not candidates:
+        return [row[:] for row in grid]
+    fill_color = max(candidates)[1]
+    remaining = [item for item in candidates if item[1] != fill_color]
+    cap_color = min(remaining)[1] if remaining else None
 
     cap_component: List[Tuple[int, int]] = []
     if cap_color is not None:
@@ -87,15 +109,36 @@ def solve_195c6913(grid: Grid) -> Grid:
         if cap_comps:
             cap_component = min(cap_comps, key=len)
 
-    result = [row[:] for row in grid]
+    out = [row[:] for row in grid]
     for cells in pattern_cells:
         for r, c in cells:
-            result[r][c] = background
+            out[r][c] = background
     for r, c in cap_component:
-        result[r][c] = background
+        out[r][c] = background
+    return out
 
-    # locate anchor rows
-    anchor_rows: List[Tuple[int, int, int]] = []  # (row, boundary, start_idx)
+
+def locateAnchors(grid: Grid, pattern: List[int]) -> List[Tuple[int, int, int, str, int, int, Grid]]:
+    # returns anchors as (row, boundary, start_idx, role, fill_color, cap_color, base_grid)
+    if not grid or not grid[0]:
+        return []
+    height = len(grid)
+    width = len(grid[0])
+    background = grid[0][0]
+
+    totals = _color_totals(grid)
+    candidates = [
+        (totals[c], c)
+        for c in totals
+        if c != background and c not in set(pattern)
+    ]
+    if not candidates:
+        return []
+    fill_color = max(candidates)[1]
+    remaining = [item for item in candidates if item[1] != fill_color]
+    cap_color = min(remaining)[1] if remaining else None
+
+    anchors_basic: List[Tuple[int, int, int]] = []
     for r, row in enumerate(grid):
         first = row[0]
         if first not in pattern:
@@ -106,100 +149,144 @@ def solve_195c6913(grid: Grid) -> Grid:
             c += 1
         if c <= 1:
             continue
-        anchor_rows.append((r, c, start_idx))
+        anchors_basic.append((r, c, start_idx))
 
-    if not anchor_rows:
-        return result
+    if not anchors_basic:
+        return []
 
-    anchor_rows.sort()
+    anchors_basic.sort()
+    if len(anchors_basic) == 1:
+        r, b, s = anchors_basic[0]
+        role = "both"
+        return [(r, b, s, role, fill_color, cap_color if cap_color is not None else -1, grid)]
 
-    def fill_anchor_row(r: int, boundary: int, start_idx: int) -> None:
+    enriched: List[Tuple[int, int, int, str, int, int, Grid]] = []
+    for i, (r, b, s) in enumerate(anchors_basic):
+        if i == 0:
+            role = "top"
+        elif i == len(anchors_basic) - 1:
+            role = "bottom"
+        else:
+            role = "middle"
+        enriched.append((r, b, s, role, fill_color, cap_color if cap_color is not None else -1, grid))
+    return enriched
+
+
+def fold_repaint(initial: Grid, items: List[Anchor], update: Callable[[Grid, Anchor], Grid]) -> Grid:
+    canvas = [row[:] for row in initial]
+    for item in items:
+        canvas = update(canvas, item)
+    return canvas
+
+
+def propagatePattern(canvas: Grid, pattern: List[int], anchor: Tuple[int, int, int, str, int, int, Grid]) -> Grid:
+    # anchor = (row, boundary, start_idx, role, fill_color, cap_color, base_grid)
+    r_anchor, boundary, start_idx, role, fill_color, cap_color, base = anchor
+    height = len(canvas)
+    width = len(canvas[0]) if height else 0
+    pattern_len = len(pattern)
+
+    def paint_anchor_row(g: Grid, r: int, boundary: int, start_idx: int) -> Grid:
+        out = [row[:] for row in g]
         idx = start_idx
         for c in range(boundary):
-            result[r][c] = pattern[idx]
+            out[r][c] = pattern[idx]
             idx = (idx + 1) % pattern_len
-        if cap_color is not None and boundary < width:
-            result[r][boundary] = cap_color
+        if cap_color != -1 and boundary < width:
+            out[r][boundary] = cap_color
+        return out
 
-    for r, boundary, start_idx in anchor_rows:
-        fill_anchor_row(r, boundary, start_idx)
-
-    def propagate(r_anchor: int, boundary: int, start_idx: int, direction: int) -> None:
+    def propagate_dir(g: Grid, direction: int) -> Grid:
+        if not (0 <= r_anchor < height):
+            return g
+        out = [row[:] for row in g]
         col_last = boundary - 1
         if col_last < 0 or col_last >= width:
-            return
+            return out
         idx_anchor = (start_idx + col_last) % pattern_len
 
-        # walk along anchor column
         rows_col: List[Tuple[int, int]] = []
         r = r_anchor + direction
         current_idx = (idx_anchor - direction) % pattern_len
-        while 0 <= r < height and result[r][col_last] == fill_color:
-            result[r][col_last] = pattern[current_idx]
+        while 0 <= r < height and out[r][col_last] == fill_color:
+            out[r][col_last] = pattern[current_idx]
             rows_col.append((r, current_idx))
             r += direction
             current_idx = (current_idx - direction) % pattern_len
-        if rows_col and cap_color is not None and 0 <= r < height:
-            result[r][col_last] = cap_color
+        if rows_col and cap_color != -1 and 0 <= r < height:
+            out[r][col_last] = cap_color
 
         if not rows_col:
-            return
+            return out
 
         boundary_row, idx_boundary = rows_col[-1]
 
-        # fill boundary row horizontally to the right
         run_end = col_last
-        while run_end < width and grid[boundary_row][run_end] == fill_color:
+        while run_end < width and base[boundary_row][run_end] == fill_color:
             run_end += 1
         if run_end == col_last:
-            return
+            return out
 
         idx = idx_boundary
         for c in range(col_last, run_end):
-            result[boundary_row][c] = pattern[idx]
+            out[boundary_row][c] = pattern[idx]
             idx = (idx + 1) % pattern_len
-        if cap_color is not None and run_end < width:
-            result[boundary_row][run_end] = cap_color
+        if cap_color != -1 and run_end < width:
+            out[boundary_row][run_end] = cap_color
 
         col_right = run_end - 1
         idx_right = (idx_boundary + (run_end - col_last - 1)) % pattern_len
         rows_edge: List[Tuple[int, int]] = []
         r = boundary_row + direction
         current_idx = (idx_right - direction) % pattern_len
-        while 0 <= r < height and grid[r][col_right] == fill_color:
-            result[r][col_right] = pattern[current_idx]
+        while 0 <= r < height and base[r][col_right] == fill_color:
+            out[r][col_right] = pattern[current_idx]
             rows_edge.append((r, current_idx))
             r += direction
             current_idx = (current_idx - direction) % pattern_len
-        if rows_edge and cap_color is not None and 0 <= r < height:
-            result[r][col_right] = cap_color
+        if rows_edge and cap_color != -1 and 0 <= r < height:
+            out[r][col_right] = cap_color
 
         if not rows_edge:
-            return
+            return out
 
         row_idx, idx_value = rows_edge[-1]
         neighbor_row = row_idx + direction
-        if not (0 <= neighbor_row < height) or grid[neighbor_row][col_right] == fill_color:
-            return
+        if not (0 <= neighbor_row < height) or base[neighbor_row][col_right] == fill_color:
+            return out
 
         c = col_right + 1
         next_idx = (idx_value + 1) % pattern_len
-        while c < width and grid[row_idx][c] == fill_color:
-            result[row_idx][c] = pattern[next_idx]
+        while c < width and base[row_idx][c] == fill_color:
+            out[row_idx][c] = pattern[next_idx]
             next_idx = (next_idx + 1) % pattern_len
             c += 1
-        if cap_color is not None and c < width:
-            result[row_idx][c] = cap_color
+        if cap_color != -1 and c < width:
+            out[row_idx][c] = cap_color
+        return out
 
-    top_r, top_boundary, top_idx = anchor_rows[0]
-    propagate(top_r, top_boundary, top_idx, direction=-1)
-    if len(anchor_rows) == 1:
-        propagate(top_r, top_boundary, top_idx, direction=1)
-    else:
-        bottom_r, bottom_boundary, bottom_idx = anchor_rows[-1]
-        propagate(bottom_r, bottom_boundary, bottom_idx, direction=-1)
+    # fill the anchor row first
+    filled = paint_anchor_row(canvas, r_anchor, boundary, start_idx)
+    if role == "both":
+        return propagate_dir(propagate_dir(filled, direction=-1), direction=1)
+    if role == "top":
+        return propagate_dir(filled, direction=-1)
+    if role == "bottom":
+        return propagate_dir(filled, direction=-1)
+    # default for any middle anchors: upward only as conservative choice
+    return propagate_dir(filled, direction=-1)
 
-    return result
+
+def solve_195c6913(grid: Grid) -> Grid:
+    components = iterComponents(grid)
+    pattern = extractPalette(components)
+    result = stripPalette(grid, pattern)
+    anchors = locateAnchors(grid, pattern)
+
+    def propagate(canvas: Grid, anchor: Anchor) -> Grid:
+        return propagatePattern(canvas, pattern, anchor)
+
+    return fold_repaint(result, anchors, propagate)
 
 
 p = solve_195c6913

@@ -1,21 +1,33 @@
-"""Solver for ARC-AGI-2 task 2c181942."""
+"""Solver for ARC-AGI-2 task 2c181942.
+
+Refactored to align the main solver with the typed-DSL lambda while
+preserving original behaviour via pure helpers.
+"""
+
+from __future__ import annotations
 
 from collections import Counter, defaultdict
 from statistics import mean
+from typing import Dict, List, Optional, Sequence, Tuple
+
+Grid = List[List[int]]
+Coord = Tuple[int, int]
+Stats = Tuple[Counter[int], Dict[int, List[int]], Dict[int, List[int]], Dict[int, List[Coord]]]
+Axis = Optional[Tuple[int, Dict[int, int], Dict[int, List[Coord]]]]
 
 
 BACKGROUND = 8
 
 
-def _copy_grid(grid):
+def _copy_grid(grid: Grid) -> Grid:
     return [row[:] for row in grid]
 
 
-def _gather_color_stats(grid):
-    counts = Counter()
-    rows = defaultdict(list)
-    cols = defaultdict(list)
-    cells = defaultdict(list)
+def gatherColorStats(grid: Grid) -> Stats:
+    counts: Counter[int] = Counter()
+    rows: Dict[int, List[int]] = defaultdict(list)
+    cols: Dict[int, List[int]] = defaultdict(list)
+    cells: Dict[int, List[Coord]] = defaultdict(list)
     for r, row in enumerate(grid):
         for c, val in enumerate(row):
             if val == BACKGROUND:
@@ -27,14 +39,14 @@ def _gather_color_stats(grid):
     return counts, rows, cols, cells
 
 
-def _detect_axis(grid):
+def detectAxis(grid: Grid) -> Axis:
     """Return (axis_left_col, per-color counts, per-color cells) or None."""
     height, width = len(grid), len(grid[0])
-    best = None
-    best_cells = None
+    best: Optional[Tuple[int, int, Dict[int, int]]] = None
+    best_cells: Optional[Dict[int, List[Coord]]] = None
     for c in range(width - 1):
-        col_counts = Counter()
-        col_cells = defaultdict(list)
+        col_counts: Counter[int] = Counter()
+        col_cells: Dict[int, List[Coord]] = defaultdict(list)
         for r in range(height):
             for dc in (0, 1):
                 val = grid[r][c + dc]
@@ -49,13 +61,13 @@ def _detect_axis(grid):
         if best is None or score < best[0] or (score == best[0] and c < best[1]):
             best = (score, c, eligible)
             best_cells = col_cells
-    if best is None:
+    if best is None or best_cells is None:
         return None
     return best[1], best[2], best_cells
 
 
-def _select_vertical_colors(axis_counts, total_counts, axis_cells):
-    ranked = []
+def _select_vertical_colors(axis_counts: Dict[int, int], total_counts: Counter[int], axis_cells: Dict[int, List[Coord]]) -> Tuple[int, int]:
+    ranked: List[Tuple[float, int, int]] = []
     for color, cnt in axis_counts.items():
         ratio = cnt / total_counts[color]
         ranked.append((ratio, total_counts[color], color))
@@ -66,7 +78,16 @@ def _select_vertical_colors(axis_counts, total_counts, axis_cells):
     return chosen[0], chosen[-1]
 
 
-def _normalise_rows(mid_start, mid_end, height):
+def selectVerticalColors(stats: Stats, axis: Axis) -> Tuple[int, int]:
+    counts, _rows_by_color, _cols_by_color, _cells_by_color = stats
+    if axis is None or not counts:
+        return BACKGROUND, BACKGROUND
+    axis_left, axis_counts, axis_cells_map = axis
+    _ = axis_left  # unused here, kept for symmetry
+    return _select_vertical_colors(axis_counts, counts, axis_cells_map)
+
+
+def _normalise_rows(mid_start: int, mid_end: int, height: int) -> List[int]:
     rows = list(range(mid_start, mid_end + 1))
     while len(rows) < 4 and rows[0] > 0:
         rows.insert(0, rows[0] - 1)
@@ -81,39 +102,36 @@ def _normalise_rows(mid_start, mid_end, height):
     return rows
 
 
-def solve_2c181942(grid):
-    counts, rows_by_color, cols_by_color, _ = _gather_color_stats(grid)
-    if not counts:
+def fillVerticalArms(grid: Grid, colors: Tuple[int, int], axis: Axis) -> Grid:
+    # Preserve original guards inside helper
+    counts, _rows_by_color, _cols_by_color, _cells_by_color = gatherColorStats(grid)
+    if not counts or axis is None:
         return _copy_grid(grid)
 
-    axis_info = _detect_axis(grid)
-    if axis_info is None:
-        return _copy_grid(grid)
-    axis_left, axis_counts, axis_cells_map = axis_info
+    axis_left, axis_counts, axis_cells_map = axis
     axis_right = axis_left + 1
 
-    top_color, bottom_color = _select_vertical_colors(axis_counts, counts, axis_cells_map)
+    top_color, bottom_color = colors
+    # Find mid rows between extreme occurrences on the axis
     top_axis_rows = [r for r, _ in axis_cells_map[top_color]]
     bottom_axis_rows = [r for r, _ in axis_cells_map[bottom_color]]
     mid_rows = _normalise_rows(min(top_axis_rows), max(bottom_axis_rows), len(grid))
     mid_start, mid_end = mid_rows[0], mid_rows[-1]
 
-    axis_centre_row = (mid_start + mid_end) / 2
-    axis_centre_col = axis_left + 0.5
-
     width = len(grid[0])
-    output = [[BACKGROUND] * width for _ in range(len(grid))]
+    output: Grid = [[BACKGROUND] * width for _ in range(len(grid))]
 
-    def fill_vertical(color, start_row, step):
+    def fill_vertical(color: int, start_row: int, step: int) -> List[int]:
         remaining = counts[color]
         row = start_row
-        used_rows = set()
+        used_rows: List[int] = []
         while remaining > 0 and 0 <= row < len(grid):
             for col in (axis_left, axis_right):
                 if remaining <= 0:
                     break
                 output[row][col] = color
-                used_rows.add(row)
+                if row not in used_rows:
+                    used_rows.append(row)
                 remaining -= 1
             row += step
         return used_rows
@@ -121,9 +139,9 @@ def solve_2c181942(grid):
     top_rows_used = fill_vertical(top_color, mid_start, -1)
     fill_vertical(bottom_color, mid_end, 1)
 
-    top_row_count = len(top_rows_used)
+    # Selective top-row flare adjustment
     top_axis_ratio = axis_counts[top_color] / counts[top_color]
-    if top_row_count == 3 and top_axis_ratio < 0.5:
+    if len(top_rows_used) == 3 and top_axis_ratio < 0.5:
         topmost = min(top_rows_used)
         for col in (axis_left, axis_right):
             if output[topmost][col] == top_color:
@@ -135,16 +153,38 @@ def solve_2c181942(grid):
         if 0 <= right_target < width:
             output[topmost][right_target] = top_color
 
+    return output
+
+
+def placeHorizontalArms(grid: Grid, stats: Stats, axis: Axis) -> Grid:
+    counts, rows_by_color, cols_by_color, _cells_by_color = stats
+    if axis is None:
+        return _copy_grid(grid)
+    axis_left, axis_counts, axis_cells_map = axis
+    axis_right = axis_left + 1
+
+    # Recompute mid rows and centres deterministically from stats+axis
+    top_color, bottom_color = _select_vertical_colors(axis_counts, counts, axis_cells_map)
+    top_axis_rows = [r for r, _ in axis_cells_map[top_color]]
+    bottom_axis_rows = [r for r, _ in axis_cells_map[bottom_color]]
+    mid_rows = _normalise_rows(min(top_axis_rows), max(bottom_axis_rows), len(grid))
+    mid_start, mid_end = mid_rows[0], mid_rows[-1]
+    axis_centre_row = (mid_start + mid_end) / 2
+    axis_centre_col = axis_left + 0.5
+
+    width = len(grid[0])
+    output: Grid = [row[:] for row in grid]
+
     horizontal_colors = [color for color in counts if color not in (top_color, bottom_color)]
     if not horizontal_colors:
         return output
 
-    def centroid(color):
+    def centroid(color: int) -> Tuple[float, float]:
         rs = rows_by_color[color]
         cs = cols_by_color[color]
         return sum(rs) / len(rs), sum(cs) / len(cs)
 
-    deltas = []
+    deltas: List[Tuple[float, float, int]] = []
     for color in horizontal_colors:
         r_cent, c_cent = centroid(color)
         deltas.append((c_cent - axis_centre_col, r_cent - axis_centre_row, color))
@@ -168,7 +208,7 @@ def solve_2c181942(grid):
                 right_color = color
                 break
 
-    def row_counts(color):
+    def row_counts(color: int) -> List[int]:
         total = counts[color]
         delta_col, delta_row, _ = next(item for item in deltas if item[2] == color)
         if delta_row < 0:
@@ -184,7 +224,7 @@ def solve_2c181942(grid):
     left_counts = row_counts(left_color)
     right_counts = row_counts(right_color)
 
-    def place_run(row, start_col, count, color):
+    def place_run(row: int, start_col: int, count: int, color: int) -> None:
         if count <= 0:
             return
         start = max(0, min(start_col, width - count))
@@ -207,4 +247,14 @@ def solve_2c181942(grid):
     return output
 
 
+def solve_2c181942(grid: Grid) -> Grid:
+    stats = gatherColorStats(grid)
+    axis = detectAxis(grid)
+    top_color, bottom_color = selectVerticalColors(stats, axis)
+
+    result = fillVerticalArms(grid, (top_color, bottom_color), axis)
+    return placeHorizontalArms(result, stats, axis)
+
+
+# Alias used by the framework
 p = solve_2c181942

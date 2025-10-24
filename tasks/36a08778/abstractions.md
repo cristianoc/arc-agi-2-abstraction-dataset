@@ -23,6 +23,5 @@ def solve_36a08778(grid: Grid) -> Grid:
     scaffold_cols = extractScaffoldColumns(grid)
     scaffolded = extendScaffolds(grid, scaffold_cols)
     runs = collectRuns(grid)
-    wrap_targets = filterRunsByScaffold(runs, scaffolded)
-    return wrapRunsWithHalo(scaffolded, wrap_targets)
+    return wrapRunsWithHalo(scaffolded, runs)
 ```

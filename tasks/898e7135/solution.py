@@ -2,7 +2,7 @@
 
 from collections import Counter, defaultdict, deque
 from math import gcd, sqrt
-from typing import Dict, List, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 Grid = List[List[int]]
 Coord = Tuple[int, int]
@@ -11,7 +11,7 @@ Coord = Tuple[int, int]
 def _dominant_color(grid: Grid) -> int:
     """Return the most common nonzero color as the background color."""
     freq = Counter(val for row in grid for val in row if val != 0)
-    return max(freq, key=freq.get)
+    return max(freq, key=lambda k: freq[k])
 
 
 def _bbox_of_color(grid: Grid, color: int) -> Tuple[int, int, int, int]:
@@ -86,7 +86,59 @@ def _scale_grid(coarse: Grid, factor: int) -> Grid:
 
 
 def solve_898e7135(grid: Grid) -> Grid:
-    """Transform the grid according to the task's inferred abstraction."""
+    components = extractComponents(grid)
+    scale = inferScaleFactor(components)
+    upscaled = [expandComponent(component, scale) for component in components]
+    return composeUpscaledGrid(upscaled)
+
+
+p = solve_898e7135
+
+
+# === DSL-friendly helper wrappers (pure, no side effects) ===
+
+ComponentData = Dict[str, Grid]
+
+
+def extractComponents(grid: Grid) -> List[ComponentData]:
+    # Represent components abstractly by carrying the original grid once.
+    return [{"grid": grid}]
+
+
+def inferScaleFactor(components: List[ComponentData]) -> int:
+    grid = components[0]["grid"]
+    return _infer_scale_from_grid(grid)
+
+
+def expandComponent(component: ComponentData, scale: int) -> Grid:
+    grid = component["grid"]
+    return _solve_with_scale(grid, forced_scale=scale)
+
+
+def composeUpscaledGrid(upscaled: List[Grid]) -> Grid:
+    return upscaled[0]
+
+
+# === Original logic, factored as pure helpers ===
+
+def _infer_scale_from_grid(grid: Grid) -> int:
+    bg = _dominant_color(grid)
+    color_comps = _color_components(grid, bg)
+    significant = [cells for _, cells in color_comps if len(cells) >= 4]
+    scale_sq = 0
+    for cells in significant:
+        area = len(cells)
+        scale_sq = area if scale_sq == 0 else gcd(scale_sq, area)
+    if scale_sq <= 0:
+        scale_sq = 1
+    scale = max(1, int(round(sqrt(scale_sq))))
+    if scale * scale != scale_sq:
+        scale_sq = scale * scale
+        scale = int(round(sqrt(scale_sq)))
+    return scale
+
+
+def _solve_with_scale(grid: Grid, forced_scale: Optional[int] = None) -> Grid:
     bg = _dominant_color(grid)
     r0, r1, c0, c1 = _bbox_of_color(grid, bg)
     h, w = r1 - r0 + 1, c1 - c0 + 1
@@ -97,15 +149,20 @@ def solve_898e7135(grid: Grid) -> Grid:
     color_comps = _color_components(grid, bg)
 
     significant = [(color, cells) for color, cells in color_comps if len(cells) >= 4]
-    scale_sq = 0
-    for _, cells in significant:
-        area = len(cells)
-        scale_sq = area if scale_sq == 0 else gcd(scale_sq, area)
-    if scale_sq <= 0:
-        scale_sq = 1
-    scale = max(1, int(round(sqrt(scale_sq))))
-    if scale * scale != scale_sq:
+
+    if forced_scale is not None:
+        scale = max(1, forced_scale)
         scale_sq = scale * scale
+    else:
+        scale_sq = 0
+        for _, cells in significant:
+            area = len(cells)
+            scale_sq = area if scale_sq == 0 else gcd(scale_sq, area)
+        if scale_sq <= 0:
+            scale_sq = 1
+        scale = max(1, int(round(sqrt(scale_sq))))
+        if scale * scale != scale_sq:
+            scale_sq = scale * scale
 
     if not zero_comps:
         return _scale_grid(coarse, scale)
@@ -119,7 +176,9 @@ def solve_898e7135(grid: Grid) -> Grid:
     colors_by_size: Dict[int, List[Tuple[int, Tuple[float, float]]]] = defaultdict(list)
     for color, cells in significant:
         area = len(cells)
-        coarse_cells = area // scale_sq
+        if area % (scale * scale) != 0:
+            continue
+        coarse_cells = area // (scale * scale)
         if coarse_cells <= 0:
             continue
         cr = sum(r for r, _ in cells) / area
@@ -150,6 +209,3 @@ def solve_898e7135(grid: Grid) -> Grid:
                 coarse[r - r0][c - c0] = color
 
     return _scale_grid(coarse, scale)
-
-
-p = solve_898e7135

@@ -1,87 +1,101 @@
-"""Solver for ARC-AGI-2 task 0934a4d8."""
+"""Solver for ARC-AGI-2 task 0934a4d8 (typed DSL style)."""
 
-def _bounding_box(grid, target):
-    """Return the bounding box (inclusive/exclusive) of cells equal to ``target``."""
-    row_min = len(grid)
-    row_max = -1
-    col_min = len(grid[0])
-    col_max = -1
+from __future__ import annotations
 
-    for r, row in enumerate(grid):
-        for c, value in enumerate(row):
-            if value == target:
-                if r < row_min:
-                    row_min = r
-                if r > row_max:
-                    row_max = r
-                if c < col_min:
-                    col_min = c
-                if c > col_max:
-                    col_max = c
+from typing import List, Tuple, NamedTuple
 
-    if row_max == -1:
+
+# Typed aliases matching the DSL docs
+Grid = List[List[int]]
+Block = Grid
+
+
+class Candidate(NamedTuple):
+    block: Block
+    distance: int
+    count8: int
+    axis: str  # 'H' or 'V'
+
+
+def bbox(grid: Grid) -> Tuple[int, int, int, int]:
+    positions = [(r, c) for r, row in enumerate(grid) for c, v in enumerate(row) if v == 8]
+    if not positions:
         raise ValueError("target value not found in grid")
+    rows = [r for r, _ in positions]
+    cols = [c for _, c in positions]
+    r0 = min(rows)
+    r1 = max(rows) + 1
+    c0 = min(cols)
+    c1 = max(cols) + 1
+    return (r0, r1, c0, c1)
 
-    return row_min, row_max + 1, col_min, col_max + 1
+
+def _extract_block(grid: Grid, r_start: int, c_start: int, height: int, width: int) -> Block:
+    return [row[c_start : c_start + width] for row in grid[r_start : r_start + height]]
 
 
-def _extract_block(grid, r_start, c_start, height, width):
-    return [row[c_start:c_start + width] for row in grid[r_start:r_start + height]]
-
-
-def _flip_lr(block):
+def _flip_lr(block: Block) -> Block:
     return [list(reversed(row)) for row in block]
 
 
-def _flip_ud(block):
+def _flip_ud(block: Block) -> Block:
     return [row[:] for row in block[::-1]]
 
 
-def solve_0934a4d8(grid):
-    r0, r1, c0, c1 = _bounding_box(grid, 8)
+def mirrorH(grid: Grid, box: Tuple[int, int, int, int]) -> Candidate:
+    r0, r1, c0, c1 = box
+    height = r1 - r0
+    width = c1 - c0
+    total_cols = len(grid[0])
+    offset = 2
+    start = total_cols - width - c0 + offset
+    valid = 0 <= start <= total_cols - width
+    block = _extract_block(grid, r0, start, height, width) if valid else []
+    dist = abs(c0 - start) if valid else -1
+    cnt8 = sum(v == 8 for row in block for v in row) if valid else -1
+    return Candidate(block=block, distance=dist, count8=cnt8, axis='H')
+
+
+def mirrorV(grid: Grid, box: Tuple[int, int, int, int]) -> Candidate:
+    r0, r1, c0, c1 = box
     height = r1 - r0
     width = c1 - c0
     total_rows = len(grid)
-    total_cols = len(grid[0])
     offset = 2
+    start = total_rows - height - r0 + offset
+    valid = 0 <= start <= total_rows - height
+    block = _extract_block(grid, start, c0, height, width) if valid else []
+    dist = abs(r0 - start) if valid else -1
+    cnt8 = sum(v == 8 for row in block for v in row) if valid else -1
+    return Candidate(block=block, distance=dist, count8=cnt8, axis='V')
 
-    horizontal_start = total_cols - width - c0 + offset
-    vertical_start = total_rows - height - r0 + offset
 
-    horizontal_valid = 0 <= horizontal_start <= total_cols - width
-    vertical_valid = 0 <= vertical_start <= total_rows - height
+def selectCandidate(a: Candidate, b: Candidate) -> Candidate:
+    if a.distance > b.distance:
+        return a
+    if b.distance > a.distance:
+        return b
+    if a.distance < 0 <= b.distance:
+        return b
+    if b.distance < 0 <= a.distance:
+        return a
+    if b.count8 < a.count8:
+        return b
+    if a.count8 < b.count8:
+        return a
+    return a
 
-    block_h = None
-    dist_h = -1
-    if horizontal_valid:
-        block_h = _extract_block(grid, r0, horizontal_start, height, width)
-        dist_h = abs(c0 - horizontal_start)
 
-    block_v = None
-    dist_v = -1
-    if vertical_valid:
-        block_v = _extract_block(grid, vertical_start, c0, height, width)
-        dist_v = abs(r0 - vertical_start)
+def flipOutput(chosen: Candidate) -> Block:
+    return _flip_lr(chosen.block) if chosen.axis == 'H' else _flip_ud(chosen.block)
 
-    if dist_h > dist_v:
-        return _flip_lr(block_h)
-    if dist_v > dist_h:
-        return _flip_ud(block_v)
 
-    if block_h is None:
-        return _flip_ud(block_v)
-    if block_v is None:
-        return _flip_lr(block_h)
-
-    count8_h = sum(value == 8 for row in block_h for value in row)
-    count8_v = sum(value == 8 for row in block_v for value in row)
-
-    if count8_v < count8_h:
-        return _flip_ud(block_v)
-    if count8_h < count8_v:
-        return _flip_lr(block_h)
-
-    return _flip_lr(block_h)
+def solve_0934a4d8(grid: Grid) -> Block:
+    bbox_val = bbox(grid)
+    h_candidate = mirrorH(grid, bbox_val)
+    v_candidate = mirrorV(grid, bbox_val)
+    chosen = selectCandidate(h_candidate, v_candidate)
+    return flipOutput(chosen)
 
 
 p = solve_0934a4d8

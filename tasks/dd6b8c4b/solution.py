@@ -1,62 +1,100 @@
-"""Solver for ARC-AGI-2 task dd6b8c4b (split: evaluation)."""
+"""Solver for ARC-AGI-2 task dd6b8c4b (split: evaluation).
+
+Refactored to align the main entrypoint with the typed-DSL lambda
+representation while preserving the original behaviour.
+"""
+
+from __future__ import annotations
 
 from collections import Counter
+from typing import List, Tuple
+
+Grid = List[List[int]]
+Cell = Tuple[int, int]
+Score = int
 
 
-def solve_dd6b8c4b(grid):
-    """Rebalance scattered 9s by relocating them toward the central ring."""
-    height = len(grid)
-    width = len(grid[0])
-    center_row, center_col = height // 2, width // 2
+def _center(grid: Grid) -> Cell:
+    return (len(grid) // 2, len(grid[0]) // 2)
 
-    left_quadrants = 0
-    right_quadrants = 0
-    nine_cells = []
+
+def measureQuadrantImbalance(grid: Grid) -> int:
+    h, w = len(grid), len(grid[0])
+    cr, cc = _center(grid)
+    left = 0
+    right = 0
     for r, row in enumerate(grid):
-        for c, value in enumerate(row):
-            if value != 9:
+        for c, v in enumerate(row):
+            if v != 9:
                 continue
-            dr = r - center_row
-            dc = c - center_col
+            dr = r - cr
+            dc = c - cc
+            if dc > 0 and dr != 0:
+                right += 1
+            elif dc < 0 and dr != 0:
+                left += 1
+    return right - left
+
+
+def selectRingTargets(grid: Grid, imbalance: int) -> List[Cell]:
+    cr, cc = _center(grid)
+    ring_order: List[Cell] = [
+        (cr - 1, cc - 1),
+        (cr - 1, cc),
+        (cr - 1, cc + 1),
+        (cr, cc - 1),
+        (cr + 1, cc - 1),
+        (cr + 1, cc),
+        (cr + 1, cc + 1),
+        (cr, cc + 1),
+        (cr, cc),
+    ]
+    steps = max(0, min(len(ring_order), 2 * imbalance))
+    return ring_order[:steps]
+
+
+def scoreExistingNines(grid: Grid) -> List[Tuple[Score, Cell]]:
+    h, w = len(grid), len(grid[0])
+    cr, cc = _center(grid)
+    scored: List[Tuple[Score, Cell]] = []
+    for r, row in enumerate(grid):
+        for c, v in enumerate(row):
+            if v != 9:
+                continue
+            dr = r - cr
+            dc = c - cc
             abs_dr = abs(dr)
             abs_dc = abs(dc)
-            if dc > 0 and dr != 0:
-                right_quadrants += 1
-            elif dc < 0 and dr != 0:
-                left_quadrants += 1
-            boundary_flag = int(r in (0, height - 1) or c in (0, width - 1))
-            score = -3 * dr - abs_dr + abs_dc - boundary_flag
-            nine_cells.append((score, r, c))
+            boundary_flag = int(r in (0, h - 1) or c in (0, w - 1))
+            score: Score = (-3 * dr) - abs_dr + abs_dc - boundary_flag
+            scored.append((score, (r, c)))
+    scored.sort(key=lambda t: t[0])
+    return scored
 
-    diff = right_quadrants - left_quadrants
-    ring_order = [
-        (center_row - 1, center_col - 1),
-        (center_row - 1, center_col),
-        (center_row - 1, center_col + 1),
-        (center_row, center_col - 1),
-        (center_row + 1, center_col - 1),
-        (center_row + 1, center_col),
-        (center_row + 1, center_col + 1),
-        (center_row, center_col + 1),
-        (center_row, center_col),
-    ]
-    steps = max(0, min(len(ring_order), 2 * diff))
 
-    palette = Counter(val for row in grid for val in row)
-    background = palette.most_common(1)[0][0]
+def rebalanceNines(grid: Grid, ring_targets: List[Cell], ranked: List[Tuple[Score, Cell]]) -> Grid:
+    # Background is the most common colour in the grid.
+    background = Counter(v for row in grid for v in row).most_common(1)[0][0]
+    result: Grid = [row[:] for row in grid]
 
-    result = [row[:] for row in grid]
-
-    for idx in range(steps):
-        r, c = ring_order[idx]
+    # Promote ring targets to 9.
+    for r, c in ring_targets:
         result[r][c] = 9
 
-    nine_cells.sort()
-    for idx in range(min(steps, len(nine_cells))):
-        _, r, c = nine_cells[idx]
+    # Retire the same number of lowest-scoring original 9s.
+    retire = min(len(ring_targets), len(ranked))
+    for i in range(retire):
+        (__, (r, c)) = ranked[i]
         result[r][c] = background
 
     return result
+
+
+def solve_dd6b8c4b(grid: Grid) -> Grid:
+    imbalance = measureQuadrantImbalance(grid)
+    ring_targets = selectRingTargets(grid, imbalance)
+    ranked = scoreExistingNines(grid)
+    return rebalanceNines(grid, ring_targets, ranked)
 
 
 p = solve_dd6b8c4b

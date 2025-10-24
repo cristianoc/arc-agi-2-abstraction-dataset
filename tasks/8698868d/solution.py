@@ -15,7 +15,7 @@ def _most_common_color(grid: Grid) -> int:
     return Counter(val for row in grid for val in row).most_common(1)[0][0]
 
 
-def _extract_components(grid: Grid, *, ignore: Iterable[int]) -> List[Dict]:
+def _extract_components(grid: Grid, ignore: Iterable[int]) -> List[Dict]:
     h, w = len(grid), len(grid[0])
     ignore_set = set(ignore)
     seen = [[False] * w for _ in range(h)]
@@ -167,9 +167,8 @@ def _render_solution(
 
 
 def solve_8698868d(grid: Grid) -> Grid:
-    """Task-specific transformation (work-in-progress)."""
     base_color = _most_common_color(grid)
-    components = _extract_components(grid, ignore=[base_color])
+    components = _extract_components(grid, (base_color,))
     backgrounds, shapes = _classify_components(components)
 
     # Guard: ensure consistent tile sizes

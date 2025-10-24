@@ -1,33 +1,56 @@
-"""Solver for ARC-AGI-2 task 7b80bb43."""
+"""Solver for ARC-AGI-2 task 7b80bb43.
+
+Refactored to align the main entry with the typed-DSL lambda
+composition while preserving original semantics.
+"""
 
 from collections import Counter
+from typing import Dict, List, Tuple
+
+Grid = List[List[int]]
+BoolMatrix = List[List[bool]]
+ColumnMasks = Dict[int, List[bool]]
 
 
-def solve_7b80bb43(grid):
-    """Regularise axis-aligned linework to match the task's rectified patterns."""
+def _copy_grid(grid: Grid) -> Grid:
+    return [row[:] for row in grid]
 
+
+def computeForegroundMask(grid: Grid) -> Tuple[int, int, BoolMatrix]:
+    """Return (foreground_color, background_color, mask) for the dominant line color.
+
+    The mask is True where the foreground color occurs.
+    """
     height = len(grid)
     width = len(grid[0]) if height else 0
     if height == 0 or width == 0:
-        return [row[:] for row in grid]
+        return 0, 0, []
 
     flat = [cell for row in grid for cell in row]
     counts = Counter(flat)
     if not counts:
-        return [row[:] for row in grid]
+        return 0, 0, []
 
     background = counts.most_common(1)[0][0]
     foreground_candidates = [color for color in counts if color != background]
     if not foreground_candidates:
-        return [row[:] for row in grid]
+        # Single-color input: treat it as both foreground and background; mask empty
+        # so downstream will return the original grid (all background painted).
+        return background, background, [[False for _ in row] for row in grid]
 
     foreground = max(foreground_candidates, key=lambda color: counts[color])
     if counts[foreground] == 0:
-        return [row[:] for row in grid]
+        return background, background, [[False for _ in row] for row in grid]
 
-    mask = [[1 if cell == foreground else 0 for cell in row] for row in grid]
-    row_counts = [sum(row_mask) for row_mask in mask]
-    pivot_row = max(range(height), key=lambda r: row_counts[r])
+    mask: BoolMatrix = [[(cell == foreground) for cell in row] for row in grid]
+    return foreground, background, mask
+
+
+def selectKeyColumns(mask: BoolMatrix) -> List[int]:
+    height = len(mask)
+    width = len(mask[0]) if height else 0
+    if height == 0 or width == 0:
+        return []
 
     col_counts = [sum(mask[r][c] for r in range(height)) for c in range(width)]
     col_threshold = max(2, (height + 3) // 4)
@@ -35,7 +58,14 @@ def solve_7b80bb43(grid):
     if not key_cols:
         ordered = sorted(range(width), key=lambda c: col_counts[c], reverse=True)
         key_cols = ordered[: min(2, len(ordered))]
-    key_cols = sorted(key_cols)
+    return sorted(key_cols)
+
+
+def buildColumnMasks(mask: BoolMatrix, key_cols: List[int]) -> ColumnMasks:
+    height = len(mask)
+    width = len(mask[0]) if height else 0
+    if height == 0 or width == 0 or not key_cols:
+        return {}
 
     vertical_min_run = 2
     vertical_keep_gap = 2
@@ -43,13 +73,13 @@ def solve_7b80bb43(grid):
     vertical_bridge_min_run = 2
     vertical_support_radius = 2
 
-    col_masks: dict[int, list[bool]] = {}
+    col_masks: ColumnMasks = {}
     for col in key_cols:
         rows_with_color = [r for r in range(height) if mask[r][col]]
         if not rows_with_color:
             continue
 
-        runs: list[tuple[int, int]] = []
+        runs: List[Tuple[int, int]] = []
         start = prev = rows_with_color[0]
         for row in rows_with_color[1:]:
             if row == prev + 1:
@@ -59,7 +89,7 @@ def solve_7b80bb43(grid):
                 start = prev = row
         runs.append((start, prev))
 
-        kept_runs: list[tuple[int, int]] = []
+        kept_runs: List[Tuple[int, int]] = []
         for idx, (run_start, run_end) in enumerate(runs):
             run_length = run_end - run_start + 1
             if run_length >= vertical_min_run:
@@ -101,13 +131,31 @@ def solve_7b80bb43(grid):
 
         col_masks[col] = column_mask
 
+    return col_masks
+
+
+def extendRows(
+    mask: BoolMatrix,
+    col_masks: ColumnMasks,
+    key_columns: List[int],
+    foreground: int,
+    background: int,
+) -> Grid:
+    height = len(mask)
+    width = len(mask[0]) if height else 0
+    if height == 0 or width == 0:
+        return []
+
+    row_counts = [sum(row_mask) for row_mask in mask]
+    pivot_row = max(range(height), key=lambda r: row_counts[r])
+
     horizontal_min_keep = 2
     small_segment_limit = 3
     horizontal_gap_bridge = 3
 
-    segments_by_row: list[list[tuple[int, int]]] = []
+    segments_by_row: List[List[Tuple[int, int]]] = []
     for row in range(height):
-        segments: list[tuple[int, int]] = []
+        segments: List[Tuple[int, int]] = []
         col = 0
         while col < width:
             if mask[row][col]:
@@ -118,7 +166,7 @@ def solve_7b80bb43(grid):
                 segments.append((seg_start, seg_end))
             col += 1
 
-        kept_segments: list[tuple[int, int]] = []
+        kept_segments: List[Tuple[int, int]] = []
         for idx, (seg_start, seg_end) in enumerate(segments):
             seg_len = seg_end - seg_start + 1
             if seg_len >= horizontal_min_keep:
@@ -128,7 +176,7 @@ def solve_7b80bb43(grid):
             if seg_len == 1:
                 current_col = seg_start
                 col_mask = col_masks.get(current_col)
-                if current_col in key_cols and col_mask and col_mask[row]:
+                if (current_col in key_columns) and col_mask and col_mask[row]:
                     kept_segments.append((seg_start, seg_end))
                     continue
 
@@ -146,7 +194,7 @@ def solve_7b80bb43(grid):
 
         segments_by_row.append(kept_segments)
 
-    result = [[background for _ in range(width)] for _ in range(height)]
+    result: Grid = [[background for _ in range(width)] for _ in range(height)]
 
     for col, column_mask in col_masks.items():
         for row in range(height):
@@ -174,8 +222,9 @@ def solve_7b80bb43(grid):
             if len_right > small_segment_limit:
                 continue
 
-            left_has_key = any(seg_col in key_cols for seg_col in range(s1, e1 + 1))
-            right_has_key = any(seg_col in key_cols for seg_col in range(s2, e2 + 1))
+            # Only bridge when any side touches a key column (i.e., has vertical support)
+            left_has_key = any((c in key_columns) for c in range(s1, e1 + 1))
+            right_has_key = any((c in key_columns) for c in range(s2, e2 + 1))
             if not (left_has_key or right_has_key):
                 continue
 
@@ -184,6 +233,13 @@ def solve_7b80bb43(grid):
             bridged = True
 
     return result
+
+
+def solve_7b80bb43(grid: Grid) -> Grid:
+    foreground_color, background_color, mask = computeForegroundMask(grid)
+    key_columns = selectKeyColumns(mask)
+    column_masks = buildColumnMasks(mask, key_columns)
+    return extendRows(mask, column_masks, key_columns, foreground_color, background_color)
 
 
 p = solve_7b80bb43

@@ -7,19 +7,27 @@
 Final choice: `column_priority_v2` abstraction.
 
 ## DSL Structure
-- **Typed operations**
-  - `extractComponents : Grid -> Components` — gather non-background components with bounding boxes, areas, and centroids.
-  - `separateBackgroundAndShapes : Components -> TilePartition` — identify large background tiles vs. smaller motif shapes.
-  - `assignShapesToTiles : TilePartition -> Assignment` — pair shapes to background tiles by minimising row/column distance with column-heavy weighting.
-  - `renderTiledLayout : Grid × Assignment -> Grid` — tile the background colours into a grid layout and stamp each assigned shape into the centered position.
-- **Solver summary**: "Extract components, split background tiles from motifs, match motifs to tiles using a column-weighted cost, and render the tiled layout with centred shapes."
+- `_most_common_color : Grid -> Int` — find the dominant color of the grid.
+- `_extract_components : Grid × Iterable Int -> List Component` — extract connected components ignoring the given colors.
+- `_classify_components : Sequence Component -> Tuple List Component, List Component` — split background tiles from motif shapes.
+- `_group_backgrounds : Sequence Component -> Tuple List Component, Int, Int` — attach tile grid positions and infer rows/cols.
+- `_assign_shapes : Sequence Component × Sequence Component -> Assignment` — assign shapes to backgrounds using row/column-weighted distance.
+- `_render_solution : Grid × Sequence Component × Assignment × Int × Int -> Grid` — render tiled backgrounds and stamp assigned shapes centered.
+- `_clone : Grid -> Grid` — clone the grid.
 
 ## Lambda Representation
 
 ```python
 def solve_8698868d(grid: Grid) -> Grid:
-    components = extractComponents(grid)
-    backgrounds, shapes = separateBackgroundAndShapes(components)
-    assignments = assignShapesToTiles((backgrounds, shapes))
-    return renderTiledLayout(grid, assignments)
+    base_color = _most_common_color(grid)
+    components = _extract_components(grid, (base_color,))
+    backgrounds, shapes = _classify_components(components)
+
+    # Guard: ensure consistent tile sizes
+    if not backgrounds or len(backgrounds) != len(shapes):
+        return _clone(grid)
+
+    grouped_backgrounds, rows, cols = _group_backgrounds(backgrounds)
+    assignment = _assign_shapes(grouped_backgrounds, shapes)
+    return _render_solution(grid, grouped_backgrounds, assignment, rows, cols)
 ```

@@ -14,13 +14,18 @@ simple compression heuristic to keep the solver total.
 """
 
 from collections import Counter
+from typing import List, Optional, Tuple, Counter as TCounter
+
+Grid = List[List[int]]
+Signature = Tuple[Tuple[int, ...], ...]
+OutputPattern = Tuple[Tuple[int, ...], ...]
 
 
-def _row_signature(grid):
+def _row_signature(grid: Grid) -> Signature:
     """Return the deduplicated foreground colour sequences per row."""
 
     h, w = len(grid), len(grid[0])
-    frequency = Counter()
+    frequency: TCounter[int] = Counter()
     for row in grid:
         frequency.update(row)
     background = frequency.most_common(1)[0][0]
@@ -34,7 +39,7 @@ def _row_signature(grid):
     min_c = min(c for _, c in coords)
     max_c = max(c for _, c in coords)
 
-    sequences = []
+    sequences: List[Tuple[int, ...]] = []
     for r in range(min_r, max_r + 1):
         row = grid[r]
         seq = []
@@ -53,7 +58,7 @@ def _row_signature(grid):
     return tuple(sequences)
 
 
-PATTERN_TO_OUTPUT = {
+PATTERN_TO_OUTPUT: dict[Signature, OutputPattern] = {
     (
         (4,),
         (3, 4),
@@ -113,11 +118,11 @@ PATTERN_TO_OUTPUT = {
 }
 
 
-def _fallback(grid):
+def _fallback(grid: Grid) -> Grid:
     """Compress the foreground bounding box into a 5-column sketch."""
 
     h, w = len(grid), len(grid[0])
-    frequency = Counter()
+    frequency: TCounter[int] = Counter()
     for row in grid:
         frequency.update(row)
     background = frequency.most_common(1)[0][0]
@@ -146,11 +151,26 @@ def _fallback(grid):
     return result or [[background] * 5]
 
 
-def solve_e8686506(grid):
-    signature = _row_signature(grid)
-    if signature in PATTERN_TO_OUTPUT:
-        return [list(row) for row in PATTERN_TO_OUTPUT[signature]]
+# Typed DSL helpers matching abstractions.md
+def deriveRowSignature(grid: Grid) -> Signature:
+    return _row_signature(grid)
+
+
+def lookupMiniature(signature: Signature) -> Optional[Grid]:
+    pattern: Optional[OutputPattern] = PATTERN_TO_OUTPUT.get(signature)
+    return [list(row) for row in pattern] if pattern is not None else None
+
+
+def compressFallback(grid: Grid, signature: Signature) -> Grid:
     return _fallback(grid)
+
+
+def solve_e8686506(grid: Grid) -> Grid:
+    signature = deriveRowSignature(grid)
+    miniature = lookupMiniature(signature)
+    if miniature is not None:
+        return miniature
+    return compressFallback(grid, signature)
 
 
 p = solve_e8686506

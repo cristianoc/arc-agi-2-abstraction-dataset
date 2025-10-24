@@ -1,20 +1,41 @@
 """Solver for ARC-AGI-2 task 78332cb0."""
 
-# Segment the grid into separator-delimited tiles and rotate their order.
+from typing import List, Tuple
 
-def solve_78332cb0(grid):
-    """Reorder the 5x5 digit tiles separated by the color 6."""
-    separator = _find_separator_color(grid)
-    blocks = _extract_blocks(grid, separator)
-    ordered_blocks, orientation = _reorder_blocks(blocks)
-    return _assemble_output(ordered_blocks, orientation, separator)
+# Typed alias used by the DSL lambda
+Grid = List[List[int]]
 
 
-def _find_separator_color(grid):
+# DSL lambda-equivalent main entrypoint
+def solve_78332cb0(grid: Grid) -> Grid:
+    separator = detectSeparatorColor(grid)
+    blocks = segmentIntoBlocks(grid, separator)
+    ordered_blocks, orientation = rotateAndCycleBlocks(blocks)
+    return assembleBlocks(list(ordered_blocks), orientation, separator)
+
+
+# Thin wrappers to align helper names with the DSL lambda, delegating to existing logic
+def detectSeparatorColor(grid: Grid) -> int:
+    return _find_separator_color(grid)
+
+
+def segmentIntoBlocks(grid: Grid, separator: int) -> List[List[Grid]]:
+    return _extract_blocks(grid, separator)
+
+
+def rotateAndCycleBlocks(blocks: List[List[Grid]]) -> Tuple[List[Grid], str]:
+    return _reorder_blocks(blocks)
+
+
+def assembleBlocks(blocks: List[Grid], orientation: str, separator: int) -> Grid:
+    return _assemble_output(blocks, orientation, separator)
+
+
+def _find_separator_color(grid: Grid) -> int:
     colors = {cell for row in grid for cell in row}
     height, width = len(grid), len(grid[0])
 
-    def has_full_line(color):
+    def has_full_line(color: int) -> bool:
         row_full = any(all(cell == color for cell in row) for row in grid)
         col_full = any(all(grid[r][c] == color for r in range(height)) for c in range(width))
         return row_full or col_full
@@ -29,7 +50,7 @@ def _find_separator_color(grid):
     return 6
 
 
-def _extract_blocks(grid, separator):
+def _extract_blocks(grid: Grid, separator: int) -> List[List[Grid]]:
     row_segments = _segments_along_axis(grid, separator, axis=0)
     col_segments = _segments_along_axis(grid, separator, axis=1)
 
@@ -43,16 +64,21 @@ def _extract_blocks(grid, separator):
     return blocks
 
 
-def _segments_along_axis(grid, separator, axis):
+from typing import Optional
+
+
+def _segments_along_axis(grid: Grid, separator: int, axis: int) -> List[Tuple[int, int]]:
     if axis == 0:
         length = len(grid)
-        is_separator = lambda idx: all(cell == separator for cell in grid[idx])
+        def is_separator(idx: int) -> bool:
+            return all(cell == separator for cell in grid[idx])
     else:
         length = len(grid[0])
-        is_separator = lambda idx: all(row[idx] == separator for row in grid)
+        def is_separator(idx: int) -> bool:
+            return all(row[idx] == separator for row in grid)
 
-    segments = []
-    start = None
+    segments: List[Tuple[int, int]] = []
+    start: Optional[int] = None
     for idx in range(length):
         if is_separator(idx):
             if start is not None:
@@ -69,7 +95,7 @@ def _segments_along_axis(grid, separator, axis):
     return segments
 
 
-def _reorder_blocks(blocks):
+def _reorder_blocks(blocks: List[List[Grid]]) -> Tuple[List[Grid], str]:
     block_rows = len(blocks)
     block_cols = len(blocks[0]) if blocks else 0
 
@@ -86,12 +112,12 @@ def _reorder_blocks(blocks):
     return flat_blocks, orientation
 
 
-def _rotate_blocks_clockwise(blocks):
+def _rotate_blocks_clockwise(blocks: List[List[Grid]]) -> List[List[Grid]]:
     if not blocks:
         return []
     block_rows = len(blocks)
     block_cols = len(blocks[0])
-    rotated = [[None for _ in range(block_rows)] for _ in range(block_cols)]
+    rotated: List[List[Grid]] = [[blocks[0][0] for _ in range(block_rows)] for _ in range(block_cols)]
     for r, row in enumerate(blocks):
         for c, block in enumerate(row):
             nr = c
@@ -100,7 +126,7 @@ def _rotate_blocks_clockwise(blocks):
     return rotated
 
 
-def _assemble_output(blocks, orientation, separator):
+def _assemble_output(blocks: List[Grid], orientation: str, separator: int) -> Grid:
     if not blocks:
         return []
 
@@ -123,12 +149,12 @@ def _assemble_output(blocks, orientation, separator):
         return result
 
     total_height = len(blocks) * block_height + (len(blocks) - 1)
-    result = []
+    vresult: Grid = []
     for index, block in enumerate(blocks):
-        result.extend(row[:] for row in block)
+        vresult.extend(row[:] for row in block)
         if index != len(blocks) - 1:
-            result.append([separator] * block_width)
-    return result
+            vresult.append([separator] * block_width)
+    return vresult
 
 
 p = solve_78332cb0

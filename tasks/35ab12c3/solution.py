@@ -1,10 +1,15 @@
 """Solver for ARC-AGI-2 task 35ab12c3."""
 
 from collections import defaultdict
-from typing import Dict, Iterable, List, Sequence, Set, Tuple
+from typing import Dict, Iterable, List, Sequence, Set, Tuple, Optional, TypedDict
 
 Coord = Tuple[int, int]
 Grid = List[List[int]]
+
+# DSL helper type aliases (opaque aggregates for pipeline stages)
+Anchors = Tuple[Dict[int, List[Tuple[int, int]]], List[int], List[int]]
+Hulls = Tuple[Dict[int, Set[Tuple[int, int]]], Set[Tuple[int, int]]]
+Shifts = Dict[int, Set[Tuple[int, int]]]
 
 
 def _line_points(a: Coord, b: Coord) -> List[Coord]:
@@ -146,11 +151,7 @@ def _build_base_shape(points: Sequence[Coord], grid: Grid) -> Set[Coord]:
     return shape if shape else set(points)
 
 
-def solve_35ab12c3(grid):
-    """Solve the puzzle; implementation filled in iteratively."""
-    height = len(grid)
-    width = len(grid[0]) if grid else 0
-
+def extractAnchors(grid: Grid) -> Anchors:
     colors = sorted({cell for row in grid for cell in row if cell != 0})
     coord_map: Dict[int, List[Coord]] = {
         color: [
@@ -161,57 +162,91 @@ def solve_35ab12c3(grid):
         ]
         for color in colors
     }
-
     base_colors = [color for color, pts in coord_map.items() if len(pts) >= 2]
     derived_colors = [color for color, pts in coord_map.items() if len(pts) == 1]
+    return coord_map, base_colors, derived_colors
 
+
+def buildPrimaryHulls(grid: Grid) -> Hulls:
+    colors = sorted({cell for row in grid for cell in row if cell != 0})
+    coord_map: Dict[int, List[Coord]] = {
+        color: [
+            (r, c)
+            for r, row in enumerate(grid)
+            for c, value in enumerate(row)
+            if value == color
+        ]
+        for color in colors
+    }
+    base_colors = [color for color, pts in coord_map.items() if len(pts) >= 2]
     base_shapes: Dict[int, Set[Coord]] = {
         color: _build_base_shape(coord_map[color], grid)
         for color in base_colors
     }
     base_union: Set[Coord] = set().union(*base_shapes.values()) if base_shapes else set()
+    return base_shapes, base_union
 
+
+def matchSingletons(anchors: Anchors, primary_hulls: Hulls) -> Shifts:
+    coord_map, base_colors, derived_colors = anchors
+    base_shapes, base_union = primary_hulls
+
+    shifts: Shifts = {}
+    for color in derived_colors:
+        point = coord_map[color][0]
+        best: Optional[int] = None
+        anchor_color: Optional[int] = None
+        anchor_point: Optional[Coord] = None
+        for bc in base_colors:
+            for candidate in coord_map[bc]:
+                dist = abs(point[0] - candidate[0]) + abs(point[1] - candidate[1])
+                if best is None or dist < best:
+                    best = dist
+                    anchor_color = bc
+                    anchor_point = candidate
+
+        if anchor_color is None or anchor_point is None:
+            shifts[color] = {point}
+            continue
+
+        dr = point[0] - anchor_point[0]
+        dc = point[1] - anchor_point[1]
+        shifted: Set[Coord] = set()
+        for r, c in base_shapes[anchor_color]:
+            nr = r + dr
+            nc = c + dc
+            shifted.add((nr, nc))
+        shifted = {cell for cell in shifted if cell not in base_union}
+        shifted.add(point)
+        shifts[color] = shifted
+
+    return shifts
+
+
+def applyHullShifts(grid: Grid, primary_hulls: Hulls, shifts: Shifts) -> Grid:
+    height = len(grid)
+    width = len(grid[0]) if grid else 0
     result = [[0 for _ in range(width)] for _ in range(height)]
+    base_shapes, _ = primary_hulls
 
     for color, shape in base_shapes.items():
         for r, c in shape:
             if 0 <= r < height and 0 <= c < width:
                 result[r][c] = color
 
-    for color in derived_colors:
-        point = coord_map[color][0]
-        best = None
-        anchor_color = None
-        anchor_point = None
-        for base_color in base_colors:
-            for candidate in coord_map[base_color]:
-                dist = abs(point[0] - candidate[0]) + abs(point[1] - candidate[1])
-                if best is None or dist < best:
-                    best = dist
-                    anchor_color = base_color
-                    anchor_point = candidate
-
-        if anchor_color is None or anchor_point is None:
-            result[point[0]][point[1]] = color
-            continue
-
-        delta_r = point[0] - anchor_point[0]
-        delta_c = point[1] - anchor_point[1]
-
-        shifted: Set[Coord] = set()
-        for r, c in base_shapes[anchor_color]:
-            nr = r + delta_r
-            nc = c + delta_c
-            if 0 <= nr < height and 0 <= nc < width:
-                shifted.add((nr, nc))
-
-        shifted = {cell for cell in shifted if cell not in base_union}
-        shifted.add(point)
-
-        for r, c in shifted:
-            result[r][c] = color
+    for color, coords in shifts.items():
+        for r, c in coords:
+            if 0 <= r < height and 0 <= c < width:
+                result[r][c] = color
 
     return result
+
+
+def solve_35ab12c3(grid: Grid) -> Grid:
+    anchors = extractAnchors(grid)
+    primary_hulls = buildPrimaryHulls(grid)
+    shifts = matchSingletons(anchors, primary_hulls)
+    return applyHullShifts(grid, primary_hulls, shifts)
 
 
 p = solve_35ab12c3

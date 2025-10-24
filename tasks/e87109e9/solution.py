@@ -1,10 +1,17 @@
 """Solver for ARC-AGI-2 task e87109e9 (evaluation split)."""
 
 from collections import Counter
+from typing import Any, Iterable, List, Optional, Sequence, Set, Tuple
+
+# Typed aliases used by the DSL-style main
+Grid = List[List[int]]
+Color = int
+Digit = int
+Mask = Tuple[Tuple[int, ...], ...]
 
 
 # Pre-computed diff/target masks extracted from the training samples.
-_SAMPLE_DATA = [
+_SAMPLE_DATA: List[dict[str, Any]] = [
     {"digit": 1,
      "target": [[1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1]] ,
      "diff": [[0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1], [0, 0, 0, 0, 1, 1]] },
@@ -43,7 +50,7 @@ _SAMPLE_DATA = [
      "diff": [[1, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0], [1, 1, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]] },
 ]
 
-_SAMPLES = [
+_SAMPLES: List[Tuple[int, Mask, Mask]] = [
     (
         entry["digit"],
         tuple(tuple(row) for row in entry["target"]),
@@ -57,33 +64,72 @@ _MASK_ROWS = 16
 _HEADER_COLOR = 5
 
 
-def solve_e87109e9(grid):
-    """Render the scoreboard digits indicated by the header."""
-
-    if not grid:
-        return []
-
-    split = _find_body_start(grid)
-    header = grid[:split]
-    body = [row[:] for row in grid[split:]]
+def solve_e87109e9(grid: Grid) -> Grid:
+    header, body = splitHeaderBody(grid)
     if not body:
         return body
+    header_colours = set(
+        colour
+        for row in header
+        for colour in row
+        if colour != 0
+    )
+    target_colour = detectTargetColor(body, header_colours)
+    block_count = int(len(body[0]) / 6)
 
-    header_colors = {val for row in header for val in row if val not in (0, _HEADER_COLOR)}
-    target_color = _find_target_color(body, header_colors)
-
-    block_count = len(body[0]) // _BLOCK_WIDTH
-    for block in range(block_count):
-        digit = _read_digit(header, block)
+    def carve(canvas: Grid, block: int) -> Grid:
+        digit = readHeaderDigit(header, block)
         if digit is None:
-            continue
-        target_mask = _compute_target_mask(body, block, target_color)
-        diff_mask = _select_diff_mask(digit, target_mask)
+            return canvas
+        target_mask = buildTargetMask(canvas, block, target_colour)
+        diff_mask = selectDiffMask(digit, target_mask)
         if diff_mask is None:
-            continue
-        _apply_diff_mask(body, block, target_color, diff_mask)
+            return canvas
+        return applyDiffMask(canvas, block, target_colour, diff_mask)
 
-    return body
+    return fold_repaint(body, list(range(block_count)), carve)
+
+
+#
+# DSL helper wrappers (pure) bridging to the existing internal implementation.
+#
+
+def splitHeaderBody(grid: Grid) -> Tuple[Grid, Grid]:
+    if not grid:
+        return [], []
+    split = _find_body_start(grid)
+    header = [row[:] for row in grid[:split]]
+    body = [row[:] for row in grid[split:]]
+    return header, body
+
+
+def detectTargetColor(body: Grid, header_colours: Set[Color]) -> Color:
+    return _find_target_color(body, header_colours)
+
+
+def readHeaderDigit(header: Grid, block: int) -> Optional[Digit]:
+    return _read_digit(header, block)
+
+
+def buildTargetMask(canvas: Grid, block: int, target_colour: Color) -> Mask:
+    return _compute_target_mask(canvas, block, target_colour)
+
+
+def selectDiffMask(digit: Digit, target_mask: Mask) -> Optional[Mask]:
+    return _select_diff_mask(digit, target_mask)
+
+
+def applyDiffMask(canvas: Grid, block: int, target_colour: Color, diff_mask: Mask) -> Grid:
+    out = [row[:] for row in canvas]
+    _apply_diff_mask(out, block, target_colour, diff_mask)
+    return out
+
+
+def fold_repaint(canvas: Grid, items: Sequence[int], update):
+    g = [row[:] for row in canvas]
+    for x in items:
+        g = update(g, x)
+    return g
 
 
 def _find_body_start(grid):

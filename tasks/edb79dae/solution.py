@@ -1,12 +1,21 @@
 """Solver for ARC task edb79dae."""
 
 from collections import Counter
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Set, Tuple, TypedDict
 
 Grid = List[List[int]]
+ROI = Tuple[int, int, int, int]
 
 
-def _bounding_box(grid: Grid, color: int) -> Tuple[int, int, int, int]:
+class DigitInfo(TypedDict):
+    mask: Optional[Grid]
+    primary: int
+    secondary: int
+
+
+# --- Internal helpers (unchanged logic) ---
+
+def _bounding_box(grid: Grid, color: int) -> ROI:
     coords = [(r, c) for r, row in enumerate(grid) for c, val in enumerate(row) if val == color]
     if not coords:
         raise ValueError("Reference color for bounding box not found")
@@ -15,9 +24,9 @@ def _bounding_box(grid: Grid, color: int) -> Tuple[int, int, int, int]:
     return min(rows), max(rows), min(cols), max(cols)
 
 
-def _detect_block_size(grid: Grid, roi: Tuple[int, int, int, int], ignored: Tuple[int, ...]) -> int:
+def _detect_block_size(grid: Grid, roi: ROI, ignored: Tuple[int, ...]) -> int:
     min_r, max_r, min_c, max_c = roi
-    counts = Counter()
+    counts: Counter[int] = Counter()
     for r in range(min_r + 1, max_r):
         row = grid[r][min_c + 1 : max_c]
         current = None
@@ -37,7 +46,7 @@ def _detect_block_size(grid: Grid, roi: Tuple[int, int, int, int], ignored: Tupl
     return counts.most_common(1)[0][0]
 
 
-def _collect_digit_info(grid: Grid, roi: Tuple[int, int, int, int], block: int) -> Tuple[int, Dict[int, Dict[str, Grid]]]:
+def _collect_digit_info(grid: Grid, roi: ROI, block: int) -> Tuple[int, Dict[int, DigitInfo]]:
     min_r, max_r, min_c, max_c = roi
     rows_total = len(grid)
     cols_total = len(grid[0])
@@ -60,7 +69,7 @@ def _collect_digit_info(grid: Grid, roi: Tuple[int, int, int, int], block: int) 
             colors = {val for row in patch for val in row}
             blocks.append((patch, colors))
 
-    info: Dict[int, Dict[str, Grid]] = {}
+    info: Dict[int, DigitInfo] = {}
     for color in digit_colors:
         # Locate a block describing the shape (mask) for this color.
         mask_block = None
@@ -109,7 +118,7 @@ def _collect_digit_info(grid: Grid, roi: Tuple[int, int, int, int], block: int) 
     return top_background, info
 
 
-def _render_roi(grid: Grid, roi: Tuple[int, int, int, int], block: int, info: Dict[int, Dict[str, Grid]]) -> Grid:
+def _render_roi(grid: Grid, roi: ROI, block: int, info: Dict[int, DigitInfo]) -> Grid:
     min_r, max_r, min_c, max_c = roi
     result = [row[:] for row in grid]
 
@@ -164,13 +173,43 @@ def _render_roi(grid: Grid, roi: Tuple[int, int, int, int], block: int, info: Di
     return [row[min_c : max_c + 1] for row in result[min_r : max_r + 1]]
 
 
-def solve_edb79dae(grid: Grid) -> Grid:
-    roi = _bounding_box(grid, 5)
-    top_rows = grid[: roi[0]]
+# --- Typed-DSL wrapper operations used by the Lambda ---
+
+def findLegendROI(grid: Grid, color: int) -> ROI:
+    return _bounding_box(grid, color)
+
+
+def inferBlockSize(grid: Grid, roi: ROI, legend_colours: Set[int]) -> int:
+    # Behaviour-preserving: choose the dominant top background among the legend rows
+    # and ignore only that plus the frame colour 5 when inferring block size.
+    r0, _, _, _ = roi
+    top_rows = grid[:r0]
     top_bg = Counter(val for row in top_rows for val in row).most_common(1)[0][0]
-    block_size = _detect_block_size(grid, roi, (top_bg, 5))
-    _, digit_info = _collect_digit_info(grid, roi, block_size)
-    return _render_roi(grid, roi, block_size, digit_info)
+    return _detect_block_size(grid, roi, (top_bg, 5))
+
+
+def decodeDigitTemplates(grid: Grid, roi: ROI, block_size: int) -> Dict[int, DigitInfo]:
+    _, info = _collect_digit_info(grid, roi, block_size)
+    return info
+
+
+def renderDigitBlocks(grid: Grid, roi: ROI, block_size: int, templates: Dict[int, DigitInfo]) -> Grid:
+    return _render_roi(grid, roi, block_size, templates)
+
+
+# --- Lambda-aligned solver ---
+
+def solve_edb79dae(grid: Grid) -> Grid:
+    roi = findLegendROI(grid, 5)
+    r0, _, c0, _ = roi
+    legend_colours = set(
+        colour
+        for r in range(r0)
+        for colour in grid[r]
+    )
+    block_size = inferBlockSize(grid, roi, legend_colours)
+    templates = decodeDigitTemplates(grid, roi, block_size)
+    return renderDigitBlocks(grid, roi, block_size, templates)
 
 
 p = solve_edb79dae

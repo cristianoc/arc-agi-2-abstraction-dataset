@@ -1,52 +1,59 @@
 """Solver for ARC-AGI-2 task 1ae2feb7 (split: evaluation)."""
 
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 Grid = List[List[int]]
+Row = List[int]
 
 
-def _extend_row_with_blocks(row: List[int]) -> List[int]:
-    """Extend non-zero blocks found to the left of the final 2 across the row."""
-
+def _last_barrier(row: Row) -> Optional[int]:
     try:
-        barrier_col = max(idx for idx, val in enumerate(row) if val == 2)
+        return max(idx for idx, val in enumerate(row) if val == 2)
     except ValueError:
-        return row[:]  # no barrier; leave the row unchanged
+        return None
 
-    extended = row[:]
-    idx = 0
+
+def collectSegments(row: Row) -> List[Tuple[int, int]]:
+    barrier = _last_barrier(row)
+    if barrier is None:
+        return []
     segments: List[Tuple[int, int]] = []
-
-    while idx < barrier_col:
+    idx = 0
+    while idx < barrier:
         color = row[idx]
         if color == 0:
             idx += 1
             continue
-
         start = idx
-        while idx < barrier_col and row[idx] == color:
+        while idx < barrier and row[idx] == color:
             idx += 1
-
         segments.append((color, idx - start))
+    return segments
 
+
+def repeatSegments(row: Row, segments: List[Tuple[int, int]]) -> Row:
+    barrier = _last_barrier(row)
+    if barrier is None:
+        return row[:]
+    extended = row[:]
     width = len(row)
     for color, length in reversed(segments):
         if length <= 0:
             continue
-
-        pos = barrier_col + 1
+        pos = barrier + 1
         while pos < width:
             if extended[pos] == 0:
                 extended[pos] = color
             pos += length
-
     return extended
 
 
 def solve_1ae2feb7(grid: Grid) -> Grid:
-    """Propagate left-hand blocks across the barrier column of 2s."""
-
-    return [_extend_row_with_blocks(row) for row in grid]
+    def processRow(row: Row) -> Row:
+        segments = collectSegments(row)
+        return repeatSegments(row, segments)
+    
+    return [processRow(row) for row in grid]
 
 
 p = solve_1ae2feb7

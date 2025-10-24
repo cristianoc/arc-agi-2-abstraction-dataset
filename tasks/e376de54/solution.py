@@ -1,35 +1,40 @@
-"""Solver for ARC task e376de54.
+"""Solver for ARC task e376de54 (typed DSL wrapper).
 
-The transformation aligns families of coloured lines so that every member
-shares the same footprint as the middle line in that family.  A "line" here
-means a row, column, or diagonal (either slope) containing non-background
-cells.  We detect the dominant orientation by scoring how well the coloured
-cells cluster along each of the four candidate directions.  The direction that
-produces the strongest clustering supplies the line family for the task.
-
-Once the orientation is fixed, we identify the median line (by index within the
-family) and treat its coloured footprint as the canonical pattern.  Every other
-line is then rebuilt so that it matches this pattern after translating it onto
-the line.  Cells that fall outside the pattern are cleared back to background.
-This behaviour matches the three training demonstrations (diagonal, row, and
-column alignment) and captures the intended regularisation for the evaluation
-grid.
+This refactor preserves the original behaviour while exposing a small, typed
+pipeline compatible with the dataset’s DSL subset. The main `solve_e376de54`
+function matches the Lambda Representation in `abstractions.md` exactly.
 """
 
+from __future__ import annotations
+
 from collections import Counter, defaultdict
+from typing import Dict, Iterable, List, Literal, Sequence, Tuple, Union
+
+Grid = List[List[int]]
+Color = int
+Cell = Tuple[int, int, int]  # (row, col, color)
+Orientation = Literal["row", "col", "diag1", "diag2"]
+LineGroups = Dict[int, List[Cell]]
+
+# Pattern encodes the median footprint; diagonals also carry the base key for translation.
+RowPattern = Tuple[Literal["row"], List[int]]
+ColPattern = Tuple[Literal["col"], List[int]]
+Diag1Pattern = Tuple[Literal["diag1"], List[Tuple[int, int]], int]
+Diag2Pattern = Tuple[Literal["diag2"], List[Tuple[int, int]], int]
+Pattern = Union[RowPattern, ColPattern, Diag1Pattern, Diag2Pattern]
 
 
-def _deep_copy(grid):
+def _deep_copy(grid: Grid) -> Grid:
     return [row[:] for row in grid]
 
 
-def _flatten(grid):
+def _flatten(grid: Grid) -> Iterable[int]:
     for row in grid:
         for value in row:
             yield value
 
 
-def _orientation_key(name, r, c):
+def _orientation_key(name: Orientation, r: int, c: int) -> int:
     if name == "row":
         return r
     if name == "col":
@@ -41,79 +46,118 @@ def _orientation_key(name, r, c):
     raise ValueError(name)
 
 
-def solve_e376de54(grid):
-    """Regularise coloured lines so they share a canonical footprint."""
+# === DSL helper operations ===
 
-    height, width = len(grid), len(grid[0])
+def collectColoredCells(grid: Grid) -> Tuple[Color, List[Cell]]:
     background = Counter(_flatten(grid)).most_common(1)[0][0]
+    h, w = len(grid), len(grid[0])
+    cells = [
+        (r, c, grid[r][c])
+        for r in range(h)
+        for c in range(w)
+        if grid[r][c] != background
+    ]
+    return background, cells
 
-    cells = [(r, c, grid[r][c])
-             for r in range(height)
-             for c in range(width)
-             if grid[r][c] != background]
 
-    if not cells:
-        return _deep_copy(grid)
-
-    orientations = ("row", "col", "diag1", "diag2")
-    scored_lines = {}
-    lines_by_orientation = {}
+def scoreOrientations(coloured_cells: List[Cell]) -> Tuple[Orientation, LineGroups]:
+    orientations: Sequence[Orientation] = ("row", "col", "diag1", "diag2")
+    scored: Dict[Orientation, Tuple[int, int]] = {}
+    grouped: Dict[Orientation, LineGroups] = {}
 
     for name in orientations:
-        lines = defaultdict(list)
-        for r, c, val in cells:
+        lines: LineGroups = defaultdict(list)
+        for r, c, val in coloured_cells:
             lines[_orientation_key(name, r, c)].append((r, c, val))
         score = sum(len(group) - 1 for group in lines.values() if len(group) > 1)
         max_len = max((len(group) for group in lines.values()), default=0)
-        scored_lines[name] = (score, max_len)
-        lines_by_orientation[name] = lines
+        scored[name] = (score, max_len)
+        grouped[name] = lines
 
-    orientation = max(orientations, key=lambda name: scored_lines[name])
-    lines = lines_by_orientation[orientation]
-    if not lines:
-        return _deep_copy(grid)
+    best: Orientation = max(orientations, key=lambda nm: scored[nm])
+    return best, grouped[best]
 
-    keys = sorted(lines)
+
+def extractMedianPattern(orientation: Orientation, line_groups: LineGroups) -> Pattern:
+    if not line_groups:
+        # Degenerate; return empty pattern per orientation.
+        if orientation == "row":
+            return ("row", [])
+        if orientation == "col":
+            return ("col", [])
+        if orientation == "diag1":
+            return ("diag1", [], 0)
+        return ("diag2", [], 0)
+
+    keys = sorted(line_groups)
     base_key = keys[len(keys) // 2]
-    base_cells = lines[base_key]
+    base_cells = line_groups[base_key]
 
     if orientation == "row":
-        base_pattern = [c for _, c, _ in sorted(base_cells, key=lambda item: item[1])]
-    elif orientation == "col":
-        base_pattern = [r for r, _, _ in sorted(base_cells, key=lambda item: item[0])]
-    else:  # diagonal orientations keep full coordinate pairs for translation
-        base_pattern = [(r, c) for r, c, _ in sorted(base_cells, key=lambda item: item[0])]
+        pattern: RowPattern = (
+            "row",
+            [c for _, c, _ in sorted(base_cells, key=lambda x: x[1])],
+        )
+        return pattern
+    if orientation == "col":
+        pattern2: ColPattern = (
+            "col",
+            [r for r, _, _ in sorted(base_cells, key=lambda x: x[0])],
+        )
+        return pattern2
+
+    # For diagonals keep absolute coordinates plus the base key for translation.
+    coords = [(r, c) for r, c, _ in sorted(base_cells, key=lambda x: x[0])]
+    if orientation == "diag1":
+        pattern3: Diag1Pattern = ("diag1", coords, base_key)
+        return pattern3
+    pattern4: Diag2Pattern = ("diag2", coords, base_key)
+    return pattern4
+
+
+def realignLines(grid: Grid, orientation: Orientation, pattern: Pattern) -> Grid:
+    h, w = len(grid), len(grid[0])
+    background = Counter(_flatten(grid)).most_common(1)[0][0]
+
+    # Rebuild line groups from the current grid to obtain colours per line.
+    _, coloured_cells = collectColoredCells(grid)
+    _, line_groups = scoreOrientations(coloured_cells)
+    keys = sorted(line_groups)
 
     result = _deep_copy(grid)
 
     for key in keys:
-        group = lines[key]
+        group = line_groups[key]
         if not group:
             continue
 
-        colour = Counter(value for _, _, value in group).most_common(1)[0][0]
+        colour = Counter(v for _, _, v in group).most_common(1)[0][0]
         existing = {(r, c) for r, c, _ in group}
 
-        if orientation == "row":
+        if pattern[0] == "row":
+            _, cols = pattern
             r = key
-            target = {(r, c) for c in base_pattern}
-        elif orientation == "col":
+            target = {(r, c) for c in cols}
+        elif pattern[0] == "col":
+            _, rows = pattern
             c = key
-            target = {(r, c) for r in base_pattern}
-        elif orientation == "diag1":
+            target = {(r, c) for r in rows}
+        elif pattern[0] == "diag1":
+            _, coords, base_key = pattern
             delta = key - base_key
             if delta % 2:
                 delta -= (1 if delta > 0 else -1)
             shift = delta // 2
-            target = {(r + shift, c - shift) for r, c in base_pattern}
+            target = {(r + shift, c - shift) for r, c in coords}
         else:  # diag2
+            _, coords, base_key = pattern  # type: ignore[assignment]
             delta = key - base_key
             if delta % 2:
                 delta -= (1 if delta > 0 else -1)
             shift = delta // 2
-            target = {(r + shift, c + shift) for r, c in base_pattern}
+            target = {(r + shift, c + shift) for r, c in coords}
 
-        target = {(r, c) for r, c in target if 0 <= r < height and 0 <= c < width}
+        target = {(r, c) for r, c in target if 0 <= r < h and 0 <= c < w}
 
         for r, c in existing - target:
             result[r][c] = background
@@ -121,6 +165,14 @@ def solve_e376de54(grid):
             result[r][c] = colour
 
     return result
+
+
+# === Lambda Representation (must match abstractions.md) ===
+def solve_e376de54(grid: Grid) -> Grid:
+    _, coloured_cells = collectColoredCells(grid)
+    orientation, line_groups = scoreOrientations(coloured_cells)
+    pattern = extractMedianPattern(orientation, line_groups)
+    return realignLines(grid, orientation, pattern)
 
 
 p = solve_e376de54

@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from typing import Iterable, List, Sequence, Tuple
+
+Grid = List[List[int]]
+
 
 def copy_grid(grid):
     return [row[:] for row in grid]
@@ -143,10 +147,65 @@ def render_path(grid):
         out[r][c] = 3
     return out
 
+# --- DSL-aligned wrappers (pure, used by the typed lambda) ---
 
-def solve_cb2d8a2c(grid):
-    return render_path(grid)
+def classifyCorridorOrientation(grid: Grid) -> str:
+    comps = get_components(grid)
+    horizontal = all(len(rows) == 1 for rows, _ in comps) if comps else True
+    return "horizontal" if horizontal else "vertical"
+
+
+def paint_path(grid: Grid, path: Iterable[Tuple[int, int]]) -> Grid:
+    out = copy_grid(grid)
+    for r, row in enumerate(out):
+        for c, val in enumerate(row):
+            if val == 1:
+                out[r][c] = 2
+    for r, c in path:
+        out[r][c] = 3
+    return out
+
+
+def buildHorizontalCorridor(grid: Grid) -> Iterable[Tuple[int, int]]:
+    obstacles = list_obstacles(grid)
+    if not obstacles:
+        anchor_row, anchor_col = next(
+            (r, c)
+            for r in range(len(grid))
+            for c in range(len(grid[0]))
+            if grid[r][c] == 3
+        )
+        return {(r, anchor_col) for r in range(anchor_row, len(grid))}
+    min_col = min(lo for _, lo, _ in obstacles)
+    left = max(1, min_col - 5)
+    right = min(len(grid[0]) - 1, left + 7)
+    segments, anchor_row, anchor_col = derive_segments(grid, left, right, "horizontal")
+    return draw_path(grid, segments, anchor_row, anchor_col, extend_downward=True)
+
+
+def buildVerticalCorridor(grid: Grid) -> Iterable[Tuple[int, int]]:
+    tgrid = transpose(grid)
+    anchor_row, anchor_col = next(
+        (r, c)
+        for r in range(len(tgrid))
+        for c in range(len(tgrid[0]))
+        if tgrid[r][c] == 3
+    )
+    left = anchor_col
+    right = min(len(tgrid[0]) - 1, 8)
+    segments, t_anchor_row, t_anchor_col = derive_segments(tgrid, left, right, "vertical")
+    t_path = draw_path(tgrid, segments, t_anchor_row, t_anchor_col, extend_downward=True)
+    return {(c, r) for r, c in t_path}
+
+
+def renderCorridorPath(grid: Grid, path: Iterable[Tuple[int, int]]) -> Grid:
+    return paint_path(grid, path)
+
+
+def solve_cb2d8a2c(grid: Grid) -> Grid:
+    orientation = classifyCorridorOrientation(grid)
+    path = buildHorizontalCorridor(grid) if orientation == "horizontal" else buildVerticalCorridor(grid)
+    return renderCorridorPath(grid, path)
 
 
 p = solve_cb2d8a2c
-

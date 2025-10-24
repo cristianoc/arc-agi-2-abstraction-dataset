@@ -1,6 +1,10 @@
 """Solver for ARC-AGI-2 task 581f7754 (split: evaluation)."""
 
 from collections import Counter, deque, defaultdict
+from typing import Any, Dict, List
+
+# Typed aliases used by the DSL-style entrypoint
+Grid = List[List[int]]
 
 
 def most_common_color(grid):
@@ -271,13 +275,50 @@ def apply_transforms(grid, components, shifts, background):
     return output
 
 
-def solve_581f7754(grid):
+def groupByAnchorColor(grid: Grid) -> Dict[str, Any]:
     background = most_common_color(grid)
     components = extract_components(grid, background)
+    return {"grid": grid, "background": background, "components": components}
+
+
+def alignColumnsToAnchor(state: Dict[str, Any]) -> Dict[str, Any]:
+    grid: Grid = state["grid"]
+    background: int = state["background"]
+    components = state["components"]
     color_targets, anchor_coords = determine_color_targets(grid, components, background)
     shifts = compute_shifts(components, color_targets)
-    refine_row_targets(components, shifts, color_targets, anchor_coords, len(grid[0]))
+    return {
+        **state,
+        "color_targets": color_targets,
+        "anchor_coords": anchor_coords,
+        "shifts": shifts,
+    }
+
+
+def compressRowsTowardAnchor(state: Dict[str, Any]) -> Dict[str, Any]:
+    grid: Grid = state["grid"]
+    components = state["components"]
+    color_targets = state.get("color_targets", {})
+    anchor_coords = state.get("anchor_coords", {})
+    shifts = state.get("shifts", [])
+    # Work on a copy to preserve functional style
+    new_shifts = list(shifts)
+    refine_row_targets(components, new_shifts, color_targets, anchor_coords, len(grid[0]))
+    return {**state, "shifts": new_shifts}
+
+
+def renderAlignedComponents(grid: Grid, state: Dict[str, Any]) -> Grid:
+    components = state["components"]
+    shifts = state["shifts"]
+    background: int = state["background"]
     return apply_transforms(grid, components, shifts, background)
+
+
+def solve_581f7754(grid: Grid) -> Grid:
+    grouped = groupByAnchorColor(grid)
+    column_aligned = alignColumnsToAnchor(grouped)
+    row_compressed = compressRowsTowardAnchor(column_aligned)
+    return renderAlignedComponents(grid, row_compressed)
 
 
 p = solve_581f7754

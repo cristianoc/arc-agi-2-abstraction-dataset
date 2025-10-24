@@ -1,4 +1,5 @@
 """ARC-AGI-2 task 7491f3cf solver."""
+from __future__ import annotations
 
 from collections import Counter
 from typing import Iterable, List, Sequence, Set, Tuple
@@ -90,10 +91,10 @@ def _choose_cross_subset(left_base: int, center_accent: int) -> Set[str]:
 
 
 def _apply_cross_subset(
-    left_panel: Sequence[Sequence[int]],
-    center_panel: Sequence[Sequence[int]],
+    left_panel: Grid,
+    center_panel: Grid,
     subset: Set[str],
-) -> List[List[int]]:
+) -> Grid:
     height = len(left_panel)
     width = len(left_panel[0])
     center_row = height // 2
@@ -109,7 +110,7 @@ def _apply_cross_subset(
     )
     center_accent = center_counter.most_common(1)[0][0] if center_counter else center_base
 
-    result = [row[:] for row in left_panel]
+    result: Grid = [list(row) for row in left_panel]
 
     def is_overlay_cell(r: int, c: int) -> bool:
         if center_panel[r][c] == center_base:
@@ -174,9 +175,9 @@ def _apply_cross_subset(
 
 
 def _apply_block_template(
-    left_panel: Sequence[Sequence[int]],
-    center_panel: Sequence[Sequence[int]],
-) -> List[List[int]]:
+    left_panel: Grid,
+    center_panel: Grid,
+) -> Grid:
     left_base = _panel_base(left_panel)
     center_base = _panel_base(center_panel)
     left_counter = Counter(
@@ -194,7 +195,7 @@ def _apply_block_template(
     left_accent = left_counter.most_common(1)[0][0]
     center_accent = center_counter.most_common(1)[0][0]
 
-    result = [row[:] for row in left_panel]
+    result: Grid = [list(row) for row in left_panel]
 
     for r in range(1, len(result) - 1):
         for c in range(len(result[0])):
@@ -210,39 +211,68 @@ def _apply_block_template(
     return result
 
 
-def solve_7491f3cf(grid: Grid) -> Grid:
+def _slice_panel(grid: Grid, start: int, width: int) -> Grid:
+    return [row[start : start + width] for row in grid]
+
+
+def _write_panel_into_right(grid: Grid, right_start: int, width: int, panel: Grid) -> Grid:
     rows = len(grid)
+    output = [row[:] for row in grid]
+    for r in range(rows):
+        output[r][right_start : right_start + width] = panel[r]
+    return output
+
+
+def _cross_case(
+    left_panel: Grid, center_panel: Grid, left_base: int, center_base: int
+) -> List[List[int]] | None:
+    rows = len(left_panel)
+    width = len(left_panel[0])
+    left_shape = _interior_shape(left_panel, left_base)
+    center_shape = _interior_shape(center_panel, center_base)
+    if not (left_shape == DIAMOND_SHAPE and center_shape == CROSS_SHAPE):
+        return None
+    center_accents = Counter(
+        center_panel[r][c]
+        for r in range(1, rows - 1)
+        for c in range(width)
+        if center_panel[r][c] != center_base
+    )
+    center_accent = center_accents.most_common(1)[0][0] if center_accents else center_base
+    subset = _choose_cross_subset(left_base, center_accent)
+    return _apply_cross_subset(left_panel, center_panel, subset)
+
+
+def _block_case(left_panel: Grid, center_panel: Grid, left_base: int, center_base: int) -> List[List[int]] | None:
+    left_shape = _interior_shape(left_panel, left_base)
+    center_shape = _interior_shape(center_panel, center_base)
+    if not (left_shape == BLOCK_LEFT_SHAPE and center_shape == BLOCK_CENTER_SHAPE):
+        return None
+    return _apply_block_template(left_panel, center_panel)
+
+
+def _unhandled(_: Grid) -> Grid:
+    raise ValueError("Unhandled panel configuration for task 7491f3cf")
+
+
+def solve_7491f3cf(grid: Grid) -> Grid:
     left_start, center_start, right_start, width = _extract_sections(grid)
 
-    left_panel = [row[left_start : left_start + width] for row in grid]
-    center_panel = [row[center_start : center_start + width] for row in grid]
+    left_panel = _slice_panel(grid, left_start, width)
+    center_panel = _slice_panel(grid, center_start, width)
 
     left_base = _panel_base(left_panel)
     center_base = _panel_base(center_panel)
 
-    left_shape = _interior_shape(left_panel, left_base)
-    center_shape = _interior_shape(center_panel, center_base)
+    result = _cross_case(left_panel, center_panel, left_base, center_base)
+    if result is not None:
+        return _write_panel_into_right(grid, right_start, width, result)
 
-    if left_shape == DIAMOND_SHAPE and center_shape == CROSS_SHAPE:
-        center_accents = Counter(
-            center_panel[r][c]
-            for r in range(1, rows - 1)
-            for c in range(width)
-            if center_panel[r][c] != center_base
-        )
-        center_accent = center_accents.most_common(1)[0][0] if center_accents else center_base
-        subset = _choose_cross_subset(left_base, center_accent)
-        result_panel = _apply_cross_subset(left_panel, center_panel, subset)
-    elif left_shape == BLOCK_LEFT_SHAPE and center_shape == BLOCK_CENTER_SHAPE:
-        result_panel = _apply_block_template(left_panel, center_panel)
-    else:
-        raise ValueError("Unhandled panel configuration for task 7491f3cf")
+    result = _block_case(left_panel, center_panel, left_base, center_base)
+    if result is not None:
+        return _write_panel_into_right(grid, right_start, width, result)
 
-    output = [row[:] for row in grid]
-    for r in range(rows):
-        output[r][right_start : right_start + width] = result_panel[r]
-
-    return output
+    return _unhandled(grid)
 
 
 p = solve_7491f3cf

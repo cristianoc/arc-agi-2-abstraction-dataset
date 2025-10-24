@@ -1,6 +1,14 @@
 """Solver for ARC-AGI-2 task 4c416de3."""
 
+from __future__ import annotations
+
 from collections import Counter, deque
+from typing import Any, Dict, List, Sequence, Tuple
+
+# DSL-friendly type aliases for checker/mypy
+Grid = List[List[int]]
+Marker = Dict[str, Any]
+HookFamily = Dict[str, Any]
 
 
 PATTERN_DIST_22 = {
@@ -24,19 +32,33 @@ PATTERN_SMALL = {
 }
 
 
-def solve_4c416de3(grid):
-    """Repaint corner hooks on zero-framed blocks according to interior markers."""
+def solve_4c416de3(grid: Grid) -> Grid:
+    markers = readCornerMarkers(grid)
+    family = classifyHookFamily(markers)
+    hook_templates = [generateHookTemplate(family, marker) for marker in markers]
+    return overlayHooks(grid, hook_templates)
+
+
+# === DSL-style helper functions (pure interface; delegate to existing logic) ===
+
+def readCornerMarkers(grid: Grid) -> List[Marker]:
+    """Detect valid single-cell markers assigned to zero components with classification.
+
+    Preserves original solver selection semantics (component/marker order and filtering
+    by valid pattern availability).
+    """
     height, width = len(grid), len(grid[0])
     background = Counter(val for row in grid for val in row).most_common(1)[0][0]
 
-    output = [row[:] for row in grid]
     zero_components = _collect_zero_components(grid)
-    markers = _collect_markers(grid, background)
-    used_markers = set()
+    raw_markers = _collect_markers(grid, background)
 
-    for comp_idx, component in enumerate(zero_components):
+    used_markers: set[int] = set()
+    selected: List[Marker] = []
+
+    for component in zero_components:
         min_r, max_r, min_c, max_c, zero_set = component
-        for marker_idx, marker in enumerate(markers):
+        for marker_idx, marker in enumerate(raw_markers):
             if marker_idx in used_markers or len(marker["cells"]) != 1:
                 continue
             (mr, mc) = marker["cells"][0]
@@ -47,19 +69,67 @@ def solve_4c416de3(grid):
             if orientation is None or dist is None or corner is None:
                 continue
 
+            # Preserve original gating: only accept markers that yield a pattern
+            # under the current background/dist combination.
             pattern = _select_pattern(orientation, dist, background)
             if not pattern:
                 continue
 
             used_markers.add(marker_idx)
-            color = marker["color"]
-            cr, cc = corner
-            for dr, dc in pattern:
-                rr, cc2 = cr + dr, cc + dc
-                if 0 <= rr < height and 0 <= cc2 < width:
-                    output[rr][cc2] = color
+            enriched: Marker = {
+                "color": marker["color"],
+                "cell": (mr, mc),
+                "orientation": orientation,
+                "dist": dist,
+                "corner": corner,
+                "bbox": (min_r, max_r, min_c, max_c),
+                "background": background,
+                "height": height,
+                "width": width,
+            }
+            selected.append(enriched)
 
-    return output
+    return selected
+
+
+def classifyHookFamily(markers: List[Marker]) -> HookFamily:
+    """Choose hook family parameters; currently depends only on background colour.
+
+    Mirrors original behavior where the choice between large/small patterns for
+    (1,1) spacing depended on background==8.
+    """
+    bg = markers[0]["background"] if markers else 0
+    return {"background": bg}
+
+
+def generateHookTemplate(family: HookFamily, marker: Marker) -> List[Tuple[int, int, int]]:
+    """Generate a list of (r, c, color) pixels to paint for a marker."""
+    orientation: str = marker["orientation"]
+    dist: Tuple[int, int] = marker["dist"]
+    corner_r, corner_c = marker["corner"]
+    color = marker["color"]
+    height: int = marker["height"]
+    width: int = marker["width"]
+
+    pattern = _select_pattern(orientation, dist, family.get("background", 0))
+    if not pattern:
+        return []
+
+    pixels: List[Tuple[int, int, int]] = []
+    for dr, dc in pattern:
+        rr, cc = corner_r + dr, corner_c + dc
+        if 0 <= rr < height and 0 <= cc < width:
+            pixels.append((rr, cc, color))
+    return pixels
+
+
+def overlayHooks(grid: Grid, hook_templates: List[List[Tuple[int, int, int]]]) -> Grid:
+    """Overlay hook templates onto the grid by repainting specified pixels."""
+    out = [row[:] for row in grid]
+    for tpl in hook_templates:
+        for r, c, color in tpl:
+            out[r][c] = color
+    return out
 
 
 def _collect_zero_components(grid):
@@ -189,4 +259,3 @@ def _select_pattern(orientation, dist, background):
 
 
 p = solve_4c416de3
-

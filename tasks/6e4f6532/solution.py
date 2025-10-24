@@ -1,7 +1,7 @@
 """Hand-tuned solver for ARC-AGI-2 task 6e4f6532 (evaluation split)."""
 
 from collections import Counter, deque
-from typing import Iterable, List, Sequence, Tuple
+from typing import Callable, Iterable, List, Optional, Sequence, Tuple, TypeVar
 
 
 Grid = List[List[int]]
@@ -149,70 +149,104 @@ def _describe_components(grid: Grid, base: int) -> List[dict]:
     return components
 
 
-def solve_6e4f6532(grid: Grid) -> Grid:
-    """Re-home the two multi-color figures so their 9-cells land on the markers."""
+def mostCommonColor(grid: Grid) -> int:
+    return _most_common_color(grid)
 
-    height = len(grid)
-    width = len(grid[0])
 
+def extractComponents(grid: Grid) -> List[dict]:
     base = _most_common_color(grid)
-    components = _describe_components(grid, base)
+    comps = _describe_components(grid, base)
+    # attach base colour for downstream pure helpers
+    return [dict(comp, base=base) for comp in comps]
 
-    objects: List[dict] = []
-    markers: List[dict] = []
 
+def splitObjectsAndMarkers(components: List[dict]) -> Tuple[List[dict], List[dict]]:
+    # separate
+    objects: List[dict] = [info for info in components if info["colors"].get(8) and info["colors"].get(9)]
+    raw_markers: List[dict] = []
     for info in components:
         colors = info["colors"]
         if set(colors) == {9}:
             coords = info["cells"]
             min_r = min(r for r, _ in coords)
             min_c = min(c for _, c in coords)
-            markers.append(
-                {
-                    "coords": coords,
-                    "size": len(coords),
-                    "min_rc": (min_r, min_c),
-                }
-            )
-        elif colors.get(8) and colors.get(9):
-            objects.append(info)
+            raw_markers.append({"coords": coords, "size": len(coords), "min_rc": (min_r, min_c)})
 
-    if not objects or len(objects) != len(markers):
-        return [row[:] for row in grid]
+    # pair markers to objects by size and order, and enrich markers with object context
+    by_size: dict[int, List[dict]] = {}
+    for m in raw_markers:
+        by_size.setdefault(m["size"], []).append(m)
+    for size in by_size:
+        by_size[size].sort(key=lambda m: m["min_rc"])
 
-    markers_by_size: dict[int, List[dict]] = {}
-    for marker in markers:
-        markers_by_size.setdefault(len(marker["coords"]), []).append(marker)
-    for size in markers_by_size:
-        markers_by_size[size].sort(key=lambda m: m["min_rc"])
+    paired_markers: List[dict] = []
+    for obj in objects:
+        size = len(obj.get("nine_coords", ()))
+        lst = by_size.get(size)
+        if lst:
+            m = lst.pop(0)
+            paired_markers.append({**m, "obj_cells": obj["cells"], "base": obj.get("base")})
 
-    result = [row[:] for row in grid]
+    return objects, paired_markers
 
+
+# pairing now handled inside splitObjectsAndMarkers; keep names minimal per DSL
+
+
+def lookupPattern(obj: dict) -> Optional[List[Tuple[int, int, int]]]:
+    counts_key = tuple(sorted(obj["colors"].items()))
+    return PATTERNS.get(counts_key)
+
+
+def clearObjects(grid: Grid, objects: List[dict], base: int) -> Grid:
+    out = [row[:] for row in grid]
     for obj in objects:
         for r, c in obj["cells"]:
-            result[r][c] = base
+            out[r][c] = base
+    return out
 
-    for obj in objects:
-        counts_key = tuple(sorted(obj["colors"].items()))
-        pattern = PATTERNS.get(counts_key)
-        size = len(obj["nine_coords"])
-        marker_list = markers_by_size.get(size)
 
-        if not pattern or not marker_list:
-            for r, c in obj["cells"]:
-                result[r][c] = grid[r][c]
-            continue
-
-        marker = marker_list.pop(0)
-        min_r, min_c = marker["min_rc"]
-
-        for dr, dc, value in pattern:
-            r = min_r + dr
-            c = min_c + dc
+def stampPatternAtMarker(canvas: Grid, pattern: List[Tuple[int, int, int]], marker: dict) -> Grid:
+    height = len(canvas)
+    width = len(canvas[0])
+    out = [row[:] for row in canvas]
+    # clear associated object's original cells to base if provided
+    base = marker.get("base")
+    obj_cells = marker.get("obj_cells")
+    if base is not None and obj_cells is not None:
+        for r, c in obj_cells:
             if 0 <= r < height and 0 <= c < width:
-                result[r][c] = value
+                out[r][c] = base
+    min_r, min_c = marker["min_rc"]
+    for dr, dc, val in pattern:
+        r = min_r + dr
+        c = min_c + dc
+        if 0 <= r < height and 0 <= c < width:
+            out[r][c] = val
+    return out
 
-    return result
+
+T = TypeVar("T")
+
+
+def fold_repaint(canvas: Grid, items: Sequence[T], update: Callable[[Grid, T], Grid]) -> Grid:
+    acc = [row[:] for row in canvas]
+    for it in items:
+        acc = update(acc, it)
+    return acc
+
+
+def solve_6e4f6532(grid: Grid) -> Grid:
+    components = extractComponents(grid)
+    objects, markers = splitObjectsAndMarkers(components)
+    entries = list(zip(objects, markers))
+
+    def stamp(canvas: Grid, entry: Tuple[dict, dict]) -> Grid:
+        obj, marker = entry
+        pattern = lookupPattern(obj)
+        return stampPatternAtMarker(canvas, pattern, marker) if pattern is not None else canvas
+
+    return fold_repaint(grid, entries, stamp)
 
 
 p = solve_6e4f6532

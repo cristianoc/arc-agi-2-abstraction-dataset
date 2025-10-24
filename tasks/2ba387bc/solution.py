@@ -1,6 +1,6 @@
 """Solver for ARC-AGI-2 task 2ba387bc (split: evaluation)."""
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 Grid = List[List[int]]
 
@@ -81,26 +81,50 @@ def _canonical_pattern(component: Optional[Dict[str, object]]) -> Grid:
     pattern = component["pattern"]
     return _resample_to_four(pattern)  # type: ignore[arg-type]
 
+def extractComponents(grid: Grid) -> List[Dict[str, object]]:
+    return _extract_components(grid)
 
-def solve_2ba387bc(grid: Grid) -> Grid:
-    components = _extract_components(grid)
+
+def partitionByHollowness(
+    components: List[Dict[str, object]]
+) -> Tuple[List[Dict[str, object]], List[Dict[str, object]]]:
     hollows = [comp for comp in components if comp["hollow"]]
     solids = [comp for comp in components if not comp["hollow"]]
+    return hollows, solids
 
-    pair_count = max(len(hollows), len(solids))
+
+def resampleToFour(component: Dict[str, object]) -> Grid:
+    pattern = component["pattern"]  # type: ignore[index]
+    return _resample_to_four(pattern)  # type: ignore[arg-type]
+
+
+def packPairs(hollow_blocks: List[Grid], solid_blocks: List[Grid]) -> Grid:
+    pair_count = max(len(hollow_blocks), len(solid_blocks))
     output: Grid = []
-
     for idx in range(pair_count):
-        left_component = hollows[idx] if idx < len(hollows) else None
-        right_component = solids[idx] if idx < len(solids) else None
-
-        left_block = _canonical_pattern(left_component)
-        right_block = _canonical_pattern(right_component)
-
-        for left_row, right_row in zip(left_block, right_block):
-            output.append(left_row + right_row)
-
+        left_block = (
+            hollow_blocks[idx]
+            if idx < len(hollow_blocks)
+            else [[0] * 4 for _ in range(4)]
+        )
+        right_block = (
+            solid_blocks[idx]
+            if idx < len(solid_blocks)
+            else [[0] * 4 for _ in range(4)]
+        )
+        for lr, rr in zip(left_block, right_block):
+            output.append(lr + rr)
     return output
+
+
+def solve_2ba387bc(grid: Grid) -> Grid:
+    components = extractComponents(grid)
+    hollows, solids = partitionByHollowness(components)
+
+    hollow_blocks = [resampleToFour(comp) for comp in hollows]
+    solid_blocks = [resampleToFour(comp) for comp in solids]
+
+    return packPairs(hollow_blocks, solid_blocks)
 
 
 p = solve_2ba387bc

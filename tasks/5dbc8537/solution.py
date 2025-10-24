@@ -201,23 +201,63 @@ def _solve_vertical(
 
 
 def solve_5dbc8537(grid: Grid) -> Grid:
-    fill, bbox, (height, width) = _find_target_component(grid)
-    min_r, max_r, min_c, max_c = bbox
+    fill_color, box = findTwoColourRegion(grid)
+    orientation = inferOrientation(grid, box)
+    expanded = expandCollar(grid, box)
+    return repaintWithPalette(grid, expanded, orientation)
 
+
+# ==========================
+# DSL-style helper wrappers
+# ==========================
+
+def findTwoColourRegion(grid: Grid) -> Tuple[int, Tuple[int, int, int, int]]:
+    fill, bbox, _ = _find_target_component(grid)
+    return fill, bbox
+
+
+def inferOrientation(grid: Grid, box: Tuple[int, int, int, int]) -> str:
+    min_r, max_r, min_c, max_c = box
+    height, width = len(grid), len(grid[0])
+    if max_r - min_r + 1 == height:
+        return "horizontal"
+    if max_c - min_c + 1 == width:
+        return "vertical"
+    raise ValueError("Unable to determine orientation for task 5dbc8537.")
+
+
+def _background_for_bbox(grid: Grid, box: Tuple[int, int, int, int], fill: int) -> int:
+    min_r, max_r, min_c, max_c = box
     colours_in_bbox = {
         grid[r][c]
         for r in range(min_r, max_r + 1)
         for c in range(min_c, max_c + 1)
     }
-    background = next(col for col in colours_in_bbox if col != fill)
+    for col in colours_in_bbox:
+        if col != fill:
+            return col
+    # Fallback: if only one colour is present (shouldn't happen), return it
+    return fill
 
-    if max_r - min_r + 1 == height:
-        return _solve_horizontal(grid, bbox, fill, background)
 
-    if max_c - min_c + 1 == width:
-        return _solve_vertical(grid, bbox, fill, background)
+def expandCollar(
+    grid: Grid, box: Tuple[int, int, int, int]
+) -> Tuple[int, int, int, int]:
+    # Minimal, side-effect free: we can return the original box because
+    # the repaint step performs its own collar expansion deterministically.
+    return box
 
-    raise ValueError("Unable to determine orientation for task 5dbc8537.")
+
+def repaintWithPalette(
+    grid: Grid, box: Tuple[int, int, int, int], orientation: str
+) -> Grid:
+    # Obtain the authoritative fill colour from the region detection.
+    fill, _, _ = _find_target_component(grid)
+    background = _background_for_bbox(grid, box, fill)
+    if orientation == "horizontal":
+        return _solve_horizontal(grid, box, fill, background)
+    else:
+        return _solve_vertical(grid, box, fill, background)
 
 
 p = solve_5dbc8537

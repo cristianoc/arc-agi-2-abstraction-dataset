@@ -1,17 +1,22 @@
 """Solver for ARC task 9aaea919 (evaluation split)."""
 
 from collections import Counter
+from typing import Any, Callable, Dict, Iterable, List, Tuple
 
 
-def _get_background(grid):
+Grid = List[List[int]]
+ColumnIndex = int
+
+
+def _get_background(grid: Grid) -> int:
     flat = [cell for row in grid for cell in row]
     return Counter(flat).most_common(1)[0][0]
 
 
-def _find_cross_columns(grid):
+def _find_cross_columns(grid: Grid) -> Dict[int, Dict[str, Any]]:
     height, width = len(grid), len(grid[0])
     visited = [[False] * width for _ in range(height)]
-    columns = {}
+    columns: Dict[int, Dict[str, Any]] = {}
 
     for r in range(height):
         for c in range(width):
@@ -62,7 +67,7 @@ def _find_cross_columns(grid):
     return columns
 
 
-def _instruction_segments(grid, background):
+def _instruction_segments(grid: Grid, background: int) -> List[Tuple[int, int, int]]:
     row = grid[-1]
     segments = []
     start = 0
@@ -78,11 +83,14 @@ def _instruction_segments(grid, background):
     return [seg for seg in segments if seg[0] != background]
 
 
-def _map_segments_to_columns(segments, columns):
+def _map_segments_to_columns(
+    segments: List[Tuple[int, int, int]],
+    columns: Dict[int, Dict[str, Any]],
+) -> Dict[int, List[int]]:
     if not columns:
         return {}
 
-    mapping = {}
+    mapping: Dict[int, List[int]] = {}
     for color, start, end in segments:
         center = (start + end) // 2
         matched = None
@@ -100,14 +108,14 @@ def _map_segments_to_columns(segments, columns):
     return mapping
 
 
-def _draw_pattern(grid, top, left, pattern):
+def _draw_pattern(grid: Grid, top: int, left: int, pattern: List[List[int]]) -> None:
     for dr, row in enumerate(pattern):
         target = grid[top + dr]
         for dc, val in enumerate(row):
             target[left + dc] = val
 
 
-def _recolor_column(grid, info, background, new_color):
+def _recolor_column(grid: Grid, info: Dict[str, Any], background: int, new_color: int) -> None:
     original_color = info["color"]
     pattern = info["pattern"]
     recolored = [
@@ -122,7 +130,7 @@ def _recolor_column(grid, info, background, new_color):
     info["color"] = new_color
 
 
-def _extend_column(grid, info, count):
+def _extend_column(grid: Grid, info: Dict[str, Any], count: int) -> None:
     if count <= 0:
         return
 
@@ -139,30 +147,97 @@ def _extend_column(grid, info, count):
         added += 1
 
 
-def solve_9aaea919(grid):
-    """Transform scoreboard-style plus grids per bottom-row instructions."""
-    result = [row[:] for row in grid]
+def _clear_instruction_segments(grid: Grid, segments: List[Tuple[int, int, int]], background: int) -> Grid:
+    """Return a copy of grid with the bottom-row instruction segments cleared to background."""
+    out = [row[:] for row in grid]
+    for _, start, end in segments:
+        for c in range(start, end + 1):
+            out[-1][c] = background
+    return out
 
-    background = _get_background(result)
-    columns = _find_cross_columns(result)
-    segments = _instruction_segments(result, background)
-    mapping = _map_segments_to_columns(segments, columns)
 
+def _build_assignments(
+    mapping: Dict[int, List[int]],
+    columns: Dict[int, Dict[str, Any]],
+) -> Dict[int, Dict[str, int]]:
+    """Build per-column instruction: recolor flag and extend count.
+
+    - recolor: 1 if colour 2 is present for the column, else 0
+    - extend: number of extra stacks to add if colour 3 is present; this equals
+      the total number of existing crosses across all columns flagged with colour 2.
+    """
     color2_columns = [col for col, colors in mapping.items() if 2 in colors]
     total_crosses = sum(len(columns[col]["rows"]) for col in color2_columns)
 
-    for col in color2_columns:
-        _recolor_column(result, columns[col], background, 5)
-
+    assignments: Dict[int, Dict[str, int]] = {}
     for col, colors in mapping.items():
-        if 3 in colors:
-            _extend_column(result, columns[col], total_crosses)
+        recolor_flag = 1 if 2 in colors else 0
+        extend_count = total_crosses if 3 in colors else 0
+        assignments[col] = {"recolor": recolor_flag, "extend": extend_count}
+    return assignments
 
-    for _, start, end in segments:
-        for c in range(start, end + 1):
-            result[-1][c] = background
 
-    return result
+def fold_repaint(
+    canvas: Grid, items: Iterable[Any], update: Callable[[Grid, Any], Grid]
+) -> Grid:
+    """Functional fold over items to repaint the canvas."""
+    g = canvas
+    for x in items:
+        g = update(g, x)
+    return g
+
+
+# Public DSL-named wrappers to align with abstractions.md
+
+def extractCrossColumns(grid: Grid) -> Dict[int, Dict[str, Any]]:
+    return _find_cross_columns(grid)
+
+
+def getBackground(grid: Grid) -> int:
+    return _get_background(grid)
+
+
+def readInstructionSegments(grid: Grid) -> List[Tuple[int, int, int]]:
+    return _instruction_segments(grid, getBackground(grid))
+
+
+def mapInstructionsToColumns(
+    segments: List[Tuple[int, int, int]],
+    columns: Dict[int, Dict[str, Any]],
+) -> Dict[int, Dict[str, int]]:
+    color_mapping = _map_segments_to_columns(segments, columns)
+    return _build_assignments(color_mapping, columns)
+
+
+def repaintColumn(canvas: Grid, column_info: Dict[str, Any], instruction: Dict[str, int]) -> Grid:
+    out = [row[:] for row in canvas]
+    bg = getBackground(canvas)
+    if instruction.get("recolor", 0):
+        _recolor_column(out, column_info, bg, 5)
+    if instruction.get("extend", 0):
+        _extend_column(out, column_info, instruction["extend"])
+    return out
+
+
+def clearInstructionSegments(
+    canvas: Grid, segments: List[Tuple[int, int, int]], background: int
+) -> Grid:
+    return _clear_instruction_segments(canvas, segments, background)
+
+
+def solve_9aaea919(grid: Grid) -> Grid:
+    columns = extractCrossColumns(grid)
+    segments = readInstructionSegments(grid)
+    assignments = mapInstructionsToColumns(segments, columns)
+
+    def repaint(canvas: Grid, column_index: ColumnIndex) -> Grid:
+        instruction = assignments[column_index]
+        column_info = columns[column_index]
+        return repaintColumn(canvas, column_info, instruction)
+
+    repainted = fold_repaint(grid, list(assignments.keys()), repaint)
+    background = getBackground(grid)
+    return clearInstructionSegments(repainted, segments, background)
 
 
 p = solve_9aaea919
