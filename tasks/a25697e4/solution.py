@@ -1,17 +1,23 @@
 """Solver for ARC-AGI-2 task a25697e4 (evaluation split)."""
 
+from __future__ import annotations
+
 from collections import Counter
+from dataclasses import dataclass
+from typing import Dict, List, Sequence, Tuple
+
+Grid = List[List[int]]
 
 
 def _sign(value: float) -> int:
     return (value > 0) - (value < 0)
 
 
-def _collect_colors(grid):
+def _collect_colors(grid: Grid):
     h = len(grid)
     w = len(grid[0])
-    counts = Counter()
-    positions = {}
+    counts: Dict[int, int] = Counter()
+    positions: Dict[int, List[Tuple[int, int]]] = {}
     for r in range(h):
         for c in range(w):
             color = grid[r][c]
@@ -20,7 +26,14 @@ def _collect_colors(grid):
     return counts, positions
 
 
-def _select_bridge_color(anchor, colors, counts, positions, hole_diff, anchor_mean_row):
+def _select_bridge_color(
+    anchor: int,
+    colors: Sequence[int],
+    counts: Dict[int, int],
+    positions: Dict[int, List[Tuple[int, int]]],
+    hole_diff: float,
+    anchor_mean_row: float,
+):
     candidates = []
     for color in colors:
         if color == anchor:
@@ -42,7 +55,7 @@ def _select_bridge_color(anchor, colors, counts, positions, hole_diff, anchor_me
     return candidates[0][1]
 
 
-def _place_third_color(out_grid, params):
+def _place_third_color(out_grid: Grid, params):
     (
         need,
         h_main,
@@ -145,33 +158,95 @@ def _place_third_color(out_grid, params):
         out_grid[r][c] = third
 
 
-def solve_a25697e4(grid):
+# === Typed-DSL friendly helpers ===
+
+@dataclass(frozen=True)
+class ColourStats:
+    background: int
+    colors: List[int]
+    counts: Dict[int, int]
+    positions: Dict[int, List[Tuple[int, int]]]
+    anchor: int
+    anchor_cells: List[Tuple[int, int]]
+
+
+@dataclass(frozen=True)
+class HoleStats:
+    holes: List[Tuple[int, int]]
+    hole_set: set[Tuple[int, int]]
+    r_bounds: Tuple[int, int]
+    c_bounds: Tuple[int, int]
+    anchor_mean_row: float
+    hole_mean_row: float
+    hole_diff: float
+
+
+def collectColorStats(grid: Grid) -> ColourStats:
     counts, positions = _collect_colors(grid)
     background = max(counts.items(), key=lambda kv: kv[1])[0]
     colors = [color for color in counts if color != background]
-
     anchor = max(colors, key=lambda color: counts[color])
-    anchor_pts = positions[anchor]
-    rows = [r for r, _ in anchor_pts]
-    cols = [c for _, c in anchor_pts]
+    anchor_cells = positions[anchor]
+    return ColourStats(
+        background=background,
+        colors=colors,
+        counts=dict(counts),
+        positions=positions,
+        anchor=anchor,
+        anchor_cells=anchor_cells,
+    )
+
+
+def analyseHoles(anchor_cells: List[Tuple[int, int]]) -> HoleStats:
+    rows = [r for r, _ in anchor_cells]
+    cols = [c for _, c in anchor_cells]
     r0, r1 = min(rows), max(rows)
     c0, c1 = min(cols), max(cols)
-    anchor_set = set(anchor_pts)
+    anchor_set = set(anchor_cells)
     holes = [
         (r, c)
         for r in range(r0, r1 + 1)
         for c in range(c0, c1 + 1)
         if (r, c) not in anchor_set
     ]
-    if not holes:
+    if holes:
+        anchor_mean_row = sum(r for r, _ in anchor_cells) / len(anchor_cells)
+        hole_mean_row = sum(r for r, _ in holes) / len(holes)
+        hole_diff = hole_mean_row - anchor_mean_row
+    else:
+        anchor_mean_row = sum(r for r, _ in anchor_cells) / len(anchor_cells)
+        hole_mean_row = anchor_mean_row
+        hole_diff = 0.0
+    return HoleStats(
+        holes=holes,
+        hole_set=set(holes),
+        r_bounds=(r0, r1),
+        c_bounds=(c0, c1),
+        anchor_mean_row=anchor_mean_row,
+        hole_mean_row=hole_mean_row,
+        hole_diff=hole_diff,
+    )
+
+
+def placeThirdComponent(grid: Grid, colour_stats: ColourStats, hole_stats: HoleStats) -> Grid:
+    if not hole_stats.holes:
         return [row[:] for row in grid]
 
-    holes_set = set(holes)
-    anchor_mean_row = sum(r for r, _ in anchor_pts) / len(anchor_pts)
-    hole_mean_row = sum(r for r, _ in holes) / len(holes)
-    hole_diff = hole_mean_row - anchor_mean_row
+    background = colour_stats.background
+    colors = colour_stats.colors
+    counts = colour_stats.counts
+    positions = colour_stats.positions
+    anchor = colour_stats.anchor
+    anchor_pts = colour_stats.anchor_cells
+    anchor_set = set(anchor_pts)
 
-    bridge = _select_bridge_color(anchor, colors, counts, positions, hole_diff, anchor_mean_row)
+    holes = hole_stats.holes
+    holes_set = hole_stats.hole_set
+    (r0, r1) = hole_stats.r_bounds
+
+    bridge = _select_bridge_color(
+        anchor, colors, counts, positions, hole_stats.hole_diff, hole_stats.anchor_mean_row
+    )
     third = next(color for color in colors if color not in {anchor, bridge})
 
     h = len(grid)
@@ -200,22 +275,31 @@ def solve_a25697e4(grid):
     if hd == 0:
         hd = 1 if anchor_mean_col < (w - 1) / 2 else -1
 
+    holes_extreme = [
+        hole for hole in holes if hole[1] == (max(holes, key=lambda rc: hd * rc[1])[1])
+    ]
     params = (
         need,
         h_main,
         v_steps,
         rem,
         hd,
-        hole_diff,
-        [hole for hole in holes if hole[1] == (max(holes, key=lambda rc: hd * rc[1])[1])],
+        hole_stats.hole_diff,
+        holes_extreme,
         anchor_set,
         holes_set,
         (r0, r1),
-        {"third": third, "base_info": (anchor_mean_row, anchor_mean_col)},
+        {"third": third, "base_info": (hole_stats.anchor_mean_row, anchor_mean_col)},
     )
     _place_third_color(out_grid, params)
 
     return out_grid
+
+
+def solve_a25697e4(grid: Grid) -> Grid:
+    colour_stats = collectColorStats(grid)
+    hole_stats = analyseHoles(colour_stats.anchor_cells)
+    return placeThirdComponent(grid, colour_stats, hole_stats)
 
 
 p = solve_a25697e4

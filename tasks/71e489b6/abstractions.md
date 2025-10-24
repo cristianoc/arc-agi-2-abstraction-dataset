@@ -9,7 +9,7 @@
   - `countZeroNeighbours : Grid -> Matrix Int` — precompute, for each cell, the number of adjacent zeros.
   - `pruneLonelyOnes : Grid × Matrix Int -> Grid` — turn colour-1 cells with at least three zero neighbours into zeros.
   - `collectZeroTips : Grid × Matrix Int -> Set Cell` — find zero cells whose zero-degree is ≤1 within each component.
-  - `paintTipHalos : Grid × Set Cell × Matrix Int -> Grid` — for each tip (and its paired zero), paint guarded 7-halo patterns while respecting adjacency counts.
+  - `paintTipHalos : Grid × Grid × Set Cell × Matrix Int -> Grid` — given the original grid and the cleaned base canvas, paint guarded 7-halo patterns for each tip (and its paired zero) while respecting adjacency counts.
 - **Solver summary**: "Count zero neighbours, prune isolated 1s, gather tip cells in the zero components, and paint guarded 7 halos around each tip."
 
 ## Lambda Representation
@@ -18,6 +18,6 @@
 def solve_71e489b6(grid: Grid) -> Grid:
     zero_counts = countZeroNeighbours(grid)
     cleaned = pruneLonelyOnes(grid, zero_counts)
-    tips = collectZeroTips(cleaned, zero_counts)
-    return paintTipHalos(cleaned, tips, zero_counts)
+    tips = collectZeroTips(grid, zero_counts)
+    return paintTipHalos(grid, cleaned, tips, zero_counts)
 ```

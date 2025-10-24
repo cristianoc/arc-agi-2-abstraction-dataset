@@ -11,8 +11,7 @@ Final refinement uses `global_color_symmetry`, which trims the unmatched color p
   - `groupCellsByColor : Grid -> ColourGroups` — collect coordinates for each non-background colour.
   - `evaluateAxisCost : List Cell -> Axis` — for each colour, scan candidate horizontal axes and choose the one minimising deletions.
   - `trimAsymmetricCells : Grid × List Cell × Axis -> Grid` — remove cells that lack a mirrored partner with respect to the chosen axis.
-  - `mirrorZeros : Grid -> Grid` — copy remaining non-zero values across the main diagonal to enforce symmetry.
-- **Solver summary**: "Group cells by colour, pick the best horizontal axis per colour by minimal deletions, remove asymmetric cells, and mirror leftover zeros across the diagonal."
+- **Solver summary**: "Group cells by colour, pick the best horizontal axis per colour by minimal deletions, and remove asymmetric cells."
 
 ## Lambda Representation
 
@@ -26,5 +25,5 @@ def solve_8e5c0c38(grid: Grid) -> Grid:
         return trimAsymmetricCells(canvas, cells, axis)
 
     trimmed = fold_repaint(grid, list(colour_groups.items()), trim)
-    return mirrorZeros(trimmed)
+    return trimmed
 ```

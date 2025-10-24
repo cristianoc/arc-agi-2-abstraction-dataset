@@ -4,9 +4,15 @@
 # TODO: revisit heuristic scoring if future grids require different packing order.
 
 from collections import deque
-from typing import List, Optional, Sequence, Tuple
+from typing import List, Optional, Sequence, Tuple, TypedDict
 
 Grid = List[List[int]]
+Component = Tuple[int, List[Tuple[int, int]]]
+
+class Shape(TypedDict):
+    color: int
+    variants: List[Tuple[Tuple[int, int], ...]]
+    area: int
 
 MAX_COMPONENTS = 6
 WEIGHTS: Tuple[float, ...] = (
@@ -64,7 +70,7 @@ def _normalize(cells: List[Tuple[int, int]]) -> Tuple[Tuple[int, int], ...]:
 
 def _generate_variants(cells: List[Tuple[int, int]]) -> List[Tuple[Tuple[int, int], ...]]:
     base = list(_normalize(cells))
-    arr = [tuple(pt) for pt in base]
+    arr: List[Tuple[int, int]] = [(r, c) for (r, c) in base]
     seen = set()
 
     def normalize_list(points: List[Tuple[int, int]]) -> Tuple[Tuple[int, int], ...]:
@@ -132,20 +138,25 @@ def _score_placements(placements: Sequence[Optional[List[Tuple[int, int]]]], sid
     return sum(w * f for w, f in zip(WEIGHTS, feats))
 
 
-def solve_7b3084d4(grid: Grid) -> Grid:
-    comps = _extract_components(grid)
-    total_cells = sum(len(cells) for _, cells in comps)
+def extractComponents(grid: Grid) -> List[Component]:
+    return _extract_components(grid)
+
+
+def enumerateVariants(component: Component) -> List[Shape]:
+    color, cells = component
+    variants = _generate_variants(cells)
+    area = len(cells)
+    return [Shape(color=color, variants=list(variants), area=area)]
+
+
+def searchTilings(shapes: Sequence[Shape]) -> Tuple[Grid, float]:
+    total_cells = sum(s["area"] for s in shapes)
     side = int(total_cells ** 0.5)
     if side * side != total_cells or side == 0:
-        return [row[:] for row in grid]
+        return [], float("-inf")
 
-    comp_variants = [
-        {
-            "color": color,
-            "variants": _generate_variants(cells),
-            "area": len(cells),
-        }
-        for color, cells in comps
+    comp_variants: List[Shape] = [
+        {"color": s["color"], "variants": s["variants"], "area": s["area"]} for s in shapes
     ]
 
     board: List[List[Optional[int]]] = [[None] * side for _ in range(side)]
@@ -230,8 +241,20 @@ def solve_7b3084d4(grid: Grid) -> Grid:
             used[idx] = False
 
     dfs(0)
+    if best_board is None:
+        return [], float("-inf")
+    return best_board, best_score
 
-    return best_board if best_board is not None else [row[:] for row in grid]
+
+def renderBestTiling(board: Grid) -> Grid:
+    return [row[:] for row in board] if board else board
+
+
+def solve_7b3084d4(grid: Grid) -> Grid:
+    components = extractComponents(grid)
+    shapes = [shape for component in components for shape in enumerateVariants(component)]
+    board, _ = searchTilings(shapes)
+    return renderBestTiling(board)
 
 
 p = solve_7b3084d4

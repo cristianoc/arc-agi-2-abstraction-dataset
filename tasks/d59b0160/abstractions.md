@@ -7,18 +7,22 @@
 
 ## DSL Structure
 - **Typed operations**
-  - `identifyRooms : Grid -> List Room` — detect enclosed background regions with boundary metadata.
-  - `classifyRoomFill : List Room -> RoomFillMap` — decide which heuristic applies (right-edge touch, shallow interior, left-edge guard, height-5 bias).
-  - `applyFillRules : Grid × RoomFillMap -> Grid` — fill rooms according to their assigned rule while preserving protected regions.
-  - `mergeFilledRooms : Grid × Grid -> Grid` — combine the filled rooms with the original grid to produce the final output.
-- **Solver summary**: "Identify the rooms, classify each room’s fill rule, apply the fills per rule, and merge the result back into the grid."
+  - `extractNonSevenComponents : Grid -> List Component` — gather 4-connected components whose colour is not 7, with bbox stats.
+  - `shouldFill : Component × Int × Int -> Bool` — decide whether to repaint a component to colour 7 based on width/height and edge contact.
+  - `paintComponent : Grid × Component × Color -> Grid` — overwrite all component cells with the given colour.
+- **Solver summary**: "Extract non-7 components, decide which to fill via simple guards, and repaint selected components to colour 7 using fold_repaint."
 
 ## Lambda Representation
 
 ```python
 def solve_d59b0160(grid: Grid) -> Grid:
-    rooms = identifyRooms(grid)
-    fill_rules = classifyRoomFill(rooms)
-    filled = applyFillRules(grid, fill_rules)
-    return mergeFilledRooms(grid, filled)
+    components = extractNonSevenComponents(grid)
+    if not grid:
+        return grid
+    h, w = len(grid), len(grid[0])
+
+    def repaint(canvas: Grid, comp: Component) -> Grid:
+        return paintComponent(canvas, comp, 7) if shouldFill(comp, h, w) else canvas
+
+    return fold_repaint(grid, components, repaint)
 ```

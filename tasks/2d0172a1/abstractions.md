@@ -23,7 +23,7 @@ For the special left-edge case, append a small right margin and continue any **a
   - `accentBoundingBox : Grid × Color -> Box` — compute the bounding box around the accent component.
   - `chooseTemplate : Box -> TemplateId` — map the accent size/aspect to one of the pre-binned template shapes (5×5, 7×5, 5×7, 9×11, 11×9).
   - `renderTemplate : TemplateId × Color × Color -> Grid` — instantiate the chosen template using background/accent colours.
-  - `extendRightMargin : Grid × Box -> Grid` — when the accent touches the left edge, append a right margin that continues alternating interior rows.
+  - `extendRightMargin : Grid × Box × Grid -> Grid` — when the accent touches the left edge, append a right margin (sized from the original grid) that continues alternating interior rows.
 - **Solver summary**: "Find the background and accent colours, crop the accent bounding box, pick the matching template from the size/aspect bins, render that template, and if the accent hugs the left edge extend the right margin while continuing the alternating pattern."
 
 ## Lambda Representation
@@ -35,5 +35,5 @@ def solve_2d0172a1(grid: Grid) -> Grid:
     bbox = accentBoundingBox(grid, accent)
     template = chooseTemplate(bbox)
     rendered = renderTemplate(template, background, accent)
-    return extendRightMargin(rendered, bbox)
+    return extendRightMargin(rendered, bbox, grid)
 ```

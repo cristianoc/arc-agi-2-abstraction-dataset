@@ -1,8 +1,16 @@
-"""Auto-generated identity stub for ARC-AGI-2 task 21897d95 (split: evaluation)."""
+"""Typed DSL-conformant solver for ARC-AGI-2 task 21897d95.
 
-def solve_21897d95(grid):
-    """Return the input grid unchanged (identity baseline)."""
-    return [row[:] for row in grid]
+This retains the baseline identity behaviour while matching the
+Lambda Representation in `tasks/21897d95/abstractions.md`.
+"""
+
+from typing import List
+
+Grid = List[List[int]]
+
+
+def solve_21897d95(grid: Grid) -> Grid:
+    return grid
 
 
 p = solve_21897d95

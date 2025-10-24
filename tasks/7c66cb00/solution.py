@@ -1,10 +1,20 @@
-"""Solver for ARC-AGI-2 task 7c66cb00."""
+"""Solver for ARC-AGI-2 task 7c66cb00.
+
+Refactored to expose DSL-style helpers and a main function that matches the
+Lambda Representation in abstractions.md.
+"""
 
 from collections import defaultdict, deque
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, TypedDict
 
 Grid = List[List[int]]
-Component = Dict[str, object]
+
+
+class Component(TypedDict):
+    height: int
+    width: int
+    col: int
+    offsets: List[Tuple[int, int]]
 
 
 def split_sections(grid: Grid, base: int) -> List[Tuple[int, int]]:
@@ -24,7 +34,9 @@ def split_sections(grid: Grid, base: int) -> List[Tuple[int, int]]:
     return sections
 
 
-def extract_prototypes(grid: Grid, sections: List[Tuple[int, int]], base: int) -> Tuple[Dict[int, List[Component]], List[Tuple[int, int]], List[Tuple[int, int]]]:
+def extract_prototypes(
+    grid: Grid, sections: List[Tuple[int, int]], base: int
+) -> Tuple[Dict[int, List[Component]], List[Tuple[int, int]], List[Tuple[int, int]]]:
     """Collect prototype components above the first target section."""
     prototypes: Dict[int, List[Component]] = defaultdict(list)
     proto_sections: List[Tuple[int, int]] = []
@@ -64,12 +76,12 @@ def extract_prototypes(grid: Grid, sections: List[Tuple[int, int]], base: int) -
                     comp_height = max(r for r, _ in norm) + 1
                     comp_width = max(c for _, c in norm) + 1
                     prototypes[color].append(
-                        {
-                            "height": comp_height,
-                            "width": comp_width,
-                            "col": min_c,
-                            "offsets": norm,
-                        }
+                        Component(
+                            height=comp_height,
+                            width=comp_width,
+                            col=min_c,
+                            offsets=norm,
+                        )
                     )
         else:
             found_target = True
@@ -78,7 +90,12 @@ def extract_prototypes(grid: Grid, sections: List[Tuple[int, int]], base: int) -
     return prototypes, proto_sections, target_sections
 
 
-def apply_prototypes(grid: Grid, result: Grid, section: Tuple[int, int], prototypes: Dict[int, List[Component]]) -> None:
+def apply_prototypes(
+    grid: Grid,
+    result: Grid,
+    section: Tuple[int, int],
+    prototypes: Dict[int, List[Component]],
+) -> None:
     r0, r1 = section
     width = len(grid[0])
     colors = {cell for row in grid[r0 : r1 + 1] for cell in row}
@@ -103,12 +120,12 @@ def apply_prototypes(grid: Grid, result: Grid, section: Tuple[int, int], prototy
 
     section_height = r1 - r0 + 1
     for comp in comps:
-        comp_height = int(comp["height"])
-        comp_width = int(comp["width"])
+        comp_height = comp["height"]
+        comp_width = comp["width"]
         if comp_height > section_height:
             continue
         top_row = r1 - comp_height + 1
-        left_col = int(comp["col"])
+        left_col = comp["col"]
         if left_col < 0 or left_col + comp_width > width:
             continue
         for dr, dc in comp["offsets"]:
@@ -117,25 +134,54 @@ def apply_prototypes(grid: Grid, result: Grid, section: Tuple[int, int], prototy
             if r0 <= rr <= r1 and 0 <= cc < width:
                 result[rr][cc] = edge_color
 
+# === DSL-style helper wrappers ===
 
-def solve_7c66cb00(grid: Grid) -> Grid:
-    base = grid[0][0]
+def getBackground(grid: Grid) -> int:
+    """Background colour selection used by the pipeline (top-left)."""
+    return grid[0][0]
+
+
+def splitSections(grid: Grid, base: int) -> List[Tuple[int, int]]:
+    return split_sections(grid, base)
+
+
+def extractPrototypes(
+    grid: Grid, sections: List[Tuple[int, int]], base: int
+) -> Tuple[Dict[int, List[Component]], List[Tuple[int, int]], List[Tuple[int, int]]]:
+    return extract_prototypes(grid, sections, base)
+
+
+def clearPrototypeRows(
+    grid: Grid, proto_sections: List[Tuple[int, int]], base: int
+) -> Grid:
+    width = len(grid[0])
     result = [row[:] for row in grid]
-
-    sections = split_sections(grid, base)
-    if not sections:
-        return result
-
-    prototypes, proto_sections, target_sections = extract_prototypes(grid, sections, base)
-
     for r0, r1 in proto_sections:
         for r in range(r0, r1 + 1):
-            result[r] = [base] * len(grid[0])
-
-    for section in target_sections:
-        apply_prototypes(grid, result, section, prototypes)
-
+            result[r] = [base] * width
     return result
+
+
+def stampBottomAnchored(
+    cleared: Grid,
+    prototypes: Dict[int, List[Component]],
+    target_sections: List[Tuple[int, int]],
+) -> Grid:
+    width = len(cleared[0])
+    result = [row[:] for row in cleared]
+    for section in target_sections:
+        apply_prototypes(cleared, result, section, prototypes)
+    return result
+
+
+# === Lambda-shaped main (must match abstractions.md) ===
+
+def solve_7c66cb00(grid: Grid) -> Grid:
+    base = getBackground(grid)
+    sections = splitSections(grid, base)
+    prototypes, protoSections, targetSections = extractPrototypes(grid, sections, base)
+    cleared = clearPrototypeRows(grid, protoSections, base)
+    return stampBottomAnchored(cleared, prototypes, targetSections)
 
 
 p = solve_7c66cb00

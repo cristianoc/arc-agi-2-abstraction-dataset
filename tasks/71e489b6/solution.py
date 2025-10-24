@@ -1,36 +1,55 @@
 """Solver for ARC-AGI-2 task 71e489b6 (evaluation split)."""
 
+from __future__ import annotations
+
 from collections import deque
+from typing import List, Sequence, Set, Tuple
 
-OFFSETS4 = ((1, 0), (-1, 0), (0, 1), (0, -1))
+
+Grid = List[List[int]]
+Cell = Tuple[int, int]
+OFFSETS4: Tuple[Tuple[int, int], ...] = ((1, 0), (-1, 0), (0, 1), (0, -1))
 
 
-def solve_71e489b6(grid):
-    """Detect 0-tips and draw 7 halos while pruning stray 1s."""
+def countZeroNeighbours(grid: Sequence[Sequence[int]]) -> List[List[int]]:
     h, w = len(grid), len(grid[0])
-    original = [row[:] for row in grid]
-    result = [row[:] for row in grid]
+    counts: List[List[int]] = [[0] * w for _ in range(h)]
+    for r in range(h):
+        for c in range(w):
+            counts[r][c] = sum(
+                1
+                for dr, dc in OFFSETS4
+                if 0 <= r + dr < h and 0 <= c + dc < w and grid[r + dr][c + dc] == 0
+            )
+    return counts
 
-    def zero_neighbors(r, c):
+
+def pruneLonelyOnes(grid: Sequence[Sequence[int]], zero_counts: Sequence[Sequence[int]]) -> Grid:
+    h, w = len(grid), len(grid[0])
+    result: Grid = [list(row) for row in grid]
+    for r in range(h):
+        for c in range(w):
+            if grid[r][c] == 1 and zero_counts[r][c] >= 3:
+                result[r][c] = 0
+    return result
+
+
+def collectZeroTips(original: Sequence[Sequence[int]], zero_counts: Sequence[Sequence[int]]) -> Set[Cell]:
+    h, w = len(original), len(original[0])
+    seen = [[False] * w for _ in range(h)]
+    tips: Set[Cell] = set()
+
+    def zero_neighbors(r: int, c: int) -> int:
         return sum(
             1
             for dr, dc in OFFSETS4
             if 0 <= r + dr < h and 0 <= c + dc < w and original[r + dr][c + dc] == 0
         )
 
-    # Step 1: turn lonely 1s into 0s when they are surrounded by zeros.
-    for r in range(h):
-        for c in range(w):
-            if original[r][c] == 1 and zero_neighbors(r, c) >= 3:
-                result[r][c] = 0
-
-    # Step 2: locate zero components and their degree-≤1 "tips".
-    seen = [[False] * w for _ in range(h)]
-    tips = set()
     for r in range(h):
         for c in range(w):
             if original[r][c] == 0 and not seen[r][c]:
-                comp = []
+                comp: List[Cell] = []
                 queue = deque([(r, c)])
                 seen[r][c] = True
                 while queue:
@@ -44,9 +63,21 @@ def solve_71e489b6(grid):
                 for rr, cc in comp:
                     if zero_neighbors(rr, cc) <= 1:
                         tips.add((rr, cc))
+    return tips
 
-    # Pre-compute, for each original zero cell, how many tip neighbours it has.
-    tip_adj = [[0] * w for _ in range(h)]
+
+def paintTipHalos(
+    original: Sequence[Sequence[int]],
+    cleaned: Sequence[Sequence[int]],
+    tips: Set[Cell],
+    zero_counts: Sequence[Sequence[int]],
+) -> Grid:
+    h, w = len(cleaned), len(cleaned[0])
+    base: Grid = [list(row) for row in cleaned]
+    result: Grid = [list(row) for row in cleaned]
+
+    # Pre-compute, for each zero cell in the original (pre-halo) canvas, how many tip neighbours it has.
+    tip_adj: List[List[int]] = [[0] * w for _ in range(h)]
     for r in range(h):
         for c in range(w):
             if original[r][c] == 0:
@@ -56,16 +87,15 @@ def solve_71e489b6(grid):
                     if 0 <= r + dr < h and 0 <= c + dc < w and (r + dr, c + dc) in tips
                 )
 
-    # Step 3: paint 7 halos around each tip (and its unique zero neighbour).
     for tr, tc in tips:
-        zero_neighbor = None
+        zero_neighbor: Cell | None = None
         for dr, dc in OFFSETS4:
             nr, nc = tr + dr, tc + dc
             if 0 <= nr < h and 0 <= nc < w and original[nr][nc] == 0:
                 zero_neighbor = (nr, nc)
                 break
 
-        pivots = [(tr, tc)]
+        pivots: List[Cell] = [(tr, tc)]
         if zero_neighbor is not None:
             pivots.append(zero_neighbor)
 
@@ -98,6 +128,13 @@ def solve_71e489b6(grid):
         result[tr][tc] = 0
 
     return result
+
+
+def solve_71e489b6(grid: Grid) -> Grid:
+    zero_counts = countZeroNeighbours(grid)
+    cleaned = pruneLonelyOnes(grid, zero_counts)
+    tips = collectZeroTips(grid, zero_counts)
+    return paintTipHalos(grid, cleaned, tips, zero_counts)
 
 
 p = solve_71e489b6

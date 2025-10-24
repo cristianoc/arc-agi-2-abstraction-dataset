@@ -11,7 +11,7 @@ The final approach is the corrected segment template lookup (segment_lookup_v1 /
 - **Typed operations**
   - `readKeyLetter : Grid -> Optional SegmentId` — inspect the top-left cell to recover the global key letter for digit lookups.
   - `segmentKeyForDigit : Grid × Int -> SegmentKey` — map the colours present in each 3-column digit slice to their segment-letter signature.
-  - `lookupDigitTemplate : Int × SegmentKey × Optional SegmentId -> Grid` — fetch the precomputed 12×3 template for the digit, falling back to the observed slice when missing.
+  - `lookupDigitTemplate : Grid × Int × SegmentKey × Optional SegmentId -> Grid` — fetch the precomputed 12×3 template for the digit, falling back to the observed slice when missing.
   - `assembleDigits : List Grid -> Grid` — concatenate the four digit templates horizontally to produce the final output.
 - **Solver summary**: "Read the key letter, derive segment signatures for each digit slice, look up the corrected templates (with fallback), and stitch the templates into the output grid."
 
@@ -23,6 +23,7 @@ def solve_b6f77b65(grid: Grid) -> Grid:
     digit_count = int(len(grid[0]) / 3)
     templates = [
         lookupDigitTemplate(
+            grid,
             index,
             segmentKeyForDigit(grid, index),
             key_letter,

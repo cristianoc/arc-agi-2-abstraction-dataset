@@ -1,8 +1,9 @@
 """Heuristic solver for ARC-AGI-2 task dfadab01."""
 
-from typing import Dict, List, Tuple
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, TypeVar
 
 Grid = List[List[int]]
+Cell = Tuple[int, int]
 Patch = Tuple[Tuple[int, ...], ...]
 
 # Mapping from input 4x4 neighbourhoods (with -1 padding outside the grid) to
@@ -234,26 +235,53 @@ def _stamp_patch(out: Grid, patch: Patch, r: int, c: int) -> None:
                 continue
             out[rr][cc] = val
 
+def extractPatch4x4(grid: Grid, cell: Cell) -> Patch:
+    return _extract_patch(grid, cell[0], cell[1])
+
+
+def lookupPatchTemplate(colour: int, patch: Patch) -> Optional[Patch]:
+    lib = PATCH_LIBRARY.get(colour)
+    if lib is None:
+        return None
+    return lib.get(patch)
+
+
+def stampTemplate(canvas: Grid, template: Patch, cell: Cell) -> Grid:
+    out = [row[:] for row in canvas]
+    _stamp_patch(out, template, cell[0], cell[1])
+    return out
+
+
+T = TypeVar("T")
+
+
+def fold_repaint(canvas: Grid, items: Sequence[T], update: Callable[[Grid, T], Grid]) -> Grid:
+    # Start from a blank canvas with the same shape to match solver semantics.
+    rows = len(canvas)
+    cols = len(canvas[0]) if rows else 0
+    acc = [[0 for _ in range(cols)] for _ in range(rows)]
+    for x in items:
+        acc = update(acc, x)
+    return acc
+
 
 def solve_dfadab01(grid: Grid) -> Grid:
-    """Tile-based synthesis driven by colour-specific 4x4 patch templates."""
+    seeds = [
+        (r, c)
+        for r, row in enumerate(grid)
+        for c, colour in enumerate(row)
+        if colour != 0
+    ]
 
-    rows = len(grid)
-    cols = len(grid[0])
-    out = [[0 for _ in range(cols)] for _ in range(rows)]
+    def repaint(canvas: Grid, cell: Cell) -> Grid:
+        colour = grid[cell[0]][cell[1]]
+        patch = extractPatch4x4(grid, cell)
+        template = lookupPatchTemplate(colour, patch)
+        if template is None:
+            return canvas
+        return stampTemplate(canvas, template, cell)
 
-    for r in range(rows):
-        for c in range(cols):
-            color = grid[r][c]
-            library = PATCH_LIBRARY.get(color)
-            if not library:
-                continue
-            key = _extract_patch(grid, r, c)
-            patch = library.get(key)
-            if patch:
-                _stamp_patch(out, patch, r, c)
-
-    return out
+    return fold_repaint(grid, seeds, repaint)
 
 
 p = solve_dfadab01

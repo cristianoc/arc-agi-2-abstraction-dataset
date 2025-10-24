@@ -1,10 +1,18 @@
 """Solver for ARC-AGI-2 task 67e490f4 (evaluation split)."""
 
 from collections import Counter, defaultdict
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Dict, Iterable, List, Sequence, Tuple, TypedDict
 
 Grid = List[List[int]]
 Coordinate = Tuple[int, int]
+
+
+class ComponentInfo(TypedDict):
+    cells: List[Coordinate]
+    shape: Tuple[Coordinate, ...]
+    category: str
+    size: int
+    pattern_colour: int
 
 
 def _canonical_shape(cells: Sequence[Coordinate]) -> Tuple[Coordinate, ...]:
@@ -77,13 +85,23 @@ def _find_pattern_square(grid: Grid) -> Tuple[int, int, int, int, int]:
     raise ValueError("Unable to locate motif square")
 
 
-def solve_67e490f4(grid: Grid) -> Grid:
-    """Solve ARC task 67e490f4."""
-    size, r0, c0, bg_colour, pattern_colour = _find_pattern_square(grid)
-    rows = range(r0, r0 + size)
-    cols = range(c0, c0 + size)
+def locateTwoColourSquare(grid: Grid) -> Tuple[Tuple[int, int, int], int, int]:
+    """Return (box, pattern_colour, bg_colour) for the target two-colour square.
 
-    # Catalogue small connected shapes outside the motif square.
+    Box is a tuple (r0, c0, size).
+    """
+    size, r0, c0, bg_colour, pattern_colour = _find_pattern_square(grid)
+    return (r0, c0, size), pattern_colour, bg_colour
+
+
+def catalogueExternalShapes(
+    grid: Grid, box: Tuple[int, int, int]
+) -> Dict[Tuple[Coordinate, ...], Counter]:
+    """Catalogue small connected shapes outside the motif square.
+
+    Returns a mapping from canonical shape to a Counter of observed colours.
+    """
+    r0, c0, size = box
     max_shape_size = max(9, size)
     shape_candidates: Dict[Tuple[Coordinate, ...], Counter] = defaultdict(Counter)
     visited = [[False] * len(grid[0]) for _ in grid]
@@ -111,37 +129,47 @@ def solve_67e490f4(grid: Grid) -> Grid:
             if len(cells) <= max_shape_size:
                 shape = _canonical_shape(cells)
                 shape_candidates[shape][colour] += 1
+    return shape_candidates
 
-    # Extract the motif components within the square.
+
+def classifyMotifComponents(
+    grid: Grid, box: Tuple[int, int, int], pattern_colour: int
+) -> List[ComponentInfo]:
+    """Extract and classify motif components within the square.
+
+    Returns a list of component info dicts containing:
+    - 'cells': List[Coordinate] in local box coords
+    - 'shape': canonical shape signature
+    - 'category': one of {'corner','edge','ring','center'}
+    - 'size': int box size (for downstream reconstruction)
+    - 'pattern_colour': int (for downstream exclusion/fallback)
+    """
+    r0, c0, size = box
+    rows = range(r0, r0 + size)
+    cols = range(c0, c0 + size)
     components = _component_cells(grid, pattern_colour, rows, cols)
-    centre_r = (size - 1) / 2
-    centre_c = (size - 1) / 2
+    centre = (size - 1) / 2
     outer_level = 0.0
-    comp_info = []
+    comp_info: List[ComponentInfo] = []
+    raw: List[Dict[str, float]] = []
     for cells in components:
         local_cells = [(r - r0, c - c0) for r, c in cells]
         shape = _canonical_shape(local_cells)
         avg_r = sum(r for r, _ in local_cells) / len(local_cells)
         avg_c = sum(c for _, c in local_cells) / len(local_cells)
-        abs_dr = abs(avg_r - centre_r)
-        abs_dc = abs(avg_c - centre_c)
+        abs_dr = abs(avg_r - centre)
+        abs_dc = abs(avg_c - centre)
         max_abs = max(abs_dr, abs_dc)
         outer_level = max(outer_level, max_abs)
-        comp_info.append(
-            {
-                "cells": local_cells,
-                "shape": shape,
-                "abs_dr": abs_dr,
-                "abs_dc": abs_dc,
-                "max_abs": max_abs,
-            }
-        )
+        raw.append({"abs_dr": abs_dr, "abs_dc": abs_dc, "max_abs": max_abs})
+        comp_info.append({"cells": local_cells, "shape": shape, "category": "", "size": size, "pattern_colour": pattern_colour})
 
-    # Assign semantic categories (corner / edge / ring / centre).
-    for info in comp_info:
-        abs_dr = info["abs_dr"]
-        abs_dc = info["abs_dc"]
-        max_abs = info["max_abs"]
+    # Assign categories using computed distances.
+    categorized: List[ComponentInfo] = []
+    for base, dist in zip(comp_info, raw):
+        abs_dr = dist["abs_dr"]
+        abs_dc = dist["abs_dc"]
+        max_abs = dist["max_abs"]
         min_abs = min(abs_dr, abs_dc)
         if max_abs < 0.5:
             category = "center"
@@ -151,33 +179,66 @@ def solve_67e490f4(grid: Grid) -> Grid:
             category = "corner"
         else:
             category = "ring"
-        info["category"] = category
+        base_update: ComponentInfo = {
+            "cells": base["cells"],
+            "shape": base["shape"],
+            "category": category,
+            "size": size,
+            "pattern_colour": pattern_colour,
+        }
+        categorized.append(base_update)
+    return categorized
 
-    # Pick a colour for each category by matching component shapes seen elsewhere.
+
+def recolourMotif(
+    motif_components: List[ComponentInfo],
+    external_shapes: Dict[Tuple[Coordinate, ...], Counter],
+    bg_colour: int,
+) -> Grid:
+    """Choose colours per category via external shape matches and repaint motif.
+
+    Excludes both the background colour and the motif pattern colour from voting.
+    """
+    if not motif_components:
+        return []
+
+    size = motif_components[0]["size"]
+    pattern_colour = motif_components[0]["pattern_colour"]
+
+    # Build palette per category.
     category_colours: Dict[str, int] = {}
     for category in ("corner", "edge", "ring", "center"):
-        relevant = [info for info in comp_info if info["category"] == category]
+        relevant = [info for info in motif_components if info["category"] == category]
         if not relevant:
             continue
-        aggregate = Counter()
+        aggregate: Counter = Counter()
         for info in relevant:
-            aggregate += shape_candidates.get(info["shape"], Counter())
+            shape = info["shape"]
+            aggregate += external_shapes.get(shape, Counter())
         for forbidden in (bg_colour, pattern_colour):
             if forbidden in aggregate:
                 del aggregate[forbidden]
-        if aggregate:
-            chosen = max(aggregate.items(), key=lambda kv: (kv[1], kv[0]))[0]
-        else:
-            chosen = pattern_colour
-        category_colours[category] = chosen
+        chosen = (
+            max(aggregate.items(), key=lambda kv: (kv[1], kv[0]))[0]
+            if aggregate
+            else pattern_colour
+        )
+        category_colours[category] = int(chosen)
 
-    # Paint the solution grid using the inferred palette.
+    # Paint output.
     output = [[bg_colour] * size for _ in range(size)]
-    for info in comp_info:
+    for info in motif_components:
         colour = category_colours.get(info["category"], pattern_colour)
         for dr, dc in info["cells"]:
             output[dr][dc] = colour
     return output
+
+
+def solve_67e490f4(grid: Grid) -> Grid:
+    box, color_a, color_b = locateTwoColourSquare(grid)
+    external_shapes = catalogueExternalShapes(grid, box)
+    motif_components = classifyMotifComponents(grid, box, color_a)
+    return recolourMotif(motif_components, external_shapes, color_b)
 
 
 p = solve_67e490f4

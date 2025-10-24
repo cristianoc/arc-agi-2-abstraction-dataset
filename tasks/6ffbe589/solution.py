@@ -1,24 +1,39 @@
 """ARC task 6ffbe589 solution."""
 
-from typing import List, Sequence, Tuple
+from typing import List, Optional, Sequence, Set, Tuple
 
 Grid = List[List[int]]
 
 
 def solve_6ffbe589(grid: Grid) -> Grid:
-    """Crop the vivid block then apply a color-specific rotation recipe."""
+    main = extractMainSquare(grid)
+    palette = detectPaletteVariant(main)
+    transformed = transformVariant(main, palette)
+    return fallbackRotate(main) if transformed is None else transformed
 
-    block = _extract_main_square(grid)
-    color_set = {value for row in block for value in row if value != 0}
 
-    if color_set == {3, 6, 8}:
+# -----------------------------------------------------------------------------
+# DSL helpers referenced by the Lambda Representation
+
+def extractMainSquare(grid: Grid) -> Grid:
+    return _extract_main_square(grid)
+
+
+def detectPaletteVariant(block: Grid) -> Set[int]:
+    return {v for row in block for v in row if v != 0}
+
+
+def transformVariant(block: Grid, palette: Set[int]) -> Optional[Grid]:
+    if palette == {3, 6, 8}:
         return _transform_house_variant(block)
-    if color_set == {3, 4, 5}:
+    if palette == {3, 4, 5}:
         return _transform_balcony_variant(block)
-    if color_set == {1, 2, 4}:
+    if palette == {1, 2, 4}:
         return _rotate_ccw(block)
+    return None
 
-    # Fallback: prefer the counter-clockwise rotation, which keeps test cases sane.
+
+def fallbackRotate(block: Grid) -> Grid:
     return _rotate_ccw(block)
 
 

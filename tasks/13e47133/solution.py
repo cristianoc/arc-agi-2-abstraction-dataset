@@ -1,17 +1,35 @@
 """Solver for ARC task 13e47133.
 
-Initial hand-crafted template replays struggled with generalisation.  We are
-about to replace them with a rule-driven reconstruction tailored to the task's
-geometric regularities.
+Refactored to a typed-DSL style entrypoint while preserving the original
+template-overlay behaviour.
 """
 
+from __future__ import annotations
+
 from collections import Counter, deque
+from copy import deepcopy
+from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple
+
+# Lightweight typed aliases to mirror the DSL nomenclature used in abstractions.md
+Grid = List[List[int]]
+Template = List[List[Optional[int]]]
+Offset = Tuple[int, int]
+TemplateKey = Tuple[int, int, int, Offset]
+
+
+class Component(NamedTuple):
+    color: int
+    min_row: int
+    min_col: int
+    size: int
+    height: int
+    width: int
 
 
 # Templates captured from training outputs.  Each key is
 # (color, grid_height, component_size, (row_offset, col_offset)) and values are
 # 2D arrays with `None` marking untouched cells.
-TEMPLATES = {
+TEMPLATES: Dict[TemplateKey, Template] = {
     (7, 20, 1, (0, 0)): [
         [7, 7, 7, 7, 7, 7, 7, 7],
         [7, None, None, None, None, None, None, 7],
@@ -266,18 +284,18 @@ TEMPLATES = {
 }
 
 
-def _find_components(grid, background):
+def _find_components(grid: Grid, background: int) -> List[Component]:
     """Return connected non-background components with metadata."""
     height = len(grid)
     width = len(grid[0])
     seen = [[False] * width for _ in range(height)]
-    components = []
+    components: List[Component] = []
     for r in range(height):
         for c in range(width):
             if seen[r][c] or grid[r][c] == background:
                 continue
             color = grid[r][c]
-            cells = []
+            cells: List[Tuple[int, int]] = []
             queue = deque([(r, c)])
             seen[r][c] = True
             while queue:
@@ -291,19 +309,27 @@ def _find_components(grid, background):
                             queue.append((nr, nc))
             rows = [rr for rr, _ in cells]
             cols = [cc for _, cc in cells]
-            components.append(
-                {
-                    "color": color,
-                    "cells": cells,
-                    "min_row": min(rows),
-                    "min_col": min(cols),
-                }
+            comp = Component(
+                color=color,
+                min_row=min(rows),
+                min_col=min(cols),
+                size=len(cells),
+                height=height,
+                width=width,
             )
+            components.append(comp)
     return components
 
 
-def _select_offset(color, height, comp_size, min_row, min_col, width):
-    """Choose an offset for placing a template."""
+def _select_offset(
+    color: int,
+    height: int,
+    comp_size: int,
+    min_row: int,
+    min_col: int,
+    width: int,
+) -> Optional[Offset]:
+    """Choose an offset for placing a template using the learned heuristics."""
     candidates = [
         key for key in TEMPLATES if key[0] == color and key[1] == height and key[2] == comp_size
     ]
@@ -334,7 +360,7 @@ def _select_offset(color, height, comp_size, min_row, min_col, width):
         return (0, -5)
 
     # Fallback: choose the offset with minimal magnitude that stays closest to bounds.
-    def score(key):
+    def score(key: TemplateKey) -> int:
         off = key[3]
         start_col = min_col + off[1]
         penalty = 0 if 0 <= start_col < width else abs(start_col)
@@ -344,10 +370,11 @@ def _select_offset(color, height, comp_size, min_row, min_col, width):
     return best_key[3]
 
 
-def _overlay(grid, template, start_row, start_col):
-    """Overlay template onto grid respecting boundaries and None markers."""
-    height = len(grid)
-    width = len(grid[0])
+def _overlay(canvas: Grid, template: Iterable[Iterable[Optional[int]]], start_row: int, start_col: int) -> Grid:
+    """Overlay template onto a copy of canvas respecting boundaries and None markers."""
+    result = deepcopy(canvas)
+    height = len(result)
+    width = len(result[0]) if height else 0
     for r_idx, row in enumerate(template):
         rr = start_row + r_idx
         if rr < 0 or rr >= height:
@@ -357,35 +384,59 @@ def _overlay(grid, template, start_row, start_col):
                 continue
             cc = start_col + c_idx
             if 0 <= cc < width:
-                grid[rr][cc] = value
+                result[rr][cc] = value
+    return result
 
 
-def solve_13e47133(grid):
-    """Apply glyph templates inferred from training examples."""
-    height = len(grid)
-    width = len(grid[0])
+# --- DSL-style helper façade used by the lambda entrypoint ---
+
+def findComponents(grid: Grid) -> List[Component]:
     flat = [cell for row in grid for cell in row]
     background = Counter(flat).most_common(1)[0][0]
+    return _find_components(grid, background)
 
-    result = [row[:] for row in grid]
-    for comp in _find_components(grid, background):
-        color = comp["color"]
-        comp_size = len(comp["cells"])
-        key_prefix = (color, height, comp_size)
-        matching = [k for k in TEMPLATES if k[:3] == key_prefix]
-        if not matching:
-            continue
-        offset = _select_offset(color, height, comp_size, comp["min_row"], comp["min_col"], width)
+
+def lookupTemplates(comp: Component) -> List[TemplateKey]:
+    return [k for k in TEMPLATES if k[0] == comp.color and k[1] == comp.height and k[2] == comp.size]
+
+
+def selectOffset(comp: Component, template_keys: List[TemplateKey]) -> Optional[Offset]:
+    if not template_keys:
+        return None
+    if len(template_keys) == 1:
+        return template_keys[0][3]
+    return _select_offset(comp.color, comp.height, comp.size, comp.min_row, comp.min_col, comp.width)
+
+
+def loadTemplate(key: TemplateKey) -> Template:
+    return TEMPLATES[key]
+
+
+def overlayTemplate(canvas: Grid, template: Template, start_row: int, start_col: int) -> Grid:
+    return _overlay(canvas, template, start_row, start_col)
+
+
+def fold_repaint(initial: Grid, items: List[Component], update: Callable[[Grid, Component], Grid]) -> Grid:
+    acc = deepcopy(initial)
+    for item in items:
+        acc = update(acc, item)
+    return acc
+
+
+def solve_13e47133(grid: Grid) -> Grid:
+    components = findComponents(grid)
+    
+    def overlay_component(canvas: Grid, comp: Component) -> Grid:
+        template_keys = lookupTemplates(comp)
+        offset = selectOffset(comp, template_keys)
         if offset is None:
-            continue
-        template = TEMPLATES.get((color, height, comp_size, offset))
-        if template is None:
-            continue
-        start_row = comp["min_row"] + offset[0]
-        start_col = comp["min_col"] + offset[1]
-        _overlay(result, template, start_row, start_col)
-
-    return result
+            return canvas
+        template = loadTemplate((comp.color, comp.height, comp.size, offset))
+        start_row = comp.min_row + offset[0]
+        start_col = comp.min_col + offset[1]
+        return overlayTemplate(canvas, template, start_row, start_col)
+    
+    return fold_repaint(grid, components, overlay_component)
 
 
 p = solve_13e47133

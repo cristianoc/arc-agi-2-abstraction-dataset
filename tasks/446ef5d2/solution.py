@@ -1,6 +1,9 @@
 """Solver for ARC-AGI-2 task 446ef5d2 (evaluation split)."""
 
 from collections import defaultdict
+from typing import List, Dict, Tuple, Any
+
+Grid = List[List[int]]
 
 
 def _ceil_div(a: int, b: int) -> int:
@@ -145,24 +148,34 @@ def _layout_block(components):
     }
 
 
-def solve_446ef5d2(grid):
+def filterNoise(grid: Grid, noise_color: int) -> Grid:
+    return [[8 if v == noise_color else v for v in row] for row in grid]
+
+
+def extractPerColorComponents(grid: Grid) -> Dict[str, Any]:
     h, w = len(grid), len(grid[0])
-    clean = [[8 if v == 4 else v for v in row] for row in grid]
-    comps = _components_by_color(clean)
+    comps = _components_by_color(grid)
+    return {"h": h, "w": w, "comps": comps}
+
+
+def packComponentsIntoGrid(info: Dict[str, Any]) -> Dict[str, Any]:
+    h: int = info["h"]
+    w: int = info["w"]
+    comps: Dict[int, List[Dict[str, Any]]] = info["comps"]
 
     if not comps:
-        return [row[:] for row in clean]
+        return {"h": h, "w": w, "rect": [row[:] for row in [[8] * 0 for _ in range(0)]], "rect_height": 0, "rect_width": 0, "offset_row": 0, "offset_col": 0}
 
     counts = {color: sum(comp["size"] for comp in lst) for color, lst in comps.items()}
     if not counts:
-        return [row[:] for row in clean]
+        return {"h": h, "w": w, "rect": [row[:] for row in [[8] * 0 for _ in range(0)]], "rect_height": 0, "rect_width": 0, "offset_row": 0, "offset_col": 0}
 
     base_color = max(counts.items(), key=lambda item: (item[1], item[0]))[0]
     others = [color for color in comps if color != base_color]
     if not others:
-        return [row[:] for row in clean]
+        return {"h": h, "w": w, "rect": [row[:] for row in [[8] * 0 for _ in range(0)]], "rect_height": 0, "rect_width": 0, "offset_row": 0, "offset_col": 0}
 
-    centroid_rows: dict[int, float] = {}
+    centroid_rows: Dict[int, float] = {}
     for color in others:
         total = 0.0
         total_size = 0
@@ -174,7 +187,7 @@ def solve_446ef5d2(grid):
 
     color_order = sorted(others, key=lambda color: centroid_rows[color])
 
-    blocks = {}
+    blocks: Dict[int, Dict[str, Any]] = {}
     inner_width = 0
     max_cols_minus_rows = 0
     max_rows_minus_cols = 0
@@ -209,12 +222,38 @@ def solve_446ef5d2(grid):
         if idx != len(color_order) - 1:
             row_cursor += 1
 
-    out = [[8] * w for _ in range(h)]
+    return {
+        "h": h,
+        "w": w,
+        "rect": rect,
+        "rect_height": rect_height,
+        "rect_width": rect_width,
+        "offset_row": offset_row,
+        "offset_col": offset_col,
+    }
+
+
+def embedPackedGrid(packed: Dict[str, Any], background: int) -> Grid:
+    h: int = packed["h"]
+    w: int = packed["w"]
+    rect: Grid = packed["rect"]
+    rect_height: int = packed["rect_height"]
+    rect_width: int = packed["rect_width"]
+    offset_row: int = packed["offset_row"]
+    offset_col: int = packed["offset_col"]
+
+    out = [[background] * w for _ in range(h)]
     for r in range(rect_height):
         for c in range(rect_width):
             out[offset_row + r][offset_col + c] = rect[r][c]
-
     return out
+
+
+def solve_446ef5d2(grid: Grid) -> Grid:
+    cleaned = filterNoise(grid, 4)
+    per_color = extractPerColorComponents(cleaned)
+    packed = packComponentsIntoGrid(per_color)
+    return embedPackedGrid(packed, 8)
 
 
 p = solve_446ef5d2

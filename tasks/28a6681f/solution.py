@@ -1,55 +1,80 @@
 """Solver for ARC-AGI-2 task 28a6681f (split: evaluation)."""
 
+from __future__ import annotations
 
-def solve_28a6681f(grid):
-    """Relocate color-1 cells into horizontal gaps bounded by non-zero colors."""
+from typing import List, Tuple
 
-    height = len(grid)
-    width = len(grid[0]) if height else 0
+Grid = List[List[int]]
+Cell = Tuple[int, int]
 
-    # Copy so we do not mutate the input grid.
-    result = [row[:] for row in grid]
 
-    # Supply of existing 1-cells (sorted top-to-bottom, left-to-right).
-    supply = sorted(
-        (r, c) for r in range(height) for c in range(width) if grid[r][c] == 1
-    )
+def _copy(grid: Grid) -> Grid:
+    return [row[:] for row in grid]
 
-    # Zero cells that lie between two non-zero cells in the same row.
-    candidates = []
+
+def collectSupply(grid: Grid) -> List[Cell]:
+    h = len(grid)
+    w = len(grid[0]) if h else 0
+    return sorted((r, c) for r in range(h) for c in range(w) if grid[r][c] == 1)
+
+
+def _bounded_zero_segments_in_row(row: List[int]) -> List[Tuple[int, int]]:
+    w = len(row)
+    segs: List[Tuple[int, int]] = []
+    c = 0
+    while c < w:
+        if row[c] != 0:
+            c += 1
+            continue
+        start = c
+        while c < w and row[c] == 0:
+            c += 1
+        end = c - 1
+        left_color = row[start - 1] if start > 0 else 0
+        right_color = row[end + 1] if end + 1 < w else 0
+        if left_color != 0 and right_color != 0:
+            segs.append((start, end))
+    return segs
+
+
+def findCandidates(grid: Grid) -> List[Cell]:
+    cells: List[Cell] = []
     for r, row in enumerate(grid):
-        c = 0
-        while c < width:
-            if row[c] != 0:
-                c += 1
-                continue
+        for start, end in _bounded_zero_segments_in_row(row):
+            cells.extend((r, c) for c in range(start, end + 1))
+    return cells
 
-            start = c
-            while c < width and row[c] == 0:
-                c += 1
-            end = c - 1
 
-            left_color = row[start - 1] if start > 0 else 0
-            right_color = row[end + 1] if end + 1 < width else 0
-            if left_color != 0 and right_color != 0:
-                for cc in range(start, end + 1):
-                    candidates.append((r, cc))
+def orderCandidates(candidates: List[Cell]) -> List[Cell]:
+    return sorted(candidates, key=lambda rc: (-rc[0], -rc[1]))
 
-    # Prefer filling from the bottom-right candidates first.
-    candidates.sort(key=lambda rc: (-rc[0], -rc[1]))
 
-    removed = []
-    for r, c in candidates:
-        if not supply:
+def fillCandidates(grid: Grid, ordered_candidates: List[Cell], supply: List[Cell]) -> Tuple[Grid, List[Cell]]:
+    result = _copy(grid)
+    supply_copy = list(supply)
+    removed: List[Cell] = []
+    for r, c in ordered_candidates:
+        if not supply_copy:
             break
-        if supply[0][0] <= r:
-            removed.append(supply.pop(0))
+        if supply_copy[0][0] <= r:
+            removed.append(supply_copy.pop(0))
             result[r][c] = 1
+    return result, removed
 
+
+def clearRemoved(grid: Grid, removed: List[Cell]) -> Grid:
+    result = _copy(grid)
     for r, c in removed:
         result[r][c] = 0
-
     return result
+
+
+def solve_28a6681f(grid: Grid) -> Grid:
+    supply = collectSupply(grid)
+    candidates = findCandidates(grid)
+    ordered_candidates = orderCandidates(candidates)
+    result, removed = fillCandidates(grid, ordered_candidates, supply)
+    return clearRemoved(result, removed)
 
 
 p = solve_28a6681f

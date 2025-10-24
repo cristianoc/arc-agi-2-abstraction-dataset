@@ -1,6 +1,12 @@
 """Solver for ARC-AGI-2 task f931b4a8 (evaluation split)."""
 
 from collections import defaultdict
+from typing import List, Tuple
+
+
+# Shared type aliases
+Grid = List[List[int]]
+RowPlan = Tuple[List[int], List[List[int]]]
 
 
 def _clone(grid):
@@ -155,23 +161,54 @@ def _compute_col_ids(grid, row_patterns, row_to_id):
     return col_ids, _transpose(tile)
 
 
-def solve_f931b4a8(grid):
-    if not grid or not grid[0]:
-        return _clone(grid)
-
-    tile, _, _ = _compute_tile(grid)
-    row_ids, row_patterns, row_to_id = _compute_row_ids(grid)
-    if not row_ids:
-        return []
-    col_ids, col_patterns = _compute_col_ids(grid, row_patterns, row_to_id)
-    if not col_ids:
-        return []
-
-    result = []
-    for row_id in row_ids:
-        tile_row = row_patterns[row_id]
-        result.append([tile_row[col_idx] for col_idx in col_ids])
-    return result
+def solve_f931b4a8(grid: Grid) -> Grid:
+    quadrants = extractTileQuadrants(grid)
+    row_plan = deriveRowOrder(quadrants)
+    col_ids = deriveColumnOrder(quadrants, row_plan)
+    return renderByIds(row_plan, col_ids)
 
 
 p = solve_f931b4a8
+
+
+# === DSL-style helper surface ===
+
+
+def extractTileQuadrants(grid: Grid) -> Tuple[Grid, Grid, Grid, Grid, Grid]:
+    """Return (grid, tile, tl, tr, br) for downstream pure steps.
+
+    - tile: base tile computed by preferring BR over BL and falling back
+    - tl: top-left quadrant region used to derive row anchors
+    - tr: top-right quadrant region used to derive column anchors
+    - br: bottom-right quadrant region used for zero-signature analysis
+    """
+    tile, bl, br = _compute_tile(grid)
+    hh = len(tile)
+    hw = len(tile[0]) if tile else 0
+    tl = [row[:hw] for row in grid[:hh]]
+    tr = [row[hw:] for row in grid[:hh]]
+    return (grid, tile, tl, tr, br)
+
+
+def deriveRowOrder(quadrants: Tuple[Grid, Grid, Grid, Grid, Grid]) -> RowPlan:
+    grid, _tile, _tl, _tr, _br = quadrants
+    row_ids, row_patterns, _row_to_id = _compute_row_ids(grid)
+    return (row_ids, row_patterns)
+
+
+def deriveColumnOrder(
+    quadrants: Tuple[Grid, Grid, Grid, Grid, Grid], row_plan: RowPlan
+) -> List[int]:
+    _grid, tile, _tl, tr, _br = quadrants
+    hw = len(tile[0]) if tile else 0
+    coords = _nonzero_positions_row_major(tr)
+    if not coords or hw == 0:
+        return []
+    return [idx % hw for idx, _ in enumerate(coords)]
+
+
+def renderByIds(row_plan: RowPlan, col_ids: List[int]) -> Grid:
+    row_ids, row_patterns = row_plan
+    if not row_ids or not col_ids:
+        return []
+    return [[row_patterns[row_id][c] for c in col_ids] for row_id in row_ids]

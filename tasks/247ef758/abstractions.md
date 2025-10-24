@@ -20,15 +20,17 @@ def solve_247ef758(grid: Grid) -> Grid:
     axis_col = findAxisColumn(grid)
     if axis_col is None:
         return grid
-    
+
     glyphs = extractGlyphs(grid, axis_col)
     col_markers = extractColumnMarkers(grid, axis_col)
     row_markers = extractRowMarkers(grid)
     glyph_entries = list(glyphs.items())
-    
+
     def place(canvas: Grid, entry: Tuple[Color, Glyph]) -> Grid:
         color, glyph = entry
+        if color not in col_markers or color not in row_markers:
+            return canvas
         return placeGlyphs(canvas, glyph, row_markers[color], col_markers[color])
-    
+
     return fold_repaint(grid, glyph_entries, place)
 ```

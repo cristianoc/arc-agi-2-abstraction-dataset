@@ -32,7 +32,7 @@ def solve_195c6913(grid: Grid) -> Grid:
     components = iterComponents(grid)
     pattern = extractPalette(components)
     result = stripPalette(grid, pattern)
-    anchors = locateAnchors(result, pattern)
+    anchors = locateAnchors(grid, pattern)
     
     def propagate(canvas: Grid, anchor: Anchor) -> Grid:
         return propagatePattern(canvas, pattern, anchor)

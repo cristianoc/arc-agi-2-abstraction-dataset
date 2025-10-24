@@ -1,225 +1,250 @@
-"""Solver for ARC-AGI-2 task 8b9c3697."""
+"""Solver for ARC-AGI-2 task 8b9c3697, refactored to DSL-style main."""
+
+from __future__ import annotations
+
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
+
+Grid = List[List[int]]
+Cell = Tuple[int, int]
 
 
-def solve_8b9c3697(grid):
-    """Move certain `2` clusters along clear corridors toward nearby structures."""
+def _copy(grid: Grid) -> Grid:
+    return [row[:] for row in grid]
 
-    from collections import Counter, deque
 
-    height = len(grid)
-    width = len(grid[0])
+def _background(grid: Grid) -> int:
+    counts = [0] * 10
+    for row in grid:
+        for v in row:
+            counts[v] += 1
+    return max(range(10), key=lambda c: (counts[c], c))
 
-    orig = [row[:] for row in grid]
-    result = [row[:] for row in grid]
 
-    color_counts = Counter(color for row in grid for color in row)
-    background = color_counts.most_common(1)[0][0]
+def _neighbors(r: int, c: int) -> Iterable[Cell]:
+    yield r - 1, c
+    yield r + 1, c
+    yield r, c - 1
+    yield r, c + 1
 
-    SHIFT_LIMIT = 8  # longest corridor observed in training examples
 
-    # ------------------------------------------------------------------
-    # Identify non-background, non-`2` structures as discrete objects.
-    # ------------------------------------------------------------------
-    object_id = [[-1] * width for _ in range(height)]
-    objects = []
+# --- DSL helpers (pure) ---
 
-    def bfs_object(start_r, start_c, idx):
-        queue = deque([(start_r, start_c)])
-        object_id[start_r][start_c] = idx
-        cells = []
-        sum_r = 0
-        sum_c = 0
-        while queue:
-            r, c = queue.popleft()
-            cells.append((r, c))
-            sum_r += r
-            sum_c += c
-            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                nr, nc = r + dr, c + dc
-                if 0 <= nr < height and 0 <= nc < width:
-                    if object_id[nr][nc] == -1:
-                        if orig[nr][nc] not in (background, 2):
-                            object_id[nr][nc] = idx
-                            queue.append((nr, nc))
-        size = len(cells)
-        center = (sum_r / size, sum_c / size)
-        return {
-            "id": idx,
-            "cells": cells,
-            "size": size,
-            "center": center,
-        }
-
-    next_obj_id = 0
-    for r in range(height):
-        for c in range(width):
-            if orig[r][c] in (background, 2) or object_id[r][c] != -1:
+def extractObjects(grid: Grid) -> List[Dict[str, Any]]:
+    """Non-background, non-2 connected objects with ids, cells, size, center."""
+    bg = _background(grid)
+    h = len(grid)
+    w = len(grid[0]) if h else 0
+    obj_id = [[-1] * w for _ in range(h)]
+    objects: List[Dict[str, Any]] = []
+    next_id = 0
+    for r in range(h):
+        for c in range(w):
+            if grid[r][c] in (bg, 2) or obj_id[r][c] != -1:
                 continue
-            objects.append(bfs_object(r, c, next_obj_id))
-            next_obj_id += 1
+            stack = [(r, c)]
+            obj_id[r][c] = next_id
+            cells: List[Cell] = []
+            sum_r = 0
+            sum_c = 0
+            while stack:
+                cr, cc = stack.pop()
+                cells.append((cr, cc))
+                sum_r += cr
+                sum_c += cc
+                for nr, nc in _neighbors(cr, cc):
+                    if 0 <= nr < h and 0 <= nc < w and obj_id[nr][nc] == -1:
+                        if grid[nr][nc] not in (bg, 2):
+                            obj_id[nr][nc] = next_id
+                            stack.append((nr, nc))
+            size = len(cells)
+            center = (sum_r / size, sum_c / size)
+            objects.append({"id": next_id, "cells": cells, "size": size, "center": center})
+            next_id += 1
+    return objects
 
-    # ------------------------------------------------------------------
-    # Locate connected components of color `2`.
-    # ------------------------------------------------------------------
-    visited = [[False] * width for _ in range(height)]
-    components = []
 
-    def bfs_two(start_r, start_c):
-        queue = deque([(start_r, start_c)])
-        visited[start_r][start_c] = True
-        cells = []
-        sum_r = 0
-        sum_c = 0
-        while queue:
-            r, c = queue.popleft()
-            cells.append((r, c))
-            sum_r += r
-            sum_c += c
-            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                nr, nc = r + dr, c + dc
-                if 0 <= nr < height and 0 <= nc < width:
-                    if not visited[nr][nc] and orig[nr][nc] == 2:
-                        visited[nr][nc] = True
-                        queue.append((nr, nc))
-        size = len(cells)
-        center = (sum_r / size, sum_c / size)
-        return {
-            "cells": cells,
-            "size": size,
-            "center": center,
-        }
+def extractTwoComponents(grid: Grid) -> List[Dict[str, Any]]:
+    """Connected components of color 2 with cells, size, center."""
+    h = len(grid)
+    w = len(grid[0]) if h else 0
+    seen = [[False] * w for _ in range(h)]
+    out: List[Dict[str, Any]] = []
+    for r in range(h):
+        for c in range(w):
+            if grid[r][c] != 2 or seen[r][c]:
+                continue
+            stack = [(r, c)]
+            seen[r][c] = True
+            cells: List[Cell] = []
+            sum_r = 0
+            sum_c = 0
+            while stack:
+                cr, cc = stack.pop()
+                cells.append((cr, cc))
+                sum_r += cr
+                sum_c += cc
+                for nr, nc in _neighbors(cr, cc):
+                    if 0 <= nr < h and 0 <= nc < w and not seen[nr][nc] and grid[nr][nc] == 2:
+                        seen[nr][nc] = True
+                        stack.append((nr, nc))
+            size = len(cells)
+            center = (sum_r / size, sum_c / size)
+            out.append({"cells": cells, "size": size, "center": center})
+    return out
 
-    for r in range(height):
-        for c in range(width):
-            if orig[r][c] == 2 and not visited[r][c]:
-                components.append(bfs_two(r, c))
 
-    if not components:
-        return result
+def _front_cells(cells: Sequence[Cell], dr: int, dc: int) -> List[Cell]:
+    if dr == -1:
+        key = min(r for r, _ in cells)
+        return [(r, c) for r, c in cells if r == key]
+    if dr == 1:
+        key = max(r for r, _ in cells)
+        return [(r, c) for r, c in cells if r == key]
+    if dc == -1:
+        key = min(c for _, c in cells)
+        return [(r, c) for r, c in cells if c == key]
+    key = max(c for _, c in cells)
+    return [(r, c) for r, c in cells if c == key]
 
-    # Pre-index objects for quick look-up.
-    objects_by_id = {obj["id"]: obj for obj in objects}
 
-    # ------------------------------------------------------------------
-    # Enumerate corridor candidates linking `2` components to objects.
-    # ------------------------------------------------------------------
-    candidates_by_object = {obj["id"]: [] for obj in objects}
+def enumerateCorridorCandidates(
+    grid: Grid,
+    two_components: Sequence[Dict[str, Any]],
+    objects: Sequence[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """Enumerate valid straight corridors from each 2-component to objects.
 
+    Returns a structure with:
+      - components: the input components (for later application)
+      - by_object: mapping object id -> list of candidate dicts
+      - objects_by_id: id -> object dict
+    """
+    bg = _background(grid)
+    h = len(grid)
+    w = len(grid[0]) if h else 0
+
+    # Build object id grid from objects' cells
+    obj_id = [[-1] * w for _ in range(h)]
+    for obj in objects:
+        oid = obj["id"]  # type: ignore[index]
+        for r, c in obj["cells"]:  # type: ignore[index]
+            obj_id[r][c] = oid  # type: ignore[assignment]
+
+    by_object: Dict[int, List[Dict[str, Any]]] = {}
     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
-    for comp_idx, comp in enumerate(components):
-        if not comp["cells"]:
+    for comp_idx, comp in enumerate(two_components):
+        cells: Sequence[Cell] = comp["cells"]  # type: ignore[assignment]
+        if not cells:
             continue
-
-        rows = [r for r, _ in comp["cells"]]
-        cols = [c for _, c in comp["cells"]]
-        min_r = min(rows)
-        max_r = max(rows)
-        min_c = min(cols)
-        max_c = max(cols)
-
         for dr, dc in directions:
-            if dr == -1:
-                front = [(r, c) for r, c in comp["cells"] if r == min_r]
-            elif dr == 1:
-                front = [(r, c) for r, c in comp["cells"] if r == max_r]
-            elif dc == -1:
-                front = [(r, c) for r, c in comp["cells"] if c == min_c]
-            else:  # dc == 1
-                front = [(r, c) for r, c in comp["cells"] if c == max_c]
-
+            front = _front_cells(cells, dr, dc)
             if not front:
                 continue
-
-            shift = None
-            target_pos = None
+            shift: Optional[int] = None
+            target: Optional[Cell] = None
             valid = True
-
             for fr, fc in front:
                 steps = 0
                 nr, nc = fr + dr, fc + dc
-                while 0 <= nr < height and 0 <= nc < width and orig[nr][nc] == background:
+                while 0 <= nr < h and 0 <= nc < w and grid[nr][nc] == bg:
                     steps += 1
                     nr += dr
                     nc += dc
-
-                if not (0 <= nr < height and 0 <= nc < width):
+                if not (0 <= nr < h and 0 <= nc < w):
                     valid = False
                     break
-                if orig[nr][nc] in (2, 0):
+                if grid[nr][nc] in (2, 0):
                     valid = False
                     break
                 if steps == 0:
                     valid = False
                     break
-
                 if shift is None:
                     shift = steps
-                    target_pos = (nr, nc)
+                    target = (nr, nc)
                 elif steps != shift:
                     valid = False
                     break
-
-            if not valid or shift is None or shift > SHIFT_LIMIT:
+            if not valid or shift is None or shift > 8:
                 continue
-
-            target_r, target_c = target_pos
-            target_object = object_id[target_r][target_c]
-            if target_object == -1:
+            tr, tc = target  # type: ignore[misc]
+            oid = obj_id[tr][tc]
+            if oid == -1:
                 continue
-
-            path_cells = set()
-            new_positions = set()
-            for r, c in comp["cells"]:
+            path_cells: set[Cell] = set()
+            new_cells: set[Cell] = set()
+            for r, c in cells:
                 for step in range(shift):
                     path_cells.add((r + dr * step, c + dc * step))
-                new_positions.add((r + dr * shift, c + dc * shift))
-
-            obj_center = objects_by_id[target_object]["center"]
-            comp_center = comp["center"]
-            distance = abs(comp_center[0] - obj_center[0]) + abs(comp_center[1] - obj_center[1])
-
-            candidates_by_object[target_object].append({
+                new_cells.add((r + dr * shift, c + dc * shift))
+            cand: Dict[str, Any] = {
                 "component": comp_idx,
                 "shift": shift,
                 "direction": (dr, dc),
                 "path": path_cells,
-                "new": new_positions,
+                "new": new_cells,
                 "component_size": comp["size"],
-                "distance": distance,
-            })
+            }
+            by_object.setdefault(oid, []).append(cand)
 
-    # ------------------------------------------------------------------
-    # Assign at most one corridor per object, preferring larger `2` blocks
-    # and shorter corridors, then closer centroids for tie-breaking.
-    # ------------------------------------------------------------------
-    assigned_component = [None] * len(components)
+    objects_by_id = {obj["id"]: obj for obj in objects}  # type: ignore[index]
+    return {"components": list(two_components), "by_object": by_object, "objects_by_id": objects_by_id}
 
-    for obj in sorted(objects, key=lambda item: (item["size"], item["id"])):
-        options = [cand for cand in candidates_by_object.get(obj["id"], []) if assigned_component[cand["component"]] is None]
-        if not options:
+
+def assignCorridors(candidates: Dict[str, Any]) -> Dict[str, Any]:
+    """Choose at most one corridor per object using size/shift/distance tiebreaks."""
+    components: Sequence[Dict[str, Any]] = candidates["components"]
+    by_object: Dict[int, List[Dict[str, Any]]] = candidates["by_object"]
+    objects_by_id: Dict[int, Dict[str, Any]] = candidates["objects_by_id"]
+
+    # Sort objects by size, then id for stability
+    objects_sorted = sorted(objects_by_id.values(), key=lambda o: (o["size"], o["id"]))
+
+    assigned: Dict[int, Dict[str, Any]] = {}
+    for obj in objects_sorted:
+        opts = [cand for cand in by_object.get(obj["id"], []) if cand["component"] not in assigned]
+        if not opts:
             continue
+        for cand in opts:
+            comp = components[cand["component"]]
+            comp_center = comp["center"]
+            obj_center = obj["center"]
+            cand["distance"] = abs(comp_center[0] - obj_center[0]) + abs(comp_center[1] - obj_center[1])
+        opts.sort(key=lambda c: (-c["component_size"], c["shift"], c["distance"]))
+        best = opts[0]
+        assigned[best["component"]] = best
 
-        options.sort(key=lambda cand: (-cand["component_size"], cand["shift"], cand["distance"]))
-        chosen = options[0]
-        assigned_component[chosen["component"]] = chosen
+    return {"components": list(components), "assigned": assigned}
 
-    # ------------------------------------------------------------------
-    # Apply moves or clean up unassigned components.
-    # ------------------------------------------------------------------
+
+def applyCorridorMoves(grid: Grid, assignments: Dict[str, Any]) -> Grid:
+    """Apply chosen corridors; erase unassigned 2-components to background."""
+    result = _copy(grid)
+    bg = _background(grid)
+    components: Sequence[Dict[str, Any]] = assignments["components"]
+    assigned: Dict[int, Dict[str, Any]] = assignments["assigned"]
+
     for idx, comp in enumerate(components):
-        chosen = assigned_component[idx]
+        chosen = assigned.get(idx)
         if chosen is None:
-            for r, c in comp["cells"]:
-                result[r][c] = background
+            for r, c in comp["cells"]:  # type: ignore[index]
+                result[r][c] = bg
             continue
-
-        for r, c in chosen["path"]:
+        for r, c in chosen["path"]:  # type: ignore[index]
             result[r][c] = 0
-        for r, c in chosen["new"]:
+        for r, c in chosen["new"]:  # type: ignore[index]
             result[r][c] = 2
-
     return result
+
+
+# --- Main (must match abstractions.md Lambda Representation) ---
+def solve_8b9c3697(grid: Grid) -> Grid:
+    objects = extractObjects(grid)
+    two_components = extractTwoComponents(grid)
+    candidates = enumerateCorridorCandidates(grid, two_components, objects)
+    assignments = assignCorridors(candidates)
+    return applyCorridorMoves(grid, assignments)
 
 
 p = solve_8b9c3697

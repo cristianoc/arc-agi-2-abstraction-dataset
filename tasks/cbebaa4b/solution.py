@@ -1,12 +1,22 @@
 """Solver for ARC-AGI-2 task cbebaa4b."""
 
 from collections import Counter, defaultdict, deque
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Dict, Iterable, List, Sequence, Tuple, cast
 
 
 Grid = List[List[int]]
 Point = Tuple[int, int]
 Vector = Tuple[int, int]
+Translations = Dict[int, Vector]
+
+# Gadgets bundle used by the typed-DSL style wrappers
+# (components, owner, connectors, door_index)
+Gadgets = Tuple[
+    List[Dict[str, object]],
+    List[List[int]],
+    Dict[int, List[Tuple[Point, Vector]]],
+    int,
+]
 
 
 def in_bounds(h: int, w: int, r: int, c: int) -> bool:
@@ -84,8 +94,8 @@ def find_door(components: Sequence[Dict[str, object]]) -> int:
     best_idx = -1
     best_area = -1
     for idx, comp in enumerate(components):
-        cells: List[Point] = comp["cells"]  # type: ignore[assignment]
-        y0, y1, x0, x1 = comp["bbox"]  # type: ignore[misc]
+        cells = cast(List[Point], comp["cells"])
+        y0, y1, x0, x1 = cast(Tuple[int, int, int, int], comp["bbox"])  # type: ignore[misc]
         height = y1 - y0 + 1
         width = x1 - x0 + 1
         area = height * width
@@ -136,7 +146,7 @@ def fallback_place(
 
     placed_cells = set()
     for idx, (dy, dx) in translations.items():
-        for r, c in components[idx]["cells"]:  # type: ignore[index]
+        for r, c in cast(List[Point], components[idx]["cells"]):  # type: ignore[index]
             placed_cells.add((r + dy, c + dx))
 
     # Known connector coordinates in absolute space.
@@ -159,7 +169,7 @@ def fallback_place(
                     dy, dx = tr - cr, tc - cc
                     # Validate placement bounds and overlap.
                     good = True
-                    for r, c in components[idx]["cells"]:  # type: ignore[index]
+                    for r, c in cast(List[Point], components[idx]["cells"]):  # type: ignore[index]
                         nr, nc = r + dy, c + dx
                         if not in_bounds(h, w, nr, nc) or (nr, nc) in placed_cells:
                             good = False
@@ -176,7 +186,7 @@ def fallback_place(
                 continue
             _, dy, dx, shifted = best
             translations[idx] = (dy, dx)
-            for r, c in components[idx]["cells"]:  # type: ignore[index]
+            for r, c in cast(List[Point], components[idx]["cells"]):  # type: ignore[index]
                 placed_cells.add((r + dy, c + dx))
             known_conns |= shifted
             remaining.remove(idx)
@@ -199,9 +209,9 @@ def apply_translations(
 
     # Place coloured components.
     for idx, comp in enumerate(components):
-        colour = comp["colour"]  # type: ignore[index]
+        colour = cast(int, comp["colour"])  # type: ignore[index]
         dy, dx = translations.get(idx, (0, 0))
-        for r, c in comp["cells"]:  # type: ignore[index]
+        for r, c in cast(List[Point], comp["cells"]):  # type: ignore[index]
             nr, nc = r + dy, c + dx
             out[nr][nc] = colour
 
@@ -215,17 +225,31 @@ def apply_translations(
     return out
 
 
-def solve_cbebaa4b(grid: Grid) -> Grid:
-    h, w = len(grid), len(grid[0])
+def extractGadgetComponents(grid: Grid) -> Gadgets:
     components, owner = get_components(grid)
     if not components:
-        return deep_copy(grid)
-
+        # Represent an empty setup with an empty connectors map and dummy door index
+        return (components, owner, {}, -1)
     connectors = get_connectors(grid, owner)
     door = find_door(components)
+    return (components, owner, connectors, door)
 
-    edges = build_edges(connectors)
-    translations: Dict[int, Vector] = {door: (0, 0)}
+
+def pairConnectors(gadgets: Gadgets) -> Dict[int, Dict[int, Vector]]:
+    components, owner, connectors, door = gadgets
+    # Only the connectors map matters to infer deltas
+    return build_edges(connectors)
+
+
+def buildConnectorGraph(gadgets: Gadgets, edges: Dict[int, Dict[int, Vector]]) -> Translations:
+    components, owner, connectors, door = gadgets
+    if owner:
+        h, w = len(owner), len(owner[0])
+    else:
+        h, w = 0, 0
+    if not components:
+        return {}
+    translations: Translations = {door: (0, 0)}
     queue = deque([door])
     while queue:
         src = queue.popleft()
@@ -240,13 +264,31 @@ def solve_cbebaa4b(grid: Grid) -> Grid:
                 translations[dst] = candidate
                 queue.append(dst)
 
-    fallback_place(grid, components, connectors, translations)
+    # Greedy fallback for components not in the edge graph
+    fallback_place(grid=owner and [[0]*len(owner[0]) for _ in range(len(owner))] or [],  # dummy grid shape
+                   components=components,
+                   connectors=connectors,
+                   translations=translations)
 
     # Ensure all components have translations (default to zero if unreachable).
     for idx in range(len(components)):
         translations.setdefault(idx, (0, 0))
+    return translations
 
-    return apply_translations(grid, components, connectors, translations)
+
+def applyTranslations(grid: Grid, graph: Translations) -> Grid:
+    components, owner = get_components(grid)
+    if not components:
+        return deep_copy(grid)
+    connectors = get_connectors(grid, owner)
+    return apply_translations(grid, components, connectors, graph)
+
+
+def solve_cbebaa4b(grid: Grid) -> Grid:
+    gadgets = extractGadgetComponents(grid)
+    pairs = pairConnectors(gadgets)
+    graph = buildConnectorGraph(gadgets, pairs)
+    return applyTranslations(grid, graph)
 
 
 p = solve_cbebaa4b

@@ -1,6 +1,10 @@
 """Solver for ARC task 136b0064."""
 
 from collections import Counter
+from typing import List, Tuple
+
+# Type aliases for DSL-style annotations
+Grid = List[List[int]]
 
 
 GLYPHS = {
@@ -11,7 +15,7 @@ GLYPHS = {
 }
 
 
-def split_blocks(grid):
+def split_blocks(grid: Grid) -> List[Tuple[int, int]]:
     """Return (start, end) row indices for each non-empty left block."""
     blocks = []
     start = None
@@ -28,8 +32,8 @@ def split_blocks(grid):
     return blocks
 
 
-def dominant_color(grid, row_range, col_range):
-    counts = Counter()
+def dominant_color(grid: Grid, row_range: Tuple[int, int], col_range) -> int:
+    counts: Counter[int] = Counter()
     start, end = row_range
     for r in range(start, end):
         for c in col_range:
@@ -39,7 +43,7 @@ def dominant_color(grid, row_range, col_range):
     return counts.most_common(1)[0][0] if counts else 0
 
 
-def extract_digits(grid):
+def extract_digits(grid: Grid) -> Tuple[List[int], List[int]]:
     left_digits = []
     right_digits = []
     for start, end in split_blocks(grid):
@@ -50,7 +54,7 @@ def extract_digits(grid):
     return left_digits, right_digits
 
 
-def glyph_size(digit):
+def glyph_size(digit: int) -> Tuple[int, int]:
     pattern = GLYPHS[digit]
     return len(pattern), len(pattern[0])
 
@@ -59,7 +63,7 @@ def compute_candidates(prev_cols, width, total_width):
     return [c0 for c0 in range(0, total_width - width + 1) if prev_cols & set(range(c0, c0 + width))]
 
 
-def select_positions(grid, left_digits, right_digits):
+def select_positions(grid: Grid, left_digits: List[int], right_digits: List[int]) -> List[int]:
     if not left_digits and not right_digits:
         return []
 
@@ -120,6 +124,7 @@ def select_positions(grid, left_digits, right_digits):
                     feas = [c for c in candidates if prev_start is None or c <= prev_start]
                     choice = feas[0] if feas else candidates[0]
         elif prev_digit == digit and glyph_width > 1:
+            assert prev_start is not None
             target = prev_start + direction * (glyph_width - 1)
             if target in candidates:
                 choice = target
@@ -151,33 +156,45 @@ def select_positions(grid, left_digits, right_digits):
     return seq
 
 
-def paint_digit(grid, row, start, digit):
+def paint_digit(grid: Grid, row: int, start: int, digit: int) -> None:
     pattern = GLYPHS[digit]
     for dr, line in enumerate(pattern):
         for dc, value in enumerate(line):
             grid[row + dr][start + dc] = value
 
 
-def solve_136b0064(grid):
-    left_digits, right_digits = extract_digits(grid)
+def splitBlocks(grid: Grid) -> List[Tuple[int, int]]:
+    return split_blocks(grid)
+
+
+def extractDigitLists(grid: Grid, blocks: List[Tuple[int, int]]) -> Tuple[List[int], List[int]]:
+    # The underlying extractor computes blocks internally; `blocks` is unused here.
+    return extract_digits(grid)
+
+
+def planDigitColumns(grid: Grid, left_digits: List[int], right_digits: List[int]) -> List[int]:
+    return select_positions(grid, left_digits, right_digits)
+
+
+def renderDigits(grid: Grid, sequence: List[int], digits: List[int]) -> Grid:
     height = len(grid)
     right_part = [row[8:] for row in grid]
     output = [row[:] for row in right_part]
-
-    sequence = select_positions(grid, left_digits, right_digits)
-    if not sequence:
-        return output
-
-    digits = left_digits + right_digits
     row = 1  # leave top row as copied from input
     for start, digit in zip(sequence, digits):
-        glyph_height, glyph_width = glyph_size(digit)
+        glyph_height, _glyph_width = glyph_size(digit)
         if row + glyph_height > height:
             break
         paint_digit(output, row, start, digit)
         row += glyph_height
-
     return output
+
+
+def solve_136b0064(grid: Grid) -> Grid:
+    blocks = splitBlocks(grid)
+    left_digits, right_digits = extractDigitLists(grid, blocks)
+    sequence = planDigitColumns(grid, left_digits, right_digits)
+    return renderDigits(grid, sequence, left_digits + right_digits)
 
 
 p = solve_136b0064

@@ -20,6 +20,6 @@ Final solver uses the `full_shadow` abstraction, with the vertical and horizonta
 def solve_64efde09(grid: Grid) -> Grid:
     motifs = identifyMotifs(grid)
     vertical = castVerticalShadows(grid, motifs)
-    horizontal = castHorizontalShadows(grid, motifs)
+    horizontal = castHorizontalShadows(vertical, motifs)
     return mergeShadowPasses(grid, vertical, horizontal)
 ```

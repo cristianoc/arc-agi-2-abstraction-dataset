@@ -7,20 +7,34 @@
 
 ## DSL Structure
 - **Typed operations**
-  - `extractPanels : Grid -> (Grid, Grid, Grid)` — identify border columns and slice the left, centre, and right panels.
-  - `classifyPanelShape : Grid -> ShapeId` — reduce each panel to its interior mask and recognise cross/diamond/block variants.
-  - `chooseTemplate : ShapeId × ShapeId -> TemplateId` — select the overlay routine (cross subset vs. block template) based on panel pairings.
-  - `renderTemplatePanel : TemplateId × Grid × Grid -> Grid` — apply the chosen overlay, preserving borders and copying accents to form the final panel.
-- **Solver summary**: "Slice the panels, classify their interior shapes, pick the appropriate overlay template, and render that template into the output panel before copying it to the right section."
+  - `_extract_sections : Grid -> (Int, Int, Int, Int)` — locate border columns and return `(left_start, center_start, right_start, width)`.
+  - `_slice_panel : Grid -> Int -> Int -> Grid` — slice a panel from the grid given start and width.
+  - `_panel_base : Grid -> Color` — detect the dominant/base colour of a panel.
+  - `_cross_case : Grid -> Grid -> Color -> Color -> Optional Grid` — if `(diamond, cross)` shapes are detected, produce the cross-overlay result; otherwise `None`.
+  - `_block_case : Grid -> Grid -> Color -> Color -> Optional Grid` — if `(block-left, block-center)` shapes are detected, produce the block-template result; otherwise `None`.
+  - `_write_panel_into_right : Grid -> Int -> Int -> Grid -> Grid` — copy a panel into the right section of the canvas.
+  - `_unhandled : Grid -> Grid` — guard-only error path for unexpected configurations.
+- **Solver summary**: "Extract and slice the left/center panels, compute bases, try the cross overlay; if it applies, copy it to the right; otherwise try the block template; if neither applies, return the guarded error."
 
 ## Lambda Representation
 
 ```python
 def solve_7491f3cf(grid: Grid) -> Grid:
-    left, centre, right = extractPanels(grid)
-    left_shape = classifyPanelShape(left)
-    centre_shape = classifyPanelShape(centre)
-    template = chooseTemplate(left_shape, centre_shape)
-    rendered = renderTemplatePanel(template, left, centre)
-    return renderTemplatePanel(template, rendered, right)
+    left_start, center_start, right_start, width = _extract_sections(grid)
+
+    left_panel = _slice_panel(grid, left_start, width)
+    center_panel = _slice_panel(grid, center_start, width)
+
+    left_base = _panel_base(left_panel)
+    center_base = _panel_base(center_panel)
+
+    result = _cross_case(left_panel, center_panel, left_base, center_base)
+    if result is not None:
+        return _write_panel_into_right(grid, right_start, width, result)
+
+    result = _block_case(left_panel, center_panel, left_base, center_base)
+    if result is not None:
+        return _write_panel_into_right(grid, right_start, width, result)
+
+    return _unhandled(grid)
 ```

@@ -1,14 +1,16 @@
 """Solution for ARC-AGI-2 task 7ed72f31 (evaluation split)."""
 
+from __future__ import annotations
+
 from collections import Counter, deque
+from typing import Any, Dict, List, Set, Tuple
+
+Grid = List[List[int]]
 
 
-def solve_7ed72f31(grid):
-    """Reflect non-axis objects across the symmetry axes marked in color 2."""
+def extractAxes(grid: Grid) -> List[Dict[str, Any]]:
     height, width = len(grid), len(grid[0])
-
-    background = Counter(cell for row in grid for cell in row).most_common(1)[0][0]
-    axes = []
+    axes: List[Dict[str, Any]] = []
     seen = [[False] * width for _ in range(height)]
 
     for y in range(height):
@@ -17,7 +19,7 @@ def solve_7ed72f31(grid):
                 continue
             queue = deque([(y, x)])
             seen[y][x] = True
-            comp = []
+            comp: List[Tuple[int, int]] = []
             while queue:
                 cy, cx = queue.popleft()
                 comp.append((cy, cx))
@@ -56,7 +58,14 @@ def solve_7ed72f31(grid):
                 }
             )
 
-    def axis_applicable(axis, y, x):
+    return axes
+
+
+def paintReflections(grid: Grid, axes: List[Dict[str, Any]]) -> Grid:
+    height, width = len(grid), len(grid[0])
+    background = Counter(cell for row in grid for cell in row).most_common(1)[0][0]
+
+    def axis_applicable(axis: Dict[str, Any], y: int, x: int) -> bool:
         if (y, x) in axis["cells"]:
             return False
         atype = axis["type"]
@@ -68,7 +77,7 @@ def solve_7ed72f31(grid):
             return axis["min_r"] <= y <= axis["max_r"] or axis["min_c"] <= x <= axis["max_c"]
         return True
 
-    def reflect(axis, y, x):
+    def reflect(axis: Dict[str, Any], y: int, x: int) -> Tuple[int, int]:
         atype = axis["type"]
         cy = axis["center_r"]
         cx = axis["center_c"]
@@ -86,8 +95,8 @@ def solve_7ed72f31(grid):
         if val == 2 or val == background:
             continue
 
-        best_axis = None
-        best_dist = None
+        best_axis: Dict[str, Any] | None = None
+        best_dist: float | None = None
         for axis in axes:
             if not axis_applicable(axis, y, x):
                 continue
@@ -111,6 +120,11 @@ def solve_7ed72f31(grid):
             out[ny][nx] = val
 
     return out
+
+
+def solve_7ed72f31(grid: Grid) -> Grid:
+    axes = extractAxes(grid)
+    return paintReflections(grid, axes)
 
 
 p = solve_7ed72f31

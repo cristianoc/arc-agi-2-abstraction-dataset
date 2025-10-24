@@ -10,6 +10,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Nothing yet
 
+
+## [1.6.1] - 2025-10-24
+
+### Added
+- Abstraction reports (abstractions.md) for identity baseline bundles: 142ca369, 21897d95, 271d71e2, da515329
+
+### Changed
+- Synchronized all 120 per-task bundles from ArcGolf/arc2 into `tasks/<id>/`
+- Normalized solver mains to match the DSL Lambda Representation exactly where applicable
+- Ensured all `tasks/**/abstractions.md` pass the DSL lambda type-checker (`dsl/check_lambda_types.py`)
+
+### Fixed
+- a32d8b75: corrected Lambda Representation to conform to DSL purity rules and match the solver
+
+### Repository status
+- Total bundles: 120 (116 full + 4 identity baselines); documentation already reflected this count
+- Known consistency exceptions: missing `abstractions.py` in 2 bundles (21897d95, 271d71e2)
+
 ## [1.6.0] - 2025-10-12
 
 ### Changed

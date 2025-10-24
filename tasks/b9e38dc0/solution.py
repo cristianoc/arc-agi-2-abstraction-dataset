@@ -1,6 +1,10 @@
 """Solver for ARC-AGI-2 task b9e38dc0."""
 
 from __future__ import annotations
+from typing import List, Tuple, Dict, Set
+
+# Typed alias used by the DSL lambda and local helpers
+Grid = List[List[int]]
 
 
 def copy_grid(grid):
@@ -259,32 +263,64 @@ def choose_orientation(grid, barrier, fill_positions):
     return opposite[nearest], (top, left, right)
 
 
-def solve_b9e38dc0(grid):
-    """Solve ARC task b9e38dc0."""
+def classifyPaletteRoles(grid: Grid) -> Tuple[int, int, int]:
     background = dominant_color(grid)
-    barrier = barrier_color(grid, background)
-    fill = fill_color(grid, background, barrier)
-    if fill is None:
-        return copy_grid(grid)
+    bar = barrier_color(grid, background)
+    fill = fill_color(grid, background, bar)
+    return background, bar, fill  # type: ignore[return-value]
 
-    fill_positions = [(r, c) for r, row in enumerate(grid) for c, value in enumerate(row) if value == fill]
-    orientation, barrier_bounds = choose_orientation(grid, barrier, fill_positions)
 
+def chooseOrientation(grid: Grid, fill: int, barrier: int) -> Tuple[str, Tuple[int, int, int] | None]:
+    fill_positions = [(r, c) for r, row in enumerate(grid) for c, v in enumerate(row) if v == fill]
+    if not fill_positions:
+        return "down", None
+    orientation, bounds = choose_orientation(grid, barrier, fill_positions)
+    return orientation, bounds
+
+
+def seedSegments(grid: Grid, orientation: str, fill: int):
+    background = dominant_color(grid)
+    fill_positions = [(r, c) for r, row in enumerate(grid) for c, v in enumerate(row) if v == fill]
     if orientation in {"down", "up"}:
-        seeds = seed_segments_vertical(grid, background, fill_positions)
-        bounds = barrier_bounds if orientation == "up" else None
-        segments = propagate_vertical(grid, orientation, seeds, background, barrier, fill, bounds)
-        cells = segments_to_cells_vertical(segments)
-    else:
-        grid_t = transpose_grid(grid)
-        seeds = seed_segments_vertical(grid_t, background, transpose_positions(fill_positions))
-        orient_t = "down" if orientation == "right" else "up"
-        segments_t = propagate_vertical(grid_t, orient_t, seeds, background, barrier, fill, None)
-        cells = segments_to_cells_horizontal(segments_t)
+        return seed_segments_vertical(grid, background, fill_positions)
+    return seed_segments_vertical(transpose_grid(grid), background, transpose_positions(fill_positions))
 
-    cells -= set(fill_positions)
+
+def propagateSegments(
+    grid: Grid,
+    orientation: str,
+    seeds,
+    palette_roles: Tuple[int, int],
+    bounds: Tuple[int, int, int] | None,
+):
+    fill, barrier = palette_roles
+    background = dominant_color(grid)
+    if orientation in {"down", "up"}:
+        limit = bounds if orientation == "up" else None
+        segments = propagate_vertical(grid, orientation, seeds, background, barrier, fill, limit)
+        return segments_to_cells_vertical(segments)
+    grid_t = transpose_grid(grid)
+    orient_t = "down" if orientation == "right" else "up"
+    segments_t = propagate_vertical(grid_t, orient_t, seeds, background, barrier, fill, None)
+    return segments_to_cells_horizontal(segments_t)
+
+
+def paintSegments(grid: Grid, segments, fill: int) -> Grid:
+    cells = set(segments)
+    fill_positions = {(r, c) for r, row in enumerate(grid) for c, v in enumerate(row) if v == fill}
+    cells -= fill_positions
     result = copy_grid(grid)
     for r, c in cells:
         result[r][c] = fill
     return result
+
+
+def solve_b9e38dc0(grid: Grid) -> Grid:
+    background, barrier, fill = classifyPaletteRoles(grid)
+    orientation, bounds = chooseOrientation(grid, fill, barrier)
+    seeds = seedSegments(grid, orientation, fill)
+    segments = propagateSegments(grid, orientation, seeds, (fill, barrier), bounds)
+    return paintSegments(grid, segments, fill)
+
+
 p = solve_b9e38dc0

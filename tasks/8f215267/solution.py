@@ -12,7 +12,11 @@ then determine which interior columns in the frame are repainted.
 from __future__ import annotations
 
 from collections import Counter
-from typing import Dict, Iterable, List, Sequence, Tuple
+from typing import Callable, Dict, Iterable, List, Sequence, Tuple
+
+# DSL-friendly type aliases
+Grid = List[List[int]]
+Frame = Tuple[int, int, int, int, int]  # (color, rmin, rmax, cmin, cmax)
 
 
 # Canonical patch --> stripe count mapping derived from the training puzzles.
@@ -128,7 +132,7 @@ def _extract_patch(
     rows = []
     max_width = 0
     for r in range(rmin, rmax + 1):
-        tail = grid[r][cmax + 1 :]
+        tail = list(grid[r][cmax + 1 :])
         rows.append(tail)
         for idx in range(len(tail) - 1, -1, -1):
             if tail[idx] != background:
@@ -213,44 +217,93 @@ def _paint_stripes(
         grid[mid][base + offset] = color
 
 
-def solve_8f215267(grid: Sequence[Sequence[int]]) -> List[List[int]]:
-    """Apply stripe reconstruction on each frame and clear side noise."""
-    work = [list(row) for row in grid]
-
+def extractFrames(grid: Grid) -> List[Frame]:
     background = _most_common_color(grid)
-    blocks = list(_find_blocks(grid, background))
-    height = len(grid)
-    width = len(grid[0]) if height else 0
+    return [(color, rmin, rmax, cmin, cmax) for (color, rmin, rmax, cmin, cmax) in _find_blocks(grid, background)]
+
+
+def sliceInstructionPatch(grid: Grid, frame: Frame) -> Tuple[Tuple[int, ...], ...]:
+    color, rmin, rmax, cmin, cmax = frame
+    background = _most_common_color(grid)
+    patch = _extract_patch(grid, (color, rmin, rmax, cmin, cmax, background))
+    return _canonical_patch(patch, color, background)
+
+
+def lookupStripeCount(patch: Tuple[Tuple[int, ...], ...]) -> int:
+    if not patch:
+        return 0
+    if patch in PATCH_STRIPES:
+        return PATCH_STRIPES[patch]
+    unique = {v for row in patch for v in row if v not in (0, -1)}
+    row_hits = sum(any(v not in (0, -1) for v in row) for row in patch)
+    return max(len(unique), row_hits // 2)
+
+
+def clearAndPaintStripes(canvas: Grid, frame: Frame, stripe_count: int) -> Grid:
+    color, rmin, rmax, cmin, cmax = frame
+    background = _most_common_color(canvas)
+    # Start from a copy (purity)
+    out = [row[:] for row in canvas]
+    # Clear interior
+    for r in range(rmin + 1, rmax):
+        for c in range(cmin + 1, cmax):
+            out[r][c] = background
+    # Paint stripes on the horizontal midline inside the frame
+    inner_width = cmax - cmin - 1
+    candidates = _candidate_positions(inner_width)
+    if not candidates or stripe_count <= 0:
+        return out
+    selected = candidates[-min(stripe_count, len(candidates)) :]
+    mid = (rmin + rmax) // 2
+    base = cmin + 1
+    for offset in selected:
+        out[mid][base + offset] = color
+    return out
+
+
+def clearNoise(canvas: Grid, frames: List[Frame]) -> Grid:
+    if not frames:
+        return [row[:] for row in canvas]
+    background = _most_common_color(canvas)
+    out = [row[:] for row in canvas]
+    height = len(out)
+    width = len(out[0]) if height else 0
+    # Clear everything to the right of the rightmost frame edge
+    right_limit = max(cmax for (_color, _rmin, _rmax, _cmin, cmax) in frames)
+    for r in range(height):
+        for c in range(right_limit + 1, width):
+            out[r][c] = background
+    # Build inside mask
     inside = [[False] * width for _ in range(height)]
-    for color, rmin, rmax, cmin, cmax in blocks:
-        inner_cols = list(range(cmin + 1, cmax))
-        inner_rows = list(range(rmin + 1, rmax))
-
-        # Clean the interior before drawing new stripes.
-        for r in inner_rows:
-            for c in inner_cols:
-                work[r][c] = background
-
-        stripe_count = _infer_stripes(grid, (color, rmin, rmax, cmin, cmax, background))
-        _paint_stripes(work, color, rmin, rmax, cmin, cmax, stripe_count)
-
-    if blocks:
-        right_limit = max(cmax for _color, _rmin, _rmax, _cmin, cmax in blocks)
-        for r in range(len(work)):
-            for c in range(right_limit + 1, len(work[0])):
-                work[r][c] = background
-
-    for color, rmin, rmax, cmin, cmax in blocks:
+    for (_color, rmin, rmax, cmin, cmax) in frames:
         for r in range(rmin, rmax + 1):
             for c in range(cmin, cmax + 1):
                 inside[r][c] = True
-
+    # Clear any non-background outside frames
     for r in range(height):
         for c in range(width):
-            if not inside[r][c] and work[r][c] != background:
-                work[r][c] = background
+            if not inside[r][c] and out[r][c] != background:
+                out[r][c] = background
+    return out
 
-    return work
+
+def fold_repaint(canvas: Grid, items: List[Frame], update: Callable[[Grid, Frame], Grid]) -> Grid:
+    acc = [row[:] for row in canvas]
+    for item in items:
+        acc = update(acc, item)
+    return acc
+
+
+def solve_8f215267(grid: Grid) -> Grid:
+    frames = extractFrames(grid)
+
+    def repaint(canvas: Grid, frame: Frame) -> Grid:
+        patch = sliceInstructionPatch(grid, frame)
+        stripe_count = lookupStripeCount(patch)
+        return clearAndPaintStripes(canvas, frame, stripe_count)
+
+    striped = fold_repaint(grid, frames, repaint)
+    return clearNoise(striped, frames)
 
 
 p = solve_8f215267

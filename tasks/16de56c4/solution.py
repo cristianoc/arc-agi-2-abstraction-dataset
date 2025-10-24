@@ -1,6 +1,10 @@
 """Solver for ARC-AGI-2 task 16de56c4."""
 
+from typing import List
 from math import gcd
+
+# Typed alias used by the DSL checker
+Grid = List[List[int]]
 
 
 def _copy_grid(grid):
@@ -115,10 +119,17 @@ def _apply_column_rule(grid, original):
     return result
 
 
-def solve_16de56c4(grid):
-    after_rows = _apply_row_rule(grid)
-    after_cols = _apply_column_rule(after_rows, grid)
-    return after_cols
+def applyRowRule(grid: Grid) -> Grid:
+    return _apply_row_rule(grid)
+
+
+def applyColumnRule(grid: Grid, original: Grid) -> Grid:
+    return _apply_column_rule(grid, original)
+
+
+def solve_16de56c4(grid: Grid) -> Grid:
+    after_rows = applyRowRule(grid)
+    return applyColumnRule(after_rows, grid)
 
 
 def p(grid):

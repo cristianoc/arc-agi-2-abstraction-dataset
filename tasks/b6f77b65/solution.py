@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
+
+# DSL type alias
+Grid = List[List[int]]
 
 
 COLOR_TO_SEGMENT = {2: 'a', 3: 'b', 4: 'c', 5: 'd', 6: 'e', 7: 'f', 8: 'g'}
@@ -292,8 +295,11 @@ MAPPING = {
 }
 
 
-def _digit_segment_key(grid: List[List[int]], digit_idx: int) -> str:
-    start = digit_idx * 3
+def readKeyLetter(grid: Grid) -> Optional[str]:
+    return COLOR_TO_SEGMENT.get(grid[0][0])
+
+def segmentKeyForDigit(grid: Grid, index: int) -> str:
+    start = index * 3
     letters = {
         COLOR_TO_SEGMENT[val]
         for row in grid
@@ -302,31 +308,40 @@ def _digit_segment_key(grid: List[List[int]], digit_idx: int) -> str:
     }
     return ''.join(sorted(letters))
 
-
-def _digit_block(grid: List[List[int]], digit_idx: int) -> List[List[int]]:
-    start = digit_idx * 3
+def _digit_block(grid: Grid, index: int) -> Grid:
+    start = index * 3
     return [row[start:start + 3] for row in grid]
 
+def lookupDigitTemplate(grid: Grid, index: int, segment_key: str, key_letter: Optional[str]) -> Grid:
+    pattern = MAPPING.get((index, segment_key, key_letter))
+    if pattern is None and key_letter is None:
+        pattern = MAPPING.get((index, segment_key, None))
+    if pattern is None:
+        return _digit_block(grid, index)
+    return [row[:] for row in pattern]
 
-def solve_b6f77b65(grid: List[List[int]]) -> List[List[int]]:
-    """Apply the best known positional mapping for the given key letter."""
+def assembleDigits(templates: List[Grid]) -> Grid:
+    if not templates:
+        return []
+    height = len(templates[0])
+    return [
+        [val for tpl in templates for val in tpl[r]]
+        for r in range(height)
+    ]
 
-    key_letter = COLOR_TO_SEGMENT.get(grid[0][0])
-    output = [[0] * len(grid[0]) for _ in range(len(grid))]
-
-    for idx in range(4):
-        start = idx * 3
-        seg_key = _digit_segment_key(grid, idx)
-        pattern = MAPPING.get((idx, seg_key, key_letter))
-        if pattern is None:
-            if key_letter is None:
-                pattern = MAPPING.get((idx, seg_key, None))
-        if pattern is None:
-            pattern = _digit_block(grid, idx)
-        for r in range(len(grid)):
-            output[r][start:start + 3] = pattern[r][:]
-
-    return output
+def solve_b6f77b65(grid: Grid) -> Grid:
+    key_letter = readKeyLetter(grid)
+    digit_count = int(len(grid[0]) / 3)
+    templates = [
+        lookupDigitTemplate(
+            grid,
+            index,
+            segmentKeyForDigit(grid, index),
+            key_letter,
+        )
+        for index in range(digit_count)
+    ]
+    return assembleDigits(templates)
 
 
 p = solve_b6f77b65

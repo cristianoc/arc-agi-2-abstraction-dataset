@@ -1,6 +1,9 @@
 """Solver for ARC-AGI-2 task 20a9e565."""
 
 from collections import Counter, defaultdict
+from typing import List
+
+Grid = List[List[int]]
 from itertools import groupby
 
 
@@ -31,6 +34,39 @@ def _column_groups(grid):
         })
         start += len(idx_list)
     return groups, len(nonzero_cols)
+
+
+# --- Thin wrappers to match the typed-DSL surface ---
+def columnGroups(grid):
+    """DSL: Group consecutive non-zero columns by top color.
+
+    Returns (groups, count).
+    """
+    groups, total_cols = _column_groups(grid)
+    return groups, total_cols
+
+
+def classifyPattern(groups):
+    """DSL: Classify groups into one of "S", "C", or "B"."""
+    kind, _ = _classify(groups)
+    return kind
+
+
+def buildTypeS(groups):
+    """DSL: Build type-S layout from groups only."""
+    # _build_type_s does not actually use the grid argument.
+    return _build_type_s(None, groups)
+
+
+def buildTypeC(grid, groups):
+    """DSL: Build type-C layout using grid + groups."""
+    return _build_type_c(grid, groups)
+
+
+def buildTypeB(groups):
+    """DSL: Build type-B layout from groups only."""
+    total_cols = sum(g["length"] for g in groups)
+    return _build_type_b(grid=None, total_cols=total_cols, groups=groups)  # type: ignore[arg-type]
 
 
 def _bounding_boxes(grid):
@@ -137,22 +173,16 @@ def _build_type_b(grid, total_cols, groups):
     return out
 
 
-def solve_20a9e565(grid):
-    """Solve task 20a9e565 by pattern classification over column groups."""
+def solve_20a9e565(grid: Grid) -> Grid:
+    groups, total_cols = columnGroups(grid)
+    tag = classifyPattern(groups)
 
-    if not grid or not grid[0]:
-        return _copy_grid(grid)
-
-    groups, total_cols = _column_groups(grid)
-    if not groups:
-        return _copy_grid(grid)
-
-    kind, _info = _classify(groups)
-    if kind == "S":
-        return _build_type_s(grid, groups)
-    if kind == "C":
-        return _build_type_c(grid, groups)
-    return _build_type_b(grid, total_cols, groups)
+    if tag == "S":
+        return buildTypeS(groups)
+    elif tag == "C":
+        return buildTypeC(grid, groups)
+    else:  # tag == "B"
+        return buildTypeB(groups)
 
 
 p = solve_20a9e565
