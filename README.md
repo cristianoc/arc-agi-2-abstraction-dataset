@@ -1,16 +1,26 @@
 # ARC-AGI-2 Abstraction Dataset
 
-A dataset containing 120 ARC-AGI-2 evaluation tasks, each with the final solver, abstraction implementation, and analysis report bundled together. In total, **120 tasks** are currently bundled.
+A dataset containing 120 ARC-AGI-2 evaluation tasks with solvers written in **CompDSL**—a purely functional, simply-typed DSL for grid transformation programs. Each solver is guaranteed to terminate with polynomial complexity bounds and maintains equational reasoning properties.
 
-## Overview
+## What is CompDSL?
+
+CompDSL is a purely functional, simply-typed DSL for grid programs embedded in disciplined Python. Every solver is guaranteed to terminate in O(n^d) time with no mutation, recursion, or unbounded loops.
+
+**Core idea**: Write programs using only pure functions, comprehensions, and the single combinator `fold_repaint`—enforced via AST validators and type checking.
+
+## Dataset Overview
 
 This dataset contains solvers for all 120 ARC-AGI-2 **evaluation tasks**, generated using an automated approach combining coding agents with abstraction-refinement techniques.
-Most solvers (116 out of 120) pass **interpolation** (i.e., they correctly solve all training examples) and include full abstraction analysis. For tasks where stable interpolating programs could not be found (142ca369, 21897d95, 271d71e2, and da515329), identity function baselines are provided as placeholders. This dataset continues to be expanded over time, and future tasks may not all pass interpolation.  
-The solvers were refined starting from identity functions, and identity functions are left when no solution is found. For details on the refinement pipeline, see the companion [compositional-program-synthesis](https://github.com/cristianoc/compositional-program-synthesis) repository. Each task solver includes:
 
-- **Task Solution**: The final working Python implementation
-- **Abstraction Code**: Reusable abstraction functions and pipelines
-- **Analysis Report**: Detailed report of the abstraction process and performance
+**Status**: 116 of 120 solvers pass **interpolation** (correctly solve all training examples). Identity baselines are provided for the remaining 4 tasks (142ca369, 21897d95, 271d71e2, da515329) as placeholders for future improvements.
+
+Each task bundle includes:
+
+- **Task Solution** (`solution.py`): Final working Python implementation in CompDSL
+- **Abstraction Code** (`abstractions.py`): Reusable abstraction functions and pipelines  
+- **Analysis Report** (`abstractions.md`): Detailed abstraction process and DSL specification
+
+For details on the refinement pipeline, see the companion [compositional-program-synthesis](https://github.com/cristianoc/compositional-program-synthesis) repository.
 
 
 ## Directory Structure
@@ -33,107 +43,48 @@ arc-agi-2-abstraction-dataset/
 └── README.md            # This file
 ```
 
-## DSL (Typed Abstractions)
+## CompDSL Specification
 
-The `dsl/` folder contains a typed DSL used to write and validate the per-task abstraction notes. It captures solver control flow as a restricted, pure subset of simply-typed lambda calculus:
+The `dsl/` directory contains the full specification, validators, and operation registry.
 
-- Not the full untyped lambda calculus (therefore not Turing-complete)
-- No general recursion (no fixpoint/Y); all well-typed programs terminate
-- Iteration over state is expressed with the domain combinator `fold_repaint`
-- Domain operations (e.g., component extraction, repaint) are recorded as typed primitives in `dsl/dsl_state.yaml`
+**Documentation**:
+- `dsl/README.md` — Quick reference with syntax cheat sheet
+- `dsl/DSL.md` — Authoritative specification for contributors
+- `dsl/DSL_Research_Note.md` — Design rationale and theoretical foundations
 
-Documents:
+**Validation**: Run `check_lambda_types.py` and `validate_dsl.py` in the `dsl/` directory. See `dsl/DSL.md` for details.
 
-- `dsl/README.md` – directory index and quick commands
-- `dsl/DSL.md` – syntax/specification and contributor guide
-- `dsl/DSL_Research_Note.md` – design rationale and theory background
+## Task Bundles
 
-Validation commands:
+Each `tasks/<task-id>/` directory contains:
 
-```bash
-# Type-check all lambda representations against declared operations
-python3 dsl/check_lambda_types.py tasks/**/abstractions.md
+- **`solution.py`** (required): Solver function. 116 of 120 pass all training examples; 4 are identity baselines.
+- **`abstractions.py`** (optional): Reusable helper functions (component analysis, symmetry detection, morphological ops).
+- **`abstractions.md`** (optional): Report with DSL specification validated by `check_lambda_types.py`.
 
-# Validate the global DSL registry structure
-python3 dsl/validate_dsl.py
-```
+Identity baselines omit the optional files.
 
-## Task Solutions
+## Common Patterns
 
-Each bundle in `tasks/<task-id>/` contains:
+**Per-item local reasoning**: `fold_repaint` over objects, applying local masks  
+**Global infer → local render**: First pass builds structure, second pass paints  
+**Search/evaluation** (rare): Generate candidates, score, select best
 
-- `solution.py`: the final solver implementation. Most solvers (116 of 120) pass every training example; the remaining bundles ship identity baselines while better programs are in progress. Generalization to unseen test cases remains the key open challenge.
-- `abstractions.py`: reusable abstraction pipelines (optional when only an identity baseline is available).
-- `abstractions.md`: a markdown report describing the abstraction process (also optional for identity baselines).
-
-## Abstraction Files
-
-Each bundle ships its own abstraction artefacts:
-
-- `abstractions.py` — reusable abstraction routines (component analysis, symmetry detection, morphological operations, etc.).
-- `abstractions.md` — a human-readable report summarising experiments, performance, and failure analysis.
-
-All `abstractions.md` files that include a DSL section follow the typed DSL specification described in `dsl/DSL.md` and are validated using the commands shown above.
-
-Identity baselines omit these files; you can treat the bundle as an invitation to contribute a stronger abstraction in the future.
-
-## Key Abstraction Patterns
-
-The solutions employ various abstraction techniques:
-
-1. **Component Analysis**: 4-connected component detection and analysis
-2. **Symmetry Detection**: Axis-aligned and rotational symmetry identification
-3. **Morphological Operations**: Dilation, erosion, and closing operations
-4. **Geometric Reasoning**: Bounding box analysis and spatial relationships
-5. **Color Analysis**: Dominant color detection and color-based segmentation
-6. **Local Rules**: Neighborhood-based pattern matching and transformation
+**Domain abstractions**: Component analysis, symmetry detection, morphological ops, geometric/color reasoning, neighborhood rules.
 
 ## Usage
 
-### Running a Task Solution
-
 ```python
-# Example: Running task 1ae2feb7 from its bundle
-from importlib import import_module
+# Run a solver
+from tasks.1ae2feb7.solution import solve_1ae2feb7
+result = solve_1ae2feb7(input_grid)
 
-solve_module = import_module("tasks.1ae2feb7.solution")
-result = solve_module.solve_1ae2feb7(input_grid)
+# Use abstraction helpers
+from tasks.1ae2feb7.abstractions import repeat_last_nonzero_block
+result = repeat_last_nonzero_block(grid)
 ```
 
-### Using Abstractions
-
-```python
-# Example: Using abstraction helpers
-abstractions = import_module("tasks.1ae2feb7.abstractions")
-result = abstractions.repeat_last_nonzero_block(grid)
-```
-
-### Checking Repository Consistency
-
-A consistency checker script is included to verify the dataset integrity:
-
-```bash
-# Check consistency (basic)
-python check_consistency.py
-
-# Check consistency with verbose output
-python check_consistency.py --verbose
-```
-
-The script verifies:
-- Every bundle contains a solver implementation
-- Abstraction code/report files are present when expected
-- Identity baselines are correctly recognised
-- Documentation reflects the actual task count
-
-## Methodology
-
-The solutions were generated using an automated approach that:
-
-1. **Initial Analysis**: Examines the task structure and patterns
-2. **Abstraction Design**: Creates reusable abstraction functions
-3. **Iterative Refinement**: Tests and refines abstractions based on failures
-4. **Evaluation**: Tests solutions against validation cases to determine which ones work
+Check repository consistency: `python check_consistency.py`
 
 
 ## Citation
