@@ -1,70 +1,88 @@
-# DSL Directory Index
+# CompDSL Directory
 
-This directory contains the typed DSL for ARC-AGI-2 task abstractions. 
+This directory contains the **CompDSL** specification, validators, and operation registry for ARC-AGI-2 task abstractions.
 
-**Current snapshot**: `dsl_state.yaml` version `68` (updated `2025-10-14T16:15:00Z`)
+## What is CompDSL?
+
+Purely functional, simply-typed DSL for grid programs. Guaranteed termination in O(n^d) time, no mutation/recursion/loops.
+
+✓ Predictable ✓ Analyzable ✓ Practical ✓ Debuggable
 
 ## Documents
 
-- **`DSL_Research_Note.md`** – *Design rationale and motivation.* Read this to understand **why** the DSL exists, its theoretical foundations (typed lambda calculus), design principles, and practical applications. For researchers and evaluators.
-
-- **`DSL.md`** – *Syntax reference and contributor guide.* Read this to learn **how** to write valid abstraction notes. Authoritative specification of allowed/forbidden constructs, operation format, and validation workflow. For active contributors.
-
-- **`dsl_state.yaml`** – *Machine-readable registry.* Authoritative inventory of all typed operations and type tokens across the corpus, with task mappings.
+- **`DSL_Research_Note.md`** — Design rationale and theory (for researchers)
+- **`DSL.md`** — Syntax specification (for contributors)
+- **`dsl_state.yaml`** — Machine-readable operation registry
 
 ## Validation Tools
 
-- **`check_lambda_types.py`** – Type-checks lambda representations against declared operations. Extracts DSL structures, generates type stubs, runs `mypy`, enforces purity constraints.
-- **`validate_dsl.py`** – Validates registry structure: required fields, uniqueness constraints, no duplicates.
-
-`dsl_state.yaml` now records the *typed operations* that appear verbatim in abstraction notes (previously these were curated as “primitives”). Each entry is automatically scraped from the per-task documentation, so the YAML is the authoritative inventory of the operations in use.
+- **`check_lambda_types.py`** — Type-checks lambdas, enforces purity
+- **`validate_dsl.py`** — Validates registry structure
 
 ## Quick Reference
 
-### Key Clarification
-- The DSL uses a restricted, simply-typed lambda subset. It is not the full untyped lambda calculus and is therefore not Turing-complete.
-- No general recursion (no fixpoint/Y); iteration over state is expressed only via the `fold_repaint` combinator.
-- Domain effects (grid ops) are provided as typed operations recorded in `dsl_state.yaml` rather than encoded from first principles.
+### Language Subset (Python)
+
+**✅ Allowed**:
+- Pure function definitions with type signatures
+- Guard-style `if/return` (all branches must return)
+- Comprehensions (map/filter)
+- Tuples and pure expressions
+- Positional-only lambdas
+
+**❌ Forbidden**:
+- `for`/`while` loops
+- Mutation: `x[i] = v`, `obj.attr = v`
+- Decorators, global state
+- `try`/`except` for control flow
+- Recursive function calls
+
+### Core Constructs
+
+**`fold_repaint(canvas, items, update)`** — The only higher-order iterator.
+
+```python
+# Pattern: thread grid through update function
+result = fold_repaint(canvas, cells, lambda g, c: paint_at(g, c, color))
+```
+
+**Comprehensions** — Pure map/filter over finite collections.
+
+```python
+coords = [(x, y) for x in range(w) for y in range(h) if grid[y][x] == target]
+```
+
+**Guard if/return** — All branches return immediately.
+
+```python
+def classify(x: int) -> str:
+    if x < 0: return "negative"
+    if x == 0: return "zero"
+    return "positive"
+```
+
+### IterDepth Complexity Metric
+
+| Construct | Contribution |
+|-----------|--------------|
+| Comprehension generator | +1 per generator |
+| `fold_repaint` | +1 + depth of update function |
+| Branches (`if`) | max(branch depths) |
+| Helper calls | propagate callee depth |
+
+**Empirical (120 tasks)**: d=0 (4%), d=1 (39%), d=2 (53%), d=3 (3%)
 
 ### Typed Operations
-Each task declares operations like:
-- `extractComponents : Grid -> List Component`
-- `paintComponent : Grid × Component × Color -> Grid`
 
-`dsl_state.yaml` auto-generates the complete inventory with task mappings. See **`DSL.md`** for format specifications.
+Example: `extractComponents : Grid -> List Component`
 
-### Standard Combinator
-- **`fold_repaint`** – iterates over a collection, threading state through an update function
-
-See **`DSL.md`** for detailed signature and usage.
-
-### Type Tokens
-`dsl_state.yaml` indexes all types (`Grid`, `Component`, `List`, etc.) with their task occurrences, enabling cross-task queries.
+See `DSL.md` for format specifications.
 
 ## Contributor Workflow
 
-**Quick version:**
-1. Edit `tasks/<task_id>/abstractions.md` (DSL Structure + Lambda Representation)
-2. Update `dsl_state.yaml` (bump version/timestamp)
-3. Run validators: `check_lambda_types.py` and `validate_dsl.py`
+1. Edit `tasks/<task_id>/abstractions.md`
+2. Update `dsl_state.yaml` (bump version)
+3. Run: `python3 dsl/check_lambda_types.py tasks/**/abstractions.md && python3 dsl/validate_dsl.py`
 4. Commit if both pass
 
-**See `DSL.md` for detailed syntax rules and the complete contributor checklist.**
-
-## Validation Commands
-
-```bash
-# Type-check all abstraction notes
-python3 dsl/check_lambda_types.py tasks/**/abstractions.md
-
-# Validate registry structure
-python3 dsl/validate_dsl.py
-```
-
-Both must pass before committing. See **`DSL.md`** for what these tools check and how to fix common errors.
-
----
-
-**For design rationale and use cases**, see **`DSL_Research_Note.md`**.  
-**For syntax rules and how-to**, see **`DSL.md`**.  
-**For general repository context**, see the root `README.md`.
+See `DSL.md` for detailed checklist.

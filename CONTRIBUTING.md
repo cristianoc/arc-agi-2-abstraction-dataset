@@ -2,6 +2,12 @@
 
 Thank you for your interest in contributing to the ARC-AGI-2 Abstraction Dataset! This document provides guidelines for contributing new tasks, abstractions, and improvements to the dataset.
 
+## About CompDSL
+
+All solvers are written in **CompDSL**—a purely functional, simply-typed DSL embedded in Python. Programs are guaranteed to terminate in O(n^d) time with no mutation, recursion, or loops.
+
+See `dsl/DSL.md` for the complete specification.
+
 ## Repository Structure
 
 The repository follows a consistent structure:
@@ -63,19 +69,16 @@ The consistency checker verifies:
 - ✅ No placeholder dates in CHANGELOG.md (e.g., "2025-01-XX")
 - ✅ No placeholder text in documentation files
 
-### DSL Validation (when editing abstractions.md)
+### CompDSL Validation
 
-If your PR adds or modifies any `tasks/**/abstractions.md` files, you must run the DSL validators and ensure they pass. The DSL captures solver control flow in a restricted, simply‑typed lambda subset (not Turing‑complete; no recursion). See `dsl/DSL.md` for the full spec.
+If your PR modifies `abstractions.md` files, run both validators:
 
 ```bash
-# Type-check all lambda representations against declared operations
 python3 dsl/check_lambda_types.py tasks/**/abstractions.md
-
-# Validate the global DSL registry structure
 python3 dsl/validate_dsl.py
 ```
 
-PRs that touch DSL notes should include a brief note in the description stating that these checks passed.
+Both must pass. See `dsl/DSL.md` for what's checked.
 
 ## Documentation Updates
 
