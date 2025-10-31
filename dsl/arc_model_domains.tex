@@ -43,7 +43,6 @@
 \newcommand{\G}{\mathcal{G}}
 \newcommand{\F}{\mathcal{F}}
 \newcommand{\Dom}{\mathrm{Dom}}
-\newcommand{\Domc}{\mathrm{Dom}_c}
 \newcommand{\Domb}{\mathrm{Dom}_b}
 \DeclareMathOperator*{\argmax}{arg\,max}
 
@@ -56,7 +55,7 @@ Domains, Interpolation, and Adaptation (Research Note)}
 \maketitle
 
 \begin{abstract}
-We formalize Abstraction and Reasoning Corpus (ARC) tasks using partial functions over grids and a numeric preference function on programs. The key technical contribution is a clean separation between a \emph{computational domain}---inputs on which evaluation is defined (short-circuit semantics)---and a \emph{behavioural domain} that encodes the programmer's intended coverage. We give a short calculus for definedness under boolean connectives, characterize interpolation, generalisation, and adaptation to novelty, and work through a representative example where generalisation succeeds precisely by extending the behavioural domain to include a previously unhandled color.
+We formalize Abstraction and Reasoning Corpus (ARC) tasks using partial functions over grids and a numeric preference function on programs. The central concept is the \emph{behavioural domain} that encodes the programmer's intended coverage. We give a short calculus for behavioural definedness under boolean connectives, characterize interpolation, generalisation, and adaptation to novelty, and work through a representative example where generalisation succeeds precisely by extending the behavioural domain to include a previously unhandled color.
 \end{abstract}
 
 \section{Model}
@@ -91,13 +90,9 @@ The \emph{intended solution} is any $f^\star\in \argmax_{f\in\mathcal{S}} P(f)$ 
 
 This formulation clarifies the tension in ARC: generalisation seeks higher-scoring interpolants (simpler, more elegant programs), while adaptation prioritizes coverage of the test input. When the test introduces novel features absent in training (e.g., a new color), the top interpolant $f^\dagger$ may exclude that case from $\Domb$, forcing a trade-off: accept a lower-preference tentative solution $g^\star$ that extends the behavioural domain, or stick with $f^\dagger$ and risk failure.
 
-\section{Two domains}
+\section{Behavioural domain}
 
-We distinguish two notions of domain:
-\begin{itemize}[leftmargin=1.5em]
-\item \textbf{Computational domain} $\Domc(e)$: inputs on which expression/program $e$ evaluates without touching an undefined primitive (short-circuit semantics).
-\item \textbf{Behavioural domain} $\Domb(e)$: inputs on which the \emph{specification} intends to define behaviour (coverage). For ARC this may be strictly smaller than $\Domc$.
-\end{itemize}
+We focus on the \textbf{behavioural domain} $\Domb(e)$: the inputs on which the specification intends to define behaviour (coverage). We assume standard short-circuit evaluation for expressions; runtime definedness is incidental here and not our emphasis.
 
 \paragraph{Definedness calculus (examples).}
 For boolean expressions $E,F$ and comparisons $x{=}c$,
@@ -109,7 +104,7 @@ For a DSL primitive $g(\cdot)$, we assume a given predicate $\Domb(g)$.
 
 \section{Worked example}
 
-We illustrate domain separation using ARC-AGI-2 task dfadab01. The puzzle and interactive solver are available at \url{https://arcprize.org/play?task=dfadab01}. For the full solver simplification analysis, see \url{https://gist.github.com/cristianoc/e86779cee94658567ecba429133d6667}.
+We illustrate the role of the behavioural domain using ARC-AGI-2 task dfadab01. The puzzle and interactive solver are available at \url{https://arcprize.org/play?task=dfadab01}. For the full solver simplification analysis, see \url{https://gist.github.com/cristianoc/e86779cee94658567ecba429133d6667}.
 
 Consider the following (corrected) DSL function:
 \begin{lstlisting}
@@ -157,9 +152,7 @@ The model suggests a concrete operating procedure and design tips:
 
 \section{Summary}
 
-Modeling ARC programs as partial functions with a numeric score yields a compact account of interpolation, generalisation, and adaptation. The separation $\Domc$ vs.\ $\Domb$ is essential: many failures are not evaluation errors but \emph{coverage} gaps. In the example, the initial solver fails on the test because color $8$ is outside $\Domb$; the generalised solution succeeds precisely by extending $\Domb$ to include that case.
-
-\paragraph{Connection to implementation.} The accompanying CompDSL implementation (\texttt{DSL\_Research\_Note.md}) provides: (i)~guaranteed computational domain via well-typed terminating programs; (ii)~explicit behavioural domain through guard-style conditionals and case-splits; (iii)~preference via IterDepth metric (lower depth preferred); and (iv)~interpolation checking through type validators. The \texttt{fold\_repaint} combinator captures iterative painting with well-defined $\Domc$, while the solver's case-split structure explicitly encodes $\Domb$.
+Modeling ARC programs as partial functions with a numeric score yields a compact account of interpolation, generalisation, and adaptation. The \emph{behavioural domain} is essential: many failures are not evaluation errors but \emph{coverage} gaps. In the example, the initial solver fails on the test because color $8$ is outside $\Domb$; the generalised solution succeeds precisely by extending $\Domb$ to include that case.
 
 Several tasks in this repository illustrate these principles: adaptation to new colors (training uses $\{1,2,3\}$, test introduces $4$), guard-based validation in legend-driven solvers, and coverage gaps in identity baselines (tasks \texttt{142ca369}, \texttt{21897d95}, \texttt{271d71e2}, \texttt{da515329}) representing $\mathcal{S}=\varnothing$ cases. The worked example above (task dfadab01) demonstrates domain extension in practice: where a solver initially handling only colors $\{2,5\}$ is generalised to also handle color $8$ by removing hard-coded guard conditions.
 
