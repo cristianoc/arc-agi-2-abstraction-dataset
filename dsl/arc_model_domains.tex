@@ -154,6 +154,4 @@ The model suggests a concrete operating procedure and design tips:
 
 Modeling ARC programs as partial functions with a numeric score yields a compact account of interpolation, generalisation, and adaptation. The \emph{behavioural domain} is essential: many failures are not evaluation errors but \emph{coverage} gaps. In the example, the initial solver fails on the test because color $8$ is outside $\Domb$; the generalised solution succeeds precisely by extending $\Domb$ to include that case.
 
-Several tasks in this repository illustrate these principles: variant-specific processing based on color detection (as in task \texttt{6ffbe589} with palette variants $\{1,2,4\}$, $\{3,4,5\}$, $\{3,6,8\}$), guard-based validation in legend-driven solvers (tasks \texttt{9385bd28}, \texttt{195c6913}), and coverage gaps in identity baselines (tasks \texttt{142ca369}, \texttt{21897d95}, \texttt{271d71e2}, \texttt{da515329}) representing $\mathcal{S}=\varnothing$ cases. The worked example above (task dfadab01) demonstrates domain extension in practice: where a solver initially handling only colors $\{2,5\}$ is generalised to also handle color $8$ by removing hard-coded guard conditions.
-
 \end{document}
