@@ -120,26 +120,18 @@ def valid_anchor(grid: Grid, anchor: Anchor) -> bool:
         or (color == 5 and guard_nw_eq(grid, (row, col), 6))
     )
 \end{lstlisting}
-Let $G4 \equiv \texttt{guard\_nw\_eq}(grid,(row,col),4)$ and $G6 \equiv \texttt{guard\_nw\_eq}(grid,(row,col),6)$.
-
-\begin{example}[Computational domain]
-Using~\eqref{eq:not} and~\eqref{eq:conjdisj}, we obtain
-\[
-\Domc(\texttt{valid\_anchor})
-\;=\;
-(color{=}2 \Rightarrow \Domc(G4)) \ \land\ (color{=}5 \Rightarrow \Domc(G6)).
-\]
-To verify, rewrite the body as $(color{\neq}2 \lor \lnot G4)\ \land\ (color{\neq}5 \lor \lnot G6)$ and apply the conjunction/disjunction rule~\eqref{eq:conjdisj}, noting that pure comparisons are total.
-\end{example}
+% Inline the guard primitives directly (no G4/G6 abbreviations).
 
 \begin{example}[Behavioural domain]
-If the intended specification handles only colors $2$ (red) and $5$ (gray), the behavioural domain is
+If the intended specification handles only colors $2$ (red) and $5$ (gray), the behavioural domain follows directly from~\eqref{eq:not} and~\eqref{eq:conjdisj} (and the fact that comparisons are total):
 \[
+\begin{aligned}
 \Domb(\texttt{valid\_anchor})
-\;=\;
-(color{=}2 \land \Domc(G4)) \ \lor\ (color{=}5 \land \Domc(G6)).
+&= (color{=}2 \land \Domb(\texttt{guard\_nw\_eq}(grid,(row,col),4))) \\
+&\quad \lor (color{=}5 \land \Domb(\texttt{guard\_nw\_eq}(grid,(row,col),6))).
+\end{aligned}
 \]
-This follows from encoding the function as an explicit case-split with no \texttt{else}: in the $2$-branch the body mentions $G4$, in the $5$-branch the body mentions $G6$, and other colors are uncovered.
+Intuitively, $\Domb(\lnot E)=\Domb(E)$, and $\Domb((x{=}c \land E)\lor F)=(x{=}c\land \Domb(E))\lor \Domb(F)$; since comparisons like $color{=}2$ are total, the only potential undefinedness comes from the calls to \texttt{guard\_nw\_eq} with colors $4$ and $6$.
 \end{example}
 
 \begin{remark}[Novelty at test time]
@@ -153,14 +145,14 @@ If the test input has \texttt{color}$=8$ (sky blue), then the expression \emph{c
 \label{fig:comparison}
 \end{figure}
 
-\section{Consequences for ARC}
+\section{Practical Implications}
 
-With interpolants $\mathcal{I}$ and tentative solutions $\mathcal{S}$ (Sec.~1), then:
+The model suggests a concrete operating procedure and design tips:
 \begin{itemize}[leftmargin=1.5em]
-\item \emph{Generalisation} corresponds to moving to a higher-scoring interpolant $g$ with $P(g)>P(f)$.
-\item \emph{Adaptation to novelty} is selecting $g^\star\in\argmax_{f\in\mathcal{S}}P(f)$ (the tentative solution maximizing~$P$) when the top interpolant $f^\dagger$ fails to cover $i$; necessarily $P(g^\star)\le P(f^\dagger)$ because $\mathcal{S}\subseteq\mathcal{I}$.
-\item The \emph{intended solution} is any $f^\star\in\argmax_{f\in\mathcal{S}}P(f)$ with $P:\F\to\mathbb{R}$ (i.e., the maximizer of~$P$ over~$\mathcal{S}$).
-\item The instance is \emph{void} if $\mathcal{S}=\varnothing$ and \emph{ambiguous} if the $\argmax$ is not a singleton.
+\item \textbf{Selection rule.} Among interpolants, pick the tentative solutions that cover the test ($\mathcal{S}$) and choose the $P$-maximizer; if $\mathcal{S}=\varnothing$ the instance is \emph{void}, and if multiple maximizers remain it is \emph{ambiguous}.
+\item \textbf{Novelty handling.} If the top-scoring interpolant $f^\dagger$ does not cover the test ($i\notin \Domb(f^\dagger)$), extend the behavioural domain with the minimal, principled change that includes $i$, accepting a possible decrease in~$P$.
+\item \textbf{Make coverage explicit.} Encode intended coverage via guard-style case-splits with no default \texttt{else}; this makes $\Domb$ visible and simplifies reasoning about what inputs are intentionally handled.
+\item \textbf{Debugging checklist.} On failures, first distinguish evaluation errors from coverage gaps: compute or approximate $\Domb(e)$ for the failing expression and check whether the test input lies outside it.
 \end{itemize}
 
 \section{Summary}
