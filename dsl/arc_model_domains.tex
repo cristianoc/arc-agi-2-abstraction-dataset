@@ -4,24 +4,41 @@
 \usepackage{amsmath,amssymb,amsthm,mathtools}
 \usepackage{enumitem}
 \usepackage{hyperref}
+\usepackage[x11names,dvipsnames,svgnames]{xcolor}
 \usepackage{listings}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{microtype}
 
-\lstset{
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.98,0.98,0.98}
+
+\lstdefinestyle{pythonstyle}{
   language=Python,
+  backgroundcolor=\color{backcolour},
+  commentstyle=\color{codegreen},
+  keywordstyle=\color{magenta},
+  numberstyle=\tiny\color{codegray},
+  stringstyle=\color{codepurple},
   basicstyle=\ttfamily\small,
   columns=fullflexible,
   showstringspaces=false,
   keepspaces=true,
   frame=single,
-  framerule=0.2pt
+  framerule=0.2pt,
+  breaklines=true,
+  numbers=left,
+  numbersep=5pt,
 }
+
+\lstset{style=pythonstyle}
 
 \newtheorem{definition}{Definition}
 \newtheorem{proposition}{Proposition}
 \newtheorem{remark}{Remark}
+\newtheorem{example}{Example}
 
 \newcommand{\G}{\mathcal{G}}
 \newcommand{\F}{\mathcal{F}}
@@ -52,21 +69,27 @@ Let $\G$ be the set of grids. Candidate programs are partial functions $f:\G\rig
 A numeric scoring function $P:\F\to\mathbb{R}$ induces a strict preference: $f_1$ is preferred to $f_2$ iff $P(f_1)>P(f_2)$.
 \end{definition}
 
-\begin{definition}[Instances and interpolation]
-An ARC instance consists of training pairs $\{(i_k,o_k)\}_{k=1}^n\subseteq \G\times\G$ and a test input $i\in\G$. A program $f$ \emph{interpolates} the training set if for all $k$, $i_k\in\Domb(f)$ and $f(i_k)=o_k$.
+\begin{definition}[ARC puzzles]
+An ARC puzzle (instance) consists of training pairs $\{(i_k,o_k)\}_{k=1}^n\subseteq \G\times\G$ and a test input $i\in\G$.
+\end{definition}
+
+\begin{definition}[Interpolants]
+For training pairs $\{(i_k,o_k)\}_{k=1}^n$, a program $f$ \emph{interpolates} the training set if for all $k$, $i_k\in\Domb(f)$ and $f(i_k)=o_k$. Let $\mathcal{I}=\{f\in\F\mid f \text{ interpolates } \{(i_k,o_k)\}_{k=1}^n\}$ denote the set of all interpolants.
 \end{definition}
 
 \begin{definition}[Tentative solution, solution, ambiguity/void]
-A \emph{tentative solution} is any $f\in\F$ that interpolates and satisfies $i\in\Domb(f)$. Let
+A \emph{tentative solution} is any interpolant $f\in\mathcal{I}$ such that $i\in\Domb(f)$. Let
 \[
-\mathcal{S} \;=\; \bigl\{ f\in\F \,\big|\, \forall k: f(i_k)=o_k \text{ and } i_k\in\Domb(f), \ \ i\in\Domb(f)\bigr\}.
+\mathcal{S} \;=\; \bigl\{ f\in\mathcal{I} \,\big|\, i\in\Domb(f)\bigr\}.
 \]
-The \emph{intended solution} is any $f^\star\in \argmax_{f\in\mathcal{S}} P(f)$. The instance is \emph{void} if $\mathcal{S}=\varnothing$ and \emph{ambiguous} if $|\argmax_{f\in\mathcal{S}} P(f)|>1$.
+The \emph{intended solution} is any $f^\star\in \argmax_{f\in\mathcal{S}} P(f)$ (i.e., the element of~$\mathcal{S}$ that maximizes~$P$). The instance is \emph{void} if $\mathcal{S}=\varnothing$ and \emph{ambiguous} if $|\argmax_{f\in\mathcal{S}} P(f)|>1$.
 \end{definition}
 
 \begin{definition}[Generalisation and adaptation to novelty]
-\emph{Generalisation} is moving between interpolants $f,g$ with $P(g)>P(f)$. Let $\mathcal{I}=\{f\in\F\mid f \text{ interpolates the training set}\}$. The top-scoring interpolant $f^\dagger\in\argmax_{f\in\mathcal{I}}P(f)$ may fail to cover the test input ($i\notin\Domb(f^\dagger)$). \emph{Adaptation to novelty} selects a tentative solution $g^\star\in\argmax_{f\in\mathcal{S}}P(f)$; since $\mathcal{S}\subseteq\mathcal{I}$, necessarily $P(g^\star)\le P(f^\dagger)$.
+\emph{Generalisation} is moving between interpolants $f,g\in\mathcal{I}$ with $P(g)>P(f)$. The top-scoring interpolant $f^\dagger\in\argmax_{f\in\mathcal{I}}P(f)$ (the interpolant maximizing~$P$) may fail to cover the test input ($i\notin\Domb(f^\dagger)$). \emph{Adaptation to novelty} selects a tentative solution $g^\star\in\argmax_{f\in\mathcal{S}}P(f)$; since $\mathcal{S}\subseteq\mathcal{I}$, necessarily $P(g^\star)\le P(f^\dagger)$.
 \end{definition}
+
+This formulation clarifies the tension in ARC: generalisation seeks higher-scoring interpolants (simpler, more elegant programs), while adaptation prioritizes coverage of the test input. When the test introduces novel features absent in training (e.g., a new color), the top interpolant $f^\dagger$ may exclude that case from $\Domb$, forcing a trade-off: accept a lower-preference tentative solution $g^\star$ that extends the behavioural domain, or stick with $f^\dagger$ and risk failure.
 
 \section{Two domains}
 
@@ -76,23 +99,17 @@ We distinguish two notions of domain:
 \item \textbf{Behavioural domain} $\Domb(e)$: inputs on which the \emph{specification} intends to define behaviour (coverage). For ARC this may be strictly smaller than $\Domc$.
 \end{itemize}
 
-\paragraph{Definedness calculus (short-circuit aware).}
-For boolean expressions $E,F$,
+\paragraph{Definedness calculus (examples).}
+For boolean expressions $E,F$ and comparisons $x{=}c$,
 \begin{align}
-\Domc(\lnot E) &= \Domc(E), \label{eq:not}\\
-\Domc(E\land F) &= \Domc(E)\ \land\ (E \Rightarrow \Domc(F)), \label{eq:and}\\
-\Domc(E\lor F) &= \Domc(E)\ \land\ (\lnot E \Rightarrow \Domc(F)). \label{eq:or}
+\Domb(\lnot E) &= \Domb(E), \label{eq:not}\\
+\Domb((x{=}c \land E) \lor F) &= (x{=}c \land \Domb(E)) \lor \Domb(F). \label{eq:conjdisj}
 \end{align}
-Pure comparisons (e.g.\ $x{=}c$) are total, hence $\Domc(x{=}c)=\text{true}$. For a DSL primitive $g(\cdot)$, we assume a given predicate $\Domc(g)$.
-
-\paragraph{Behavioural domain via explicit coverage.}
-When the specification intentionally handles only certain cases, encode this as an explicit case-split without a default:
-\[
-\Domb(\texttt{case\_split}) \;=\; \bigvee_j \bigl(\texttt{guard}_j \ \land\ \Domc(\texttt{body}_j)\bigr),
-\]
-and any input not covered by a guard lies outside $\Domb$.
+For a DSL primitive $g(\cdot)$, we assume a given predicate $\Domb(g)$.
 
 \section{Worked example}
+
+We illustrate domain separation using ARC-AGI-2 task dfadab01. The puzzle and interactive solver are available at \url{https://arcprize.org/play?task=dfadab01}. For the full solver simplification analysis, see \url{https://gist.github.com/cristianoc/e86779cee94658567ecba429133d6667}.
 
 Consider the following (corrected) DSL function:
 \begin{lstlisting}
@@ -105,49 +122,53 @@ def valid_anchor(grid: Grid, anchor: Anchor) -> bool:
 \end{lstlisting}
 Let $G4 \equiv \texttt{guard\_nw\_eq}(grid,(row,col),4)$ and $G6 \equiv \texttt{guard\_nw\_eq}(grid,(row,col),6)$.
 
-\begin{proposition}[Computational domain]
-\label{prop:domc}
-Using~\eqref{eq:not}--\eqref{eq:or}, we obtain
+\begin{example}[Computational domain]
+Using~\eqref{eq:not} and~\eqref{eq:conjdisj}, we obtain
 \[
 \Domc(\texttt{valid\_anchor})
 \;=\;
 (color{=}2 \Rightarrow \Domc(G4)) \ \land\ (color{=}5 \Rightarrow \Domc(G6)).
 \]
-\end{proposition}
+To verify, rewrite the body as $(color{\neq}2 \lor \lnot G4)\ \land\ (color{\neq}5 \lor \lnot G6)$ and apply the conjunction/disjunction rule~\eqref{eq:conjdisj}, noting that pure comparisons are total.
+\end{example}
 
-\begin{proof}
-Rewrite the body as $(color{\neq}2 \lor \lnot G4)\ \land\ (color{\neq}5 \lor \lnot G6)$. Apply~\eqref{eq:or} to each disjunct and note that pure comparisons are total.
-\end{proof}
-
-\begin{proposition}[Behavioural domain]
-\label{prop:domb}
-If the intended specification handles only colors $2$ and $5$, the behavioural domain is
+\begin{example}[Behavioural domain]
+If the intended specification handles only colors $2$ (red) and $5$ (gray), the behavioural domain is
 \[
 \Domb(\texttt{valid\_anchor})
 \;=\;
 (color{=}2 \land \Domc(G4)) \ \lor\ (color{=}5 \land \Domc(G6)).
 \]
-\end{proposition}
-
-\begin{proof}
-Express the function as an explicit case-split with no \texttt{else}: in the $2$-branch the body mentions $G4$, in the $5$-branch the body mentions $G6$, and other colors are uncovered; apply the coverage rule above.
-\end{proof}
+This follows from encoding the function as an explicit case-split with no \texttt{else}: in the $2$-branch the body mentions $G4$, in the $5$-branch the body mentions $G6$, and other colors are uncovered.
+\end{example}
 
 \begin{remark}[Novelty at test time]
-If the test input has \texttt{color}$=8$, then the expression \emph{computationally} evaluates (no guard is forced), but $i\notin\Domb(\texttt{valid\_anchor})$ by Prop.~\ref{prop:domb}. Generalisation must therefore extend the behavioural domain (e.g.\ add a new branch or a principled fallback) so that $8$ becomes covered.
+If the test input has \texttt{color}$=8$ (sky blue), then the expression \emph{computationally} evaluates (no guard is forced), but $i\notin\Domb(\texttt{valid\_anchor})$ by the behavioural domain example above. Generalisation must therefore extend the behavioural domain (e.g.\ add a new branch or a principled fallback) so that $8$ becomes covered.
 \end{remark}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.9\textwidth]{images/solver_comparison.png}
+\caption{Before/after comparison showing domain extension failure and recovery: the initial solver explicitly handles only red ($2$) and gray ($5$). When sky blue ($8$) appears in the test input (corresponding to an \texttt{X}-pattern motif with orange ($7$) borders), the solver incorrectly stamps the motif because $8 \notin \Domb(\texttt{valid\_anchor})$. The simplified version introduces \texttt{guard\_color} (deriving the guard color $7$ from the motif's top-left cell) to uniformly treat all motifs, extending $\Domb$ to include color $8$ and preventing spurious stamping.}
+\label{fig:comparison}
+\end{figure}
 
 \section{Consequences for ARC}
 
-Let $\mathcal{I}$ be the interpolants and $\mathcal{S}$ the tentative solutions (Sec.~1). Then:
+With interpolants $\mathcal{I}$ and tentative solutions $\mathcal{S}$ (Sec.~1), then:
 \begin{itemize}[leftmargin=1.5em]
 \item \emph{Generalisation} corresponds to moving to a higher-scoring interpolant $g$ with $P(g)>P(f)$.
-\item \emph{Adaptation to novelty} is selecting $g^\star\in\argmax_{f\in\mathcal{S}}P(f)$ when the top interpolant $f^\dagger$ fails to cover $i$; necessarily $P(g^\star)\le P(f^\dagger)$ because $\mathcal{S}\subseteq\mathcal{I}$.
-\item The \emph{intended solution} is any $f^\star\in\argmax_{f\in\mathcal{S}}P(f)$ with $P:\F\to\mathbb{R}$.
+\item \emph{Adaptation to novelty} is selecting $g^\star\in\argmax_{f\in\mathcal{S}}P(f)$ (the tentative solution maximizing~$P$) when the top interpolant $f^\dagger$ fails to cover $i$; necessarily $P(g^\star)\le P(f^\dagger)$ because $\mathcal{S}\subseteq\mathcal{I}$.
+\item The \emph{intended solution} is any $f^\star\in\argmax_{f\in\mathcal{S}}P(f)$ with $P:\F\to\mathbb{R}$ (i.e., the maximizer of~$P$ over~$\mathcal{S}$).
 \item The instance is \emph{void} if $\mathcal{S}=\varnothing$ and \emph{ambiguous} if the $\argmax$ is not a singleton.
 \end{itemize}
 
 \section{Summary}
 
 Modeling ARC programs as partial functions with a numeric score yields a compact account of interpolation, generalisation, and adaptation. The separation $\Domc$ vs.\ $\Domb$ is essential: many failures are not evaluation errors but \emph{coverage} gaps. In the example, the initial solver fails on the test because color $8$ is outside $\Domb$; the generalised solution succeeds precisely by extending $\Domb$ to include that case.
+
+\paragraph{Connection to implementation.} The accompanying CompDSL implementation (\texttt{DSL\_Research\_Note.md}) provides: (i)~guaranteed computational domain via well-typed terminating programs; (ii)~explicit behavioural domain through guard-style conditionals and case-splits; (iii)~preference via IterDepth metric (lower depth preferred); and (iv)~interpolation checking through type validators. The \texttt{fold\_repaint} combinator captures iterative painting with well-defined $\Domc$, while the solver's case-split structure explicitly encodes $\Domb$.
+
+Several tasks in this repository illustrate these principles: adaptation to new colors (training uses $\{1,2,3\}$, test introduces $4$), guard-based validation in legend-driven solvers, and coverage gaps in identity baselines (tasks \texttt{142ca369}, \texttt{21897d95}, \texttt{271d71e2}, \texttt{da515329}) representing $\mathcal{S}=\varnothing$ cases. The worked example above (task dfadab01) demonstrates domain extension in practice: where a solver initially handling only colors $\{2,5\}$ is generalised to also handle color $8$ by removing hard-coded guard conditions.
+
 \end{document}
