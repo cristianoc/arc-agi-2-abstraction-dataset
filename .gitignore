@@ -6,3 +6,6 @@ __pycache__/
 *.aux
 *.log
 *.out
+
+# macOS
+.DS_Store
