@@ -11,6 +11,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nothing yet
 
 
+## [1.7.0] - 2025-10-31
+
+### Added
+- Formal mathematical foundation: `dsl/arc_model_domains.pdf` documenting partial function model, behavioural domains, interpolation, generalisation, and adaptation to novelty ([LaTeX source](dsl/arc_model_domains.tex))
+- Visual documentation infrastructure in `dsl/images/` with solver comparison diagram illustrating domain extension
+
+### Changed
+- Enhanced research documentation with complementary theoretical foundations: formal mathematical model (`arc_model_domains.pdf`) and implementation design (`DSL_Research_Note.md`)
+- Updated cross-references to clearly connect mathematical foundations with DSL implementation
+
+### Technical Details
+- Formal model focuses on behavioural domain (Dom_b) as the programmer's intended coverage
+- Worked example demonstrates adaptation to novelty via domain extension
+- Definedness calculus provides rules for behavioural definedness under boolean connectives
+
+
 ## [1.6.1] - 2025-10-24
 
 ### Added
@@ -136,6 +152,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Date | Tasks | Description |
 |---------|------|-------|-------------|
+| 1.7.0 | 2025-10-31 | 120 | Added formal mathematical foundations (partial functions, domains) |
+| 1.6.1 | 2025-10-24 | 120 | Synchronized all task bundles, normalized solver implementations |
+| 1.6.0 | 2025-10-12 | 120 | Restructured into per-task bundles |
 | 1.5.0 | 2025-10-11 | 120 | Complete ARC-AGI-2 coverage (116 full + 4 identity baselines) |
 | 1.4.0 | 2025-10-10 | 118 | Added 40 tasks approaching full ARC-AGI-2 coverage |
 | 1.3.0 | 2025-10-09 | 99 | Added 20 tasks for expanded coverage |
