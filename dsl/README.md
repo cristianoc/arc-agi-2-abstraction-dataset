@@ -10,9 +10,17 @@ Purely functional, simply-typed DSL for grid programs. Guaranteed termination in
 
 ## Documents
 
-- **`DSL_Research_Note.md`** — Design rationale and theory (for researchers)
+### Research Notes
+
+**Theoretical Foundations:**
+- **`arc_model_domains.pdf`** — Formal model using partial functions and preference ([LaTeX source](arc_model_domains.tex))
+- **`DSL_Research_Note.md`** — Compositional DSL design and properties
+
+**Practical Reference:**
 - **`DSL.md`** — Syntax specification (for contributors)
 - **`dsl_state.yaml`** — Machine-readable operation registry
+
+The research notes complement each other: `arc_model_domains.pdf` provides the mathematical foundations (partial functions, domains, interpolation), while `DSL_Research_Note.md` shows how these concepts map to the CompDSL implementation (lambda calculus, combinators, complexity bounds).
 
 ## Validation Tools
 
