@@ -1,0 +1,153 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+
+\lstset{
+  language=Python,
+  basicstyle=\ttfamily\small,
+  columns=fullflexible,
+  showstringspaces=false,
+  keepspaces=true,
+  frame=single,
+  framerule=0.2pt
+}
+
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+
+\newcommand{\G}{\mathcal{G}}
+\newcommand{\F}{\mathcal{F}}
+\newcommand{\Dom}{\mathrm{Dom}}
+\newcommand{\Domc}{\mathrm{Dom}_c}
+\newcommand{\Domb}{\mathrm{Dom}_b}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
+\title{Partial Functions and Preference for ARC:\\
+Domains, Interpolation, and Adaptation (Research Note)}
+\author{Cristiano Calcagno}
+\date{2025-10-31}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We formalize Abstraction and Reasoning Corpus (ARC) tasks using partial functions over grids and a numeric preference function on programs. The key technical contribution is a clean separation between a \emph{computational domain}---inputs on which evaluation is defined (short-circuit semantics)---and a \emph{behavioural domain} that encodes the programmer's intended coverage. We give a short calculus for definedness under boolean connectives, characterize interpolation, generalisation, and adaptation to novelty, and work through a representative example where generalisation succeeds precisely by extending the behavioural domain to include a previously unhandled color.
+\end{abstract}
+
+\section{Model}
+
+\begin{definition}[Objects]
+Let $\G$ be the set of grids. Candidate programs are partial functions $f:\G\rightharpoonup \G$; write $\Domb(f)\subseteq \G$ for the (behavioural) domain of $f$, i.e.\ the set of inputs on which $f$ \emph{specifies} behaviour. Let $\F$ denote a chosen hypothesis class of such programs.
+\end{definition}
+
+\begin{definition}[Preference]
+A numeric scoring function $P:\F\to\mathbb{R}$ induces a strict preference: $f_1$ is preferred to $f_2$ iff $P(f_1)>P(f_2)$.
+\end{definition}
+
+\begin{definition}[Instances and interpolation]
+An ARC instance consists of training pairs $\{(i_k,o_k)\}_{k=1}^n\subseteq \G\times\G$ and a test input $i\in\G$. A program $f$ \emph{interpolates} the training set if for all $k$, $i_k\in\Domb(f)$ and $f(i_k)=o_k$.
+\end{definition}
+
+\begin{definition}[Tentative solution, solution, ambiguity/void]
+A \emph{tentative solution} is any $f\in\F$ that interpolates and satisfies $i\in\Domb(f)$. Let
+\[
+\mathcal{S} \;=\; \bigl\{ f\in\F \,\big|\, \forall k: f(i_k)=o_k \text{ and } i_k\in\Domb(f), \ \ i\in\Domb(f)\bigr\}.
+\]
+The \emph{intended solution} is any $f^\star\in \argmax_{f\in\mathcal{S}} P(f)$. The instance is \emph{void} if $\mathcal{S}=\varnothing$ and \emph{ambiguous} if $|\argmax_{f\in\mathcal{S}} P(f)|>1$.
+\end{definition}
+
+\begin{definition}[Generalisation and adaptation to novelty]
+\emph{Generalisation} is moving between interpolants $f,g$ with $P(g)>P(f)$. Let $\mathcal{I}=\{f\in\F\mid f \text{ interpolates the training set}\}$. The top-scoring interpolant $f^\dagger\in\argmax_{f\in\mathcal{I}}P(f)$ may fail to cover the test input ($i\notin\Domb(f^\dagger)$). \emph{Adaptation to novelty} selects a tentative solution $g^\star\in\argmax_{f\in\mathcal{S}}P(f)$; since $\mathcal{S}\subseteq\mathcal{I}$, necessarily $P(g^\star)\le P(f^\dagger)$.
+\end{definition}
+
+\section{Two domains}
+
+We distinguish two notions of domain:
+\begin{itemize}[leftmargin=1.5em]
+\item \textbf{Computational domain} $\Domc(e)$: inputs on which expression/program $e$ evaluates without touching an undefined primitive (short-circuit semantics).
+\item \textbf{Behavioural domain} $\Domb(e)$: inputs on which the \emph{specification} intends to define behaviour (coverage). For ARC this may be strictly smaller than $\Domc$.
+\end{itemize}
+
+\paragraph{Definedness calculus (short-circuit aware).}
+For boolean expressions $E,F$,
+\begin{align}
+\Domc(\lnot E) &= \Domc(E), \label{eq:not}\\
+\Domc(E\land F) &= \Domc(E)\ \land\ (E \Rightarrow \Domc(F)), \label{eq:and}\\
+\Domc(E\lor F) &= \Domc(E)\ \land\ (\lnot E \Rightarrow \Domc(F)). \label{eq:or}
+\end{align}
+Pure comparisons (e.g.\ $x{=}c$) are total, hence $\Domc(x{=}c)=\text{true}$. For a DSL primitive $g(\cdot)$, we assume a given predicate $\Domc(g)$.
+
+\paragraph{Behavioural domain via explicit coverage.}
+When the specification intentionally handles only certain cases, encode this as an explicit case-split without a default:
+\[
+\Domb(\texttt{case\_split}) \;=\; \bigvee_j \bigl(\texttt{guard}_j \ \land\ \Domc(\texttt{body}_j)\bigr),
+\]
+and any input not covered by a guard lies outside $\Domb$.
+
+\section{Worked example}
+
+Consider the following (corrected) DSL function:
+\begin{lstlisting}
+def valid_anchor(grid: Grid, anchor: Anchor) -> bool:
+    row, col, color = anchor
+    return not (
+        (color == 2 and guard_nw_eq(grid, (row, col), 4))
+        or (color == 5 and guard_nw_eq(grid, (row, col), 6))
+    )
+\end{lstlisting}
+Let $G4 \equiv \texttt{guard\_nw\_eq}(grid,(row,col),4)$ and $G6 \equiv \texttt{guard\_nw\_eq}(grid,(row,col),6)$.
+
+\begin{proposition}[Computational domain]
+\label{prop:domc}
+Using~\eqref{eq:not}--\eqref{eq:or}, we obtain
+\[
+\Domc(\texttt{valid\_anchor})
+\;=\;
+(color{=}2 \Rightarrow \Domc(G4)) \ \land\ (color{=}5 \Rightarrow \Domc(G6)).
+\]
+\end{proposition}
+
+\begin{proof}
+Rewrite the body as $(color{\neq}2 \lor \lnot G4)\ \land\ (color{\neq}5 \lor \lnot G6)$. Apply~\eqref{eq:or} to each disjunct and note that pure comparisons are total.
+\end{proof}
+
+\begin{proposition}[Behavioural domain]
+\label{prop:domb}
+If the intended specification handles only colors $2$ and $5$, the behavioural domain is
+\[
+\Domb(\texttt{valid\_anchor})
+\;=\;
+(color{=}2 \land \Domc(G4)) \ \lor\ (color{=}5 \land \Domc(G6)).
+\]
+\end{proposition}
+
+\begin{proof}
+Express the function as an explicit case-split with no \texttt{else}: in the $2$-branch the body mentions $G4$, in the $5$-branch the body mentions $G6$, and other colors are uncovered; apply the coverage rule above.
+\end{proof}
+
+\begin{remark}[Novelty at test time]
+If the test input has \texttt{color}$=8$, then the expression \emph{computationally} evaluates (no guard is forced), but $i\notin\Domb(\texttt{valid\_anchor})$ by Prop.~\ref{prop:domb}. Generalisation must therefore extend the behavioural domain (e.g.\ add a new branch or a principled fallback) so that $8$ becomes covered.
+\end{remark}
+
+\section{Consequences for ARC}
+
+Let $\mathcal{I}$ be the interpolants and $\mathcal{S}$ the tentative solutions (Sec.~1). Then:
+\begin{itemize}[leftmargin=1.5em]
+\item \emph{Generalisation} corresponds to moving to a higher-scoring interpolant $g$ with $P(g)>P(f)$.
+\item \emph{Adaptation to novelty} is selecting $g^\star\in\argmax_{f\in\mathcal{S}}P(f)$ when the top interpolant $f^\dagger$ fails to cover $i$; necessarily $P(g^\star)\le P(f^\dagger)$ because $\mathcal{S}\subseteq\mathcal{I}$.
+\item The \emph{intended solution} is any $f^\star\in\argmax_{f\in\mathcal{S}}P(f)$ with $P:\F\to\mathbb{R}$.
+\item The instance is \emph{void} if $\mathcal{S}=\varnothing$ and \emph{ambiguous} if the $\argmax$ is not a singleton.
+\end{itemize}
+
+\section{Summary}
+
+Modeling ARC programs as partial functions with a numeric score yields a compact account of interpolation, generalisation, and adaptation. The separation $\Domc$ vs.\ $\Domb$ is essential: many failures are not evaluation errors but \emph{coverage} gaps. In the example, the initial solver fails on the test because color $8$ is outside $\Domb$; the generalised solution succeeds precisely by extending $\Domb$ to include that case.
+\end{document}
