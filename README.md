@@ -2,6 +2,21 @@
 
 A dataset containing 120 ARC-AGI-2 evaluation tasks with solvers written in **CompDSL**—a purely functional, simply-typed DSL for grid transformation programs. Each solver is guaranteed to terminate with polynomial complexity bounds and maintains equational reasoning properties.
 
+## How to run solvers and check output correctness
+
+```
+./test.py
+```
+
+This also produces `out/*.json` files containing the output, which can be plotted for visual inspection with:
+
+```
+virtualenv -p python3 .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+./plot.py out/0934a4d8.json
+```
+
 ## What is CompDSL?
 
 CompDSL is a purely functional, simply-typed DSL for grid programs embedded in disciplined Python. Every solver is guaranteed to terminate in O(n^d) time with no mutation, recursion, or unbounded loops.
